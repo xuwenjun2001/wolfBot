@@ -41,6 +41,7 @@ coverage/
 *.parquet
 *.sqlite
 *.sqlite3
+*.sqlite3-*
 *.db
 
 # Logs and temporary files

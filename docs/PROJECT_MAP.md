@@ -1,10 +1,10 @@
 # WolfBot 项目全景图
 
-状态：治理骨架初始化（2026-08-28）
+状态：Wolf Dashboard 本地 MVP 已实现（2026-08-28）
 
 ## 当前范围
 
-当前仓库只包含维护规范和定位文档，没有业务代码、运行时入口或可执行服务。后续功能提交必须把真实结构补充到本文件，不要提前填写不存在的模块。
+当前仓库包含维护规范、策略证据材料和 `wolf-dashboard` 可执行服务。后续结构变化仍需在本文件登记，不要把本地数据库、Cookie 或原始导出写入仓库。
 
 ## 当前文件树
 
@@ -55,7 +55,9 @@ wolfBot/
 
 | 路径 | 职责 | 公共入口 | 数据/依赖 | 测试位置 | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| （待首个实现提交补充） | - | - | - | - | 未创建 |
+| `wolf-dashboard/backend/app` | FastAPI 后端、NGA、行情、策略与调度 | `/api/*` | Python、SQLite、requests、APScheduler | `wolf-dashboard/backend/tests` | 已实现 |
+| `wolf-dashboard/frontend` | 本地仪表盘界面 | `/` | 原生 HTML/CSS/JS | 手工 HTTP 检查 | 已实现 |
+| `wolf-dashboard/scripts` | 启动与 Windows 登录任务 | `start.ps1`、`install-task.ps1` | PowerShell、Uvicorn | README 启动步骤 | 已实现 |
 
 ## 变更时的更新要求
 
@@ -76,3 +78,24 @@ wolfBot/
 - 索引链接仍然有效，命令和路径没有过期。
 - 结构变化、依赖变化和用户可见变化已经在本图或 README 反映。
 - 本图没有记录不在远端仓库中的私有数据内容。
+
+## Wolf Dashboard 实现登记
+
+仓库现在包含 `wolf-dashboard` 本地服务：FastAPI + SQLite 后端、静态仪表盘、NGA 增量采集、行情快照、策略版本和回归测试。原始 Excel/Markdown 仍只作为本地种子材料，不写入提交产物。NGA/AI 的阻塞请求通过线程池执行，长时间推理不会冻结状态和发言接口；AI 思考强度可由 `OPENAI_REASONING_EFFORT` 配置，独立超时由 `OPENAI_REQUEST_TIMEOUT` 控制且上限为 1200 秒。
+
+管理接口还包括 `DELETE /api/watchlist/{code}` 和 `GET /api/aliases`；目录级运行说明见 `wolf-dashboard/README.md`。
+
+```text
+wolf-dashboard/
+  backend/app/config.py       .env 与运行配置
+  backend/app/db.py           SQLite schema、事件和事务
+  backend/app/nga.py          NGA lite=js 解析、作者过滤分页与游标迁移
+  backend/app/seed.py         Markdown 文章与 E25 规则导入
+  backend/app/market.py       代码归一化与腾讯行情
+  backend/app/strategy.py     AI JSON、引用校验与版本
+  backend/app/scheduler.py    5 分钟、08:30 和盘中任务
+  backend/app/main.py         FastAPI API、SSE 与静态页
+  backend/tests/              解析、采集、策略和 API 回归测试
+  frontend/                   本地仪表盘 HTML/CSS/JS
+  scripts/                    启动与 Windows 登录任务脚本
+```

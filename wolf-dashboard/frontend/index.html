@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#112331" />
+    <title>Wolf Dashboard</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand-mark" aria-hidden="true">W</div>
+      <div class="brand-copy">
+        <strong>Wolf Dashboard</strong>
+        <span>公开发言与盘前观察</span>
+      </div>
+      <div class="top-actions">
+        <span id="live-state" class="status-pill muted">连接中</span>
+        <button id="refresh-all" class="button primary" title="立即刷新页面数据">↻ <span>刷新</span></button>
+      </div>
+    </header>
+
+    <main class="shell">
+      <section class="intro-row">
+        <div>
+          <p class="eyebrow">北京日期 <span id="today-label">--</span></p>
+          <h1>今天看什么</h1>
+          <p class="subtle">把作者原文、历史规则和可核验行情放在同一张桌面上。</p>
+        </div>
+        <div class="task-actions">
+          <button id="crawl-now" class="button secondary">⌁ <span>检查新发言</span></button>
+          <button id="strategy-now" class="button accent">✦ <span>生成今日策略</span></button>
+        </div>
+      </section>
+
+      <section class="market-strip" aria-label="行情快照">
+        <div class="section-label">市场快照 <span id="market-asof" class="subtle">等待数据</span></div>
+        <div id="market-grid" class="market-grid">
+          <div class="empty-inline">还没有行情快照</div>
+        </div>
+      </section>
+
+      <div class="content-grid">
+        <section class="panel strategy-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">盘前基线 / 盘中补充</p>
+              <h2>今日策略</h2>
+            </div>
+            <span id="strategy-state" class="status-pill muted">未生成</span>
+          </div>
+          <div id="strategy-list" class="strategy-list">
+            <div class="empty-state">点击“生成今日策略”，或等待 08:30 自动生成。</div>
+          </div>
+          <div class="panel-footnote">策略只呈现可验证的观察条件，不保存个人持仓成本，也不构成投资建议。</div>
+        </section>
+
+        <section class="panel posts-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">NGA / tid 47288722 / authorid 150058</p>
+              <h2>最新发言</h2>
+            </div>
+            <span id="post-count" class="count-badge">0</span>
+          </div>
+          <div id="post-list" class="post-list">
+            <div class="empty-state">正在读取本地记录。</div>
+          </div>
+        </section>
+      </div>
+
+      <div class="lower-grid">
+        <section class="panel watchlist-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">公开市场观察</p>
+              <h2>自选池</h2>
+            </div>
+            <span class="subtle">只保存代码与备注</span>
+          </div>
+          <form id="watchlist-form" class="inline-form">
+            <label><span>代码</span><input id="watch-code" placeholder="600519.SH" required /></label>
+            <label><span>名称</span><input id="watch-name" placeholder="可选" /></label>
+            <button class="button secondary" type="submit">＋ <span>加入</span></button>
+          </form>
+          <div id="watchlist-list" class="watchlist-list"></div>
+          <div class="alias-heading">AI 标的映射</div>
+          <div id="alias-list" class="alias-list"><div class="empty-inline">生成策略后显示候选映射</div></div>
+        </section>
+
+        <section class="panel status-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">运行状态</p>
+              <h2>监控健康度</h2>
+            </div>
+          </div>
+          <div id="status-list" class="status-list"></div>
+          <div class="status-note">需要登录 Cookie 才能稳定访问 NGA。凭据仅从本机 `.env` 读取。</div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="footer shell">Wolf Dashboard · 本机私有运行 · <a href="https://ngabbs.com/read.php?tid=47288722" target="_blank" rel="noreferrer">打开原帖 ↗</a></footer>
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>
