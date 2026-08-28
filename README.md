@@ -8,6 +8,7 @@ WolfBot 是一个从干净仓库起步的项目，当前包含可运行的 `wolf
 - [CONTRIBUTING.md](CONTRIBUTING.md)：分支、验证、提交和评审流程。
 - [项目全景图](docs/PROJECT_MAP.md)：当前文件定位、未来模块登记和文档同步规则。
 - [CHANGELOG.md](CHANGELOG.md)：`feat` 和 `fix` 的可追溯记录。
+- [COMMIT_LOG.md](COMMIT_LOG.md)：所有提交的原因、实现方式和验证记录。
 - [.gitmessage](.gitmessage)：提交正文模板。
 
 ## 当前状态

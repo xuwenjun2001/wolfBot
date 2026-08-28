@@ -8,7 +8,7 @@
 2. 阅读 [AGENTS.md](AGENTS.md) 和 [docs/PROJECT_MAP.md](docs/PROJECT_MAP.md)，确定代码入口、影响范围和验证方式。
 3. 先实现最小可用改动，再补充边界处理、错误路径和必要测试。
 4. 执行受影响的测试和静态检查，并运行 `git diff --check`。
-5. 结构变化同步更新项目全景图；`feat` 或 `fix` 同步更新 `CHANGELOG.md`。
+5. 结构变化同步更新项目全景图；每个提交同步更新 `COMMIT_LOG.md`；`feat` 或 `fix` 另外更新 `CHANGELOG.md`。
 6. 按提交规范创建小而完整的提交，提交前复核暂存区内容。
 7. 发起评审时说明背景、行为变化、验证结果、兼容性和已知风险。
 
@@ -65,13 +65,15 @@ Validation: 命令、测试或手工检查及结果
 Change-Id: WB-YYYYMMDD-NNN
 ```
 
-变更表只登记 `feat` 和 `fix`；`docs`、`chore` 等提交的 Why/How/Validation 保证它们仍可从 Git 历史追溯。
+所有类型的提交都必须在提交前向根目录 `COMMIT_LOG.md` 增加记录，至少包含提交标题、日期、类型、范围以及 `Why`、`How`、`Validation`。`CHANGELOG.md` 只登记 `feat` 和 `fix`；`docs`、`chore` 等提交通过 `COMMIT_LOG.md` 和 Git 历史双重追溯。
 
 ## 文档与全景图
 
 任何新增模块、入口、外部依赖、配置、数据流或测试命令，都必须在同一提交更新 [项目全景图](docs/PROJECT_MAP.md)。只要用户行为或使用方式发生变化，也要更新 README。
 
 NGA 分页、游标迁移、AI 超时或环境变量变化同时更新 `wolf-dashboard/README.md` 和根目录 `README.md`；用户可见的 `feat`/`fix` 还要在同一提交更新 `CHANGELOG.md`。
+
+提交原因记录统一维护在根目录 [COMMIT_LOG.md](COMMIT_LOG.md)；新增提交时按时间倒序追加，并确保不写入任何凭据或本地运行数据。
 
 ## 评审检查
 
@@ -83,5 +85,6 @@ NGA 分页、游标迁移、AI 超时或环境变量变化同时更新 `wolf-das
 - 提交正文是否包含 Why、How、Validation，且验证结果可复核？
 - 暂存区是否只包含本次任务文件，且没有 `.env`、数据库、WAL、日志或缓存？
 - 提交标题是否符合 Conventional Commits，`feat`/`fix` 是否有唯一 `WB-YYYYMMDD-NNN` 和 `Change-Id`？
+- 是否已在 `COMMIT_LOG.md` 记录本次提交的 `Why`、`How`、`Validation`？
 
 没有运行测试时必须明确写出原因；不要把“代码看起来正确”当作验证结果。

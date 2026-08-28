@@ -14,6 +14,7 @@ wolfBot/
 ├── .gitmessage                # Git 提交正文模板
 ├── AGENTS.md                  # 仓库级代理与工程规范
 ├── CHANGELOG.md               # feat/fix 变更记录
+├── COMMIT_LOG.md              # 所有提交的原因、实现和验证记录
 ├── CONTRIBUTING.md            # 贡献、提交与评审流程
 ├── README.md                  # 项目入口与当前状态
 └── docs/
@@ -28,7 +29,8 @@ wolfBot/
 | 代码质量、安全、测试要求 | `AGENTS.md` | 仓库级强制工作约定 |
 | 开发和评审流程 | `CONTRIBUTING.md` | 分支、验证和提交步骤 |
 | 项目状态和入口 | `README.md` | 面向维护者的概览 |
-| feat/fix 原因与修改记录 | `CHANGELOG.md` | 按变更 ID 追溯；其他提交查 Git 历史 |
+| feat/fix 原因与修改记录 | `CHANGELOG.md` | 按变更 ID 追溯 |
+| 所有提交的原因与验证 | `COMMIT_LOG.md` | 按提交标题和日期集中审阅 |
 | 提交正文格式 | `.gitmessage` | 本地 commit template |
 
 ## 维护者工作流
@@ -43,6 +45,8 @@ wolfBot/
   ├─> 执行验证并记录真实结果
   │
   ├─> 结构或使用方式变化？──是──> 同提交更新本图 / README
+  │
+  ├─> 每个提交 ────────────────> 同提交更新 COMMIT_LOG.md
   │
   ├─> feat 或 fix？──────────是──> 同提交更新 CHANGELOG.md
   │
