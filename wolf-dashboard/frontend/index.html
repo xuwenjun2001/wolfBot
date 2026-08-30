@@ -14,6 +14,11 @@
         <strong>Wolf Dashboard</strong>
         <span>公开发言与盘前观察</span>
       </div>
+      <nav class="monitor-nav" aria-label="主导航">
+        <a href="/">Agent</a>
+        <a href="/skills">Skills</a>
+        <a class="active" href="/monitor" aria-current="page">Monitor</a>
+      </nav>
       <div class="top-actions">
         <span id="live-state" class="status-pill muted">连接中</span>
         <button id="refresh-all" class="button primary" title="立即刷新页面数据">↻ <span>刷新</span></button>
@@ -63,7 +68,7 @@
             </div>
             <span id="post-count" class="count-badge">0</span>
           </div>
-          <div id="post-list" class="post-list">
+          <div id="post-list" class="post-list" role="region" aria-label="最新发言列表" tabindex="0">
             <div class="empty-state">正在读取本地记录。</div>
           </div>
         </section>

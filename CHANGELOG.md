@@ -6,6 +6,7 @@
 
 | ID | 日期 | 类型 | 范围 | 摘要 | 原因 | 修改方式 | 验证 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| WB-20260830-001 | 2026-08-30 | feat | wolf-dashboard | 增加 Agent 研究工作台、skill 管理、行情与确定性选股能力 | 用户需要在本地提出独立研究问题，查看受控工具轨迹、证据、终态结论和候选股图表，而不是只使用原有监控页 | 增加 PI Agent sidecar、FastAPI Agent/SSE/取消与持久化、EastMoney 股票池导入、腾讯行情/日线/指标、SQLite 与筛选器；新增 Agent 和 `/skills` 页面，保留 `/monitor` 并补齐启动脚本与文档 | `python -m pytest -q`（77 passed）；sidecar 测试（8 passed）和构建通过；前端语法检查、Playwright 桌面/移动端检查及 `git diff --check` 通过 |
 | WB-20260828-003 | 2026-08-28 | fix | wolf-dashboard | 修复 NGA 作者发言增量检查不更新的问题 | 普通帖子页码与 `authorid` 过滤页码不是同一套游标，旧游标会一直扫描错误的页区间 | 请求固定携带 `authorid`/`opt=262144`；游标记录作者过滤页码并在无新发言时推进；旧普通页游标首次从 `NGA_INITIAL_PAGE` 重扫并去重 | `python -m pytest -q`（16 passed）；`python -m compileall -q backend`；`node --check frontend/app.js`；`git diff --check` |
 | WB-20260828-002 | 2026-08-28 | fix | wolf-dashboard | 支持 AI 思考强度配置、最长 1200 秒超时并避免任务请求阻塞页面 | 兼容模型的长推理请求可能超过默认超时，阻塞同步 API | 新增 `OPENAI_REASONING_EFFORT`/`OPENAI_REQUEST_TIMEOUT`（上限 1200 秒），策略/爬取任务通过线程池执行；补充请求体回归测试 | `python -m pytest -q`（13 passed） |
 | WB-20260828-001 | 2026-08-28 | feat | wolf-dashboard | 增加 NGA 增量监控、可追溯策略版本、行情快照和本地仪表盘 | 将作者发言、历史规则和盘前观察放入可复核的本地工作流 | FastAPI + SQLite；`last_page-1` 重叠扫描；AI 输出强制 PID/规则引用；无凭据时显式降级 | `python -m pytest -q`（12 passed） |

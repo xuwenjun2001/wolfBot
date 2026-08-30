@@ -8,16 +8,21 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query, Request
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from .config import Settings, settings
 from .db import Database
+from .agent_router import create_agent_router
+from .agent_service import AgentService
 from .market import latest_snapshots, normalize_ticker
+from .market_router import create_market_router
+from .market_store import MarketStore
 from .nga import NGAClient, crawl_incremental
 from .scheduler import SchedulerController
 from .seed import seed_all
+from .skills import SkillManager, create_skill_manager, create_skills_router
 from .strategy import StrategyService
 
 
@@ -47,12 +52,24 @@ class AliasPayload(BaseModel):
 
 
 class AppState:
-    def __init__(self, db: Database, config: Settings):
+    def __init__(
+        self,
+        db: Database,
+        config: Settings,
+        *,
+        skill_manager: SkillManager | None = None,
+        agent_service: AgentService | None = None,
+    ):
         self.db = db
         self.config = config
         self.nga = NGAClient(config)
         self.strategy = StrategyService(db, config)
         self.scheduler = SchedulerController(db, config)
+        self.market_store = MarketStore(db)
+        self.skills = skill_manager or create_skill_manager(db, config)
+        self.agent = agent_service or AgentService(db, config, self.skills)
+        if self.agent.skills is None:
+            self.agent.skills = self.skills
 
 
 def _post_dict(row: Any) -> dict[str, Any]:
@@ -61,9 +78,20 @@ def _post_dict(row: Any) -> dict[str, Any]:
     return item
 
 
-def create_app(db: Database | None = None, config: Settings = settings) -> FastAPI:
+def create_app(
+    db: Database | None = None,
+    config: Settings = settings,
+    *,
+    skill_manager: SkillManager | None = None,
+    agent_service: AgentService | None = None,
+) -> FastAPI:
     database = db or Database(config.database_path)
-    state = AppState(database, config)
+    state = AppState(
+        database,
+        config,
+        skill_manager=skill_manager,
+        agent_service=agent_service,
+    )
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
@@ -73,6 +101,7 @@ def create_app(db: Database | None = None, config: Settings = settings) -> FastA
         try:
             yield
         finally:
+            await state.agent.shutdown()
             state.scheduler.shutdown()
             database.close()
 
@@ -83,12 +112,46 @@ def create_app(db: Database | None = None, config: Settings = settings) -> FastA
     if frontend_root.exists():
         app.mount("/static", StaticFiles(directory=frontend_root), name="static")
 
+    def _page_response(filename: str, route: str) -> Any:
+        """Serve a named frontend entrypoint, with an explicit JSON fallback."""
+
+        path = frontend_root / filename
+        if path.is_file():
+            return FileResponse(path)
+        return JSONResponse(
+            {
+                "service": "wolf-dashboard",
+                "status": "ok",
+                "page": route,
+                "fallback": "frontend entrypoint is not installed",
+            }
+        )
+
+    @app.get("/favicon.ico", include_in_schema=False)
+    async def favicon() -> Any:
+        path = frontend_root / "favicon.svg"
+        if path.is_file():
+            return FileResponse(path, media_type="image/svg+xml")
+        return Response(status_code=204)
+
+    app.include_router(create_market_router(store=state.market_store))
+    app.include_router(create_skills_router(state.skills))
+    app.include_router(create_agent_router(state.agent))
+    # A descriptive alias is useful to clients that namespace Agent APIs;
+    # both paths share the same durable service and active-run lock.
+    app.include_router(create_agent_router(state.agent, prefix="/api/v1/agent/runs"))
+
     @app.get("/", include_in_schema=False)
     async def index() -> Any:
-        path = frontend_root / "index.html"
-        if path.exists():
-            return FileResponse(path)
-        return JSONResponse({"service": "wolf-dashboard", "status": "ok"})
+        return _page_response("agent.html", "/")
+
+    @app.get("/skills", include_in_schema=False)
+    async def skills_page() -> Any:
+        return _page_response("skills.html", "/skills")
+
+    @app.get("/monitor", include_in_schema=False)
+    async def monitor() -> Any:
+        return _page_response("index.html", "/monitor")
 
     @app.get("/healthz")
     async def healthz() -> dict[str, str]:

@@ -41,15 +41,27 @@ function renderMarket(items) {
   $('#market-asof').textContent = latest ? `快照 ${latest.replace('T', ' ')}` : '等待数据';
 }
 
+function cleanQuoteText(value) {
+  return String(value ?? '')
+    .replace(/^\s*\[pid=[^\]]*\]\s*/i, '')
+    .replace(/\[\/?pid(?:=[^\]]*)?\]/gi, '')
+    .trim();
+}
+
 function renderPosts(items) {
   $('#post-count').textContent = items?.length || 0;
   const list = $('#post-list');
   if (!items?.length) { list.innerHTML = '<div class="empty-state">今天还没有检测到新的作者发言。</div>'; return; }
-  list.innerHTML = items.map(post => `<article class="post-card">
+  list.innerHTML = items.map(post => {
+    const quote = cleanQuoteText(post.quote_text);
+    const quoteBlock = quote ? `<blockquote class="post-quote"><div class="post-quote-label">${post.quote_pid ? `引用 PID ${escapeHtml(post.quote_pid)}` : '引用内容'}</div><div class="post-quote-text">${escapeHtml(quote)}</div></blockquote>` : '';
+    return `<article class="post-card">
     <div class="post-head"><strong>PID ${escapeHtml(post.pid)}</strong><span class="post-time">${escapeHtml(post.post_at || '时间待核验')}</span></div>
+    ${quoteBlock}
     <p>${escapeHtml(post.body || post.subject || '（空内容）')}</p>
     <a class="post-link" href="${escapeHtml(post.url)}" target="_blank" rel="noreferrer">在 NGA 打开 ↗</a>
-  </article>`).join('');
+  </article>`;
+  }).join('');
 }
 
 function renderStrategies(versions) {

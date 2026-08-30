@@ -1,65 +1,115 @@
 # WolfBot
 
-WolfBot 是一个从干净仓库起步的项目，当前包含可运行的 `wolf-dashboard` 本地监控与策略仪表盘。
+WolfBot 是一个本地优先的研究与监控项目。`wolf-dashboard` 由 FastAPI/SQLite 后端、原生 HTML/CSS/JS 前端和本地 TypeScript PI Agent sidecar 组成。服务默认只绑定回环地址，不提供自动交易、账户连接或投资收益承诺。
 
 ## 文档入口
 
-- [AGENTS.md](AGENTS.md)：代理和维护者必须遵守的仓库级工作规范。
+- [AGENTS.md](AGENTS.md)：仓库级工程约定。
+- [项目全景图](docs/PROJECT_MAP.md)：文件、模块、数据流和验证命令索引。
+- [WolfBot Agent MVP 计划](docs/improvement-plans/wolfbot-agent-mvp.md)：产品边界与验收矩阵。
+- [wolf-dashboard 运行说明](wolf-dashboard/README.md)：完整的本地启动、配置、市场初始化和恢复步骤。
+- [第三方归因](THIRD_PARTY_NOTICES.md)：QuantPilot MIT 改编范围。
 - [CONTRIBUTING.md](CONTRIBUTING.md)：分支、验证、提交和评审流程。
-- [项目全景图](docs/PROJECT_MAP.md)：当前文件定位、未来模块登记和文档同步规则。
-- [CHANGELOG.md](CHANGELOG.md)：`feat` 和 `fix` 的可追溯记录。
-- [COMMIT_LOG.md](COMMIT_LOG.md)：所有提交的原因、实现方式和验证记录。
-- [.gitmessage](.gitmessage)：提交正文模板。
 
-## 当前状态
+## MVP 页面
 
-- 仓库默认分支：`main`
-- `wolf-dashboard` 默认监听 `127.0.0.1:8787`，启动、配置和测试命令见下文。
-- NGA 需要有效 `NGA_COOKIE`；AI 需要 `OPENAI_API_KEY`，缺少凭据时服务会明确显示降级状态。
+- `/`：Agent 工作台。提交独立研究问题，选择自动、指定或不使用 skill，查看公开工具轨迹、证据、回答、候选表和本地 SVG K 线。
+- `/skills`：本地 skill 注册表。可以上传 ZIP/TGZ/TAR.GZ，启用或停用 skill，查看内容；内置 skill 不能卸载。
+- `/monitor`：原有 NGA 发言、引用、行情快照、watchlist 和策略总结仪表盘。
 
-## 开始贡献
+浏览器只访问 FastAPI；Agent sidecar 不直接接触 SQLite、浏览器或外部行情源。Agent 的唯一市场访问路径是 FastAPI 的只读 `/api/v1/` allowlist。
 
-1. 阅读 [AGENTS.md](AGENTS.md) 和 [CONTRIBUTING.md](CONTRIBUTING.md)。
-2. 查看 [项目全景图](docs/PROJECT_MAP.md)，先确认修改位置和影响范围。
-3. 完成功能、修复或文档变更，并按仓库规范验证。
-4. 需要时更新项目全景图；`feat` 或 `fix` 还必须更新 [CHANGELOG.md](CHANGELOG.md)。
-5. 使用 Conventional Commits 提交，并在正文填写 `Why`、`How`、`Validation`。
+## 前置条件
 
-## 设计原则
+- Windows PowerShell。
+- Python 3.10 或更高版本。
+- Node.js 22 或更高版本及 npm。
+- 可访问腾讯行情接口的网络；NGA 抓取还需要有效的 `NGA_COOKIE`。
+- Agent 研究需要 OpenAI-compatible Provider 的 `OPENAI_API_KEY`；没有 key 时会得到明确的 `needs_configuration`，不会生成无来源结论。
 
-- 让代码、测试、文档和提交记录互相可定位。
-- 优先小而明确的改动，避免无关重构和隐式行为。
-- 不把密钥、个人数据或未经许可的原始数据提交到仓库。
-- 没有可靠验证时如实说明，不以未执行的测试代替验证结论。
-
-## Wolf Dashboard
-
-`wolf-dashboard` 现在提供一个只绑定 `127.0.0.1` 的本地仪表盘：每 5 分钟从 NGA `tid=47288722` 增量检查 `authorid=150058`，请求使用 `opt=262144` 的作者过滤分页，并记录 `(tid,pid)` 去重游标。游标保存的是作者过滤后的页码；检测不到新发言时仍会推进到本轮成功扫描的最高页。首次启动遇到旧版普通帖子页游标时，会从 `NGA_INITIAL_PAGE`（默认 29）重扫上一页到末页并自动迁移。每天 08:30 生成盘前策略版本，并为每条策略保存作者 PID 与规则 ID 引用。行情快照优先使用腾讯财经接口，失败时在页面显示明确的待核验状态。
-
-### 启动
+## 启动
 
 ```powershell
 cd wolf-dashboard
 Copy-Item .env.example .env
+
 python -m venv backend/.venv
-backend/.venv/Scripts/python -m pip install -r backend/requirements.txt
+backend/.venv/Scripts/python.exe -m pip install -r backend/requirements.txt
+
+Push-Location agent-sidecar
+npm.cmd ci
+npm.cmd run typecheck
+npm.cmd test
+npm.cmd run build
+Pop-Location
+
 .\scripts\start.ps1
 ```
 
-打开 <http://127.0.0.1:8787>。在 `.env` 填写有效的 `NGA_COOKIE` 才能稳定抓取；填写 `OPENAI_API_KEY` 后才会调用 AI，未填写时仍会生成带引用的“待配置 AI”版本，不会伪造结论。
+启动脚本会检查 venv 中的 FastAPI/Uvicorn、Node/npm、sidecar 依赖和 `dist/main.js`，然后以前台方式管理两个进程：FastAPI `127.0.0.1:8787` 与 sidecar `127.0.0.1:8790`。任一进程异常退出时会停止另一进程并返回非零码；Ctrl+C 也会清理两个进程。启动不会执行全市场初始化。
 
-登录后自动启动（Windows）：
+打开 <http://127.0.0.1:8787/>。登录后启动任务可执行：
 
 ```powershell
 .\scripts\install-task.ps1
 ```
 
-### 测试
+## API 概览
+
+Agent 浏览器 API 位于 `/api/v1/runs`，包括创建、查询、SSE `/api/v1/runs/{run_id}/events` 和取消 `/api/v1/runs/{run_id}/cancel`；`/api/v1/agent/runs` 是兼容别名。Skill API 位于 `/api/v1/skills`。行情和研究 API 包括证券解析、实时行情、前复权日 K、技术指标、股票池摘要/成员和固定或白名单 DSL 筛选器，详见 [wolf-dashboard/README.md](wolf-dashboard/README.md)。
+
+原有接口仍保留：`/api/status`、`/api/posts`、`/api/strategies`、`/api/watchlist`、`/api/aliases`、`/api/tasks/crawl`、`/api/tasks/strategy` 和 `/api/events`（SSE）。
+
+## 市场初始化
+
+市场初始化是显式命令，不属于服务启动流程。无参数时 CLI 通过 EastMoney `push2/api/qt/clist/get` 导入当前沪深和北交所 920xxx A 股普通股目录，再通过 Tencent `MarketSyncService` 拉取前复权日线；显式 symbol/文件模式保留用于小范围恢复，不会把 fixture 冒充全市场：
+
+```powershell
+cd wolf-dashboard
+backend/.venv/Scripts/python.exe .\scripts\initialize-market.py --symbol sh600519 --symbol sz300750 --dry-run
+backend/.venv/Scripts/python.exe .\scripts\initialize-market.py --symbol sh600519 --symbol sz300750
+```
+
+也可用 UTF-8 文本文件（每行一个 `sh`/`sz`/`bj` canonical symbol）：
+
+```powershell
+backend/.venv/Scripts/python.exe .\scripts\initialize-market.py --symbols-file .\symbols.txt
+```
+
+不提供 `--symbol` 或 `--symbols-file` 时执行全 A 股目录导入。首次全量历史同步通常需要数十分钟到数小时，耗时取决于 Tencent 响应和证券数量；可先用 `--max-symbols 20 --history-limit 120 --dry-run` 检查目录，或用 `--max-symbols` 做受控 smoke run。`--dry-run` 只读取 EastMoney 目录并打印计划，不打开 SQLite、不调用 Tencent；显式 symbol 的 dry-run 完全不联网。
+
+EastMoney 目录请求复用一个 HTTP session，分页请求串行执行，页间至少等待 1 秒并带少量抖动；连接错误、429 和 5xx 会退避重试，403、畸形 JSON、空目录和不完整分页会明确失败。目录导入不会按 symbol 逐个访问 EastMoney。每个标的执行一次腾讯前复权日线请求，默认最多 800 条；命令输出 JSON 的覆盖率和错误，部分失败返回非零码。重复运行是恢复方式：数据库使用 upsert，不要删除 SQLite；用下面的接口检查覆盖率和最近交易日：
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8787/api/v1/research/universes/summary?universe_id=a-share
+Invoke-RestMethod http://127.0.0.1:8787/api/v1/research/universes/a-share/members
+```
+
+网络或单标的失败时，重新运行失败标的即可。覆盖率不足时，Agent 必须显示警告，不能声称全 A 股没有候选。
+
+## 测试
 
 ```powershell
 cd wolf-dashboard/backend
 $env:PYTHONPATH=(Get-Location).Path
 python -m pytest -q
+
+cd ..\agent-sidecar
+npm.cmd run typecheck
+npm.cmd test
+npm.cmd run build
 ```
 
-接口包括 `/api/status`、`/api/posts`、`/api/strategies`、`/api/watchlist`（含删除）、`/api/aliases`、`/api/tasks/crawl`、`/api/tasks/strategy` 和 `/api/events`（SSE）。
+启动/CLI 的无副作用检查：
+
+```powershell
+python ..\scripts\initialize-market.py --help
+python ..\scripts\initialize-market.py --symbol sh600519 --dry-run
+$null=[System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path ..\scripts\start.ps1),[ref]$null,[ref]$null)
+```
+
+## 已知限制
+
+MVP 只使用腾讯报价/日线和本地 SQLite；EastMoney 仅用于一次性的 A 股目录和名称导入，`/api/v1/symbols/resolve` 使用本地已导入目录，不提供每次查询的远程证券搜索。导入器只保留沪深普通股和当前北交所 920xxx，排除 ETF、指数、B 股及旧北交所 43/83/87 代码。财务、估值、行业、资金、新闻和公告数据不在当前证据范围内。Agent 只有在终端工具提交 `completed` 或 `insufficient_evidence` 后才展示结论；Provider 未配置、sidecar 离线、覆盖不足、超时、取消和无终端提交均会显示明确状态。
+
+NGA 抓取需要 cookie，外部接口可能限流或字段变化。行情和抓取失败会保留错误/待核验状态，不用模型记忆补造数据。页面和本地数据库均不应写入密钥、Cookie、原始敏感导出或生成物。

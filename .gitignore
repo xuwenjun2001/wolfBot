@@ -13,6 +13,8 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.cache/
+**/.cache/
 .venv/
 venv/
 env/
@@ -48,3 +50,15 @@ coverage/
 *.log
 *.tmp
 *.temp
+
+# Locally cloned external repositories
+/QuantPilot/
+
+# User-installed WolfBot skills; the repository's public skills live in /skills/.
+/wolf-dashboard/data/skills/
+
+# Public skill sources must remain visible even when a local exclude hides
+# private directories named wolf-investing.
+!/skills/
+!/skills/wolf-investing/
+!/skills/wolf-investing/**

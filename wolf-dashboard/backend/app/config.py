@@ -72,6 +72,18 @@ class Settings:
     openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
     openai_reasoning_effort: str = os.getenv("OPENAI_REASONING_EFFORT", "")
     openai_request_timeout: float = _bounded_float("OPENAI_REQUEST_TIMEOUT", 120.0, 1200.0)
+    # The sidecar is deliberately local-only by default.  Agent runtime
+    # limits live here so the FastAPI owner and its browser contract share one
+    # bounded configuration surface.
+    sidecar_url: str = os.getenv(
+        "WOLFBOT_SIDECAR_URL",
+        os.getenv("AGENT_SIDECAR_URL", os.getenv("SIDECAR_URL", "http://127.0.0.1:8790")),
+    )
+    agent_max_turns: int = int(os.getenv("AGENT_MAX_TURNS", "8"))
+    agent_max_total_tool_calls: int = int(os.getenv("AGENT_MAX_TOTAL_TOOL_CALLS", "20"))
+    agent_max_market_requests: int = int(os.getenv("AGENT_MAX_MARKET_REQUESTS", "16"))
+    agent_max_output_tokens: int = int(os.getenv("AGENT_MAX_OUTPUT_TOKENS", "12000"))
+    agent_timeout_seconds: float = _bounded_float("AGENT_TIMEOUT_SECONDS", 300.0, 1200.0)
     ai_enabled: bool = _bool("AI_ENABLED", True)
     scheduler_enabled: bool = _bool("SCHEDULER_ENABLED", True)
     initial_page: int = int(os.getenv("NGA_INITIAL_PAGE", "29"))

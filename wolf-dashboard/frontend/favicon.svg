@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Wolf Dashboard</title>
+  <rect width="64" height="64" rx="12" fill="#162d3a" />
+  <path d="M9 16 18 48 27 29 32 39 37 29 46 48 55 16h-8l-5 20-6-13h-8l-6 13-5-20Z" fill="#f4f1e8" />
+</svg>

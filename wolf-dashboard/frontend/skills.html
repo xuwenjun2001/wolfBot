@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#162d3a" />
+    <title>Skills · Wolf Dashboard</title>
+    <link rel="stylesheet" href="/static/skills.css" />
+  </head>
+  <body class="skills-page">
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Wolf Dashboard Agent 工作台">
+        <span class="brand-mark" aria-hidden="true">W</span>
+        <span class="brand-copy"><strong>Wolf Dashboard</strong><small>Skill registry</small></span>
+      </a>
+      <nav class="primary-nav" aria-label="主导航">
+        <a class="nav-link" href="/">Agent</a>
+        <a class="nav-link active" href="/skills" aria-current="page">Skills</a>
+        <a class="nav-link" href="/monitor">Monitor</a>
+      </nav>
+      <div class="header-state"><span id="connection-state" class="state-dot checking"><span aria-hidden="true"></span>检查连接</span></div>
+    </header>
+
+    <main class="page-shell">
+      <div id="global-alert" class="alert" role="alert" hidden></div>
+      <section class="page-intro">
+        <div>
+          <p class="eyebrow">Registry / Local only</p>
+          <h1>Skills</h1>
+          <p class="intro-copy">管理可供 Agent 使用的内置与本地技能包。</p>
+        </div>
+        <div class="registry-metric"><span>已启用</span><strong id="enabled-count">--</strong></div>
+      </section>
+
+      <section class="surface upload-surface" aria-labelledby="upload-title">
+        <div class="section-heading">
+          <div><p class="eyebrow">Install package</p><h2 id="upload-title">安装本地 Skill</h2></div>
+          <span id="upload-state" class="quiet-state">支持 ZIP / TGZ</span>
+        </div>
+        <form id="upload-form" class="upload-form">
+          <label class="file-picker" for="skill-file"><span class="file-icon" aria-hidden="true">⇧</span><span><strong id="file-label">选择技能包</strong><small>ZIP、TGZ 或 TAR.GZ</small></span><input id="skill-file" type="file" name="file" accept=".zip,.tgz,.tar.gz,application/zip,application/gzip" required /></label>
+          <button id="upload-button" class="button primary" type="submit"><span aria-hidden="true">＋</span><span>安装</span></button>
+        </form>
+        <p id="upload-error" class="inline-error" role="alert" hidden></p>
+      </section>
+
+      <section class="surface registry-surface" aria-labelledby="registry-title">
+        <div class="section-heading">
+          <div><p class="eyebrow">Installed skills</p><h2 id="registry-title">Skill 注册表</h2></div>
+          <button id="refresh-skills" class="icon-button" type="button" title="刷新 Skill 列表" aria-label="刷新 Skill 列表">↻</button>
+        </div>
+        <div id="skills-list" class="skills-list" aria-live="polite"><div class="loading-state"><span class="spinner" aria-hidden="true"></span>正在读取 Skill 列表...</div></div>
+      </section>
+    </main>
+
+    <footer class="page-footer">Wolf Dashboard · 本机私有运行 · <a href="/">返回 Agent</a></footer>
+    <script src="/static/skills.js" defer></script>
+  </body>
+</html>
