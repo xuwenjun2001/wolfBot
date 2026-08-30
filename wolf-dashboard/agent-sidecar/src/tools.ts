@@ -31,6 +31,8 @@ const readOnlyPathPatterns = [
   /^\/api\/v1\/research\/universes\/summary$/,
   /^\/api\/v1\/research\/universes\/[A-Za-z0-9._:-]+\/members$/,
   /^\/api\/v1\/research\/screeners\/a-share\/short-term-candidates$/,
+  /^\/api\/v1\/skills\/[A-Za-z0-9._:-]+\/SKILL\.md$/,
+  /^\/api\/v1\/skills\/[A-Za-z0-9._:-]+\/reference$/,
 ];
 
 const screenFields = new Set([
@@ -342,33 +344,56 @@ export function createGovernedTools(options: ToolRuntimeOptions = {}): Registere
       return failure('FASTAPI_REQUEST_ERROR', 'FastAPI request failed.');
     }
   };
+  const skillPath = (skillId: string, suffix: string): string => `/api/v1/skills/${encodeURIComponent(skillId)}${suffix}`;
 
   return [
     {
       name: 'load_skill', description: 'Load the selected enabled skill SKILL.md.', inputSchema: TOOL_SCHEMAS.load_skill,
       parseInput: parseLoadInput,
-      execute: async (raw) => {
+      execute: async (raw, context) => {
         const input = parseLoadInput(raw);
         if (selectedSkill === null || selectedSkill === 'none') return failure('SKILL_NOT_SELECTED', 'No skill was selected for this run.');
         if (selectedSkill !== undefined && input.skill_id !== selectedSkill) return failure('SKILL_NOT_ALLOWED', 'Only the selected skill may be loaded.');
         if (loadedSkill && loadedSkill !== input.skill_id) return failure('SKILL_LIMIT', 'Only one skill may be loaded per run.');
         const skill = skillById(input.skill_id);
-        if (!skill || typeof skill.content !== 'string') return failure('SKILL_UNAVAILABLE', 'Selected skill content is unavailable.');
-        if (skill.content.length > MAX_SKILL_CONTENT_CHARS) return failure('SKILL_TOO_LARGE', 'Selected skill content exceeded the size limit.');
+        if (!skill) return failure('SKILL_UNAVAILABLE', 'Selected skill is unavailable.');
+        let content = skill.content;
+        if (typeof content !== 'string') {
+          const fetched = await callFastApi(
+            skillPath(input.skill_id, '/SKILL.md'),
+            { method: 'GET', headers: { Accept: 'application/json' } },
+            context,
+          );
+          if (!fetched.ok) return fetched;
+          if (!isRecord(fetched.data) || typeof fetched.data.content !== 'string') return failure('FASTAPI_PROTOCOL_ERROR', 'FastAPI returned invalid skill content.');
+          content = fetched.data.content;
+        }
+        if (content.length > MAX_SKILL_CONTENT_CHARS) return failure('SKILL_TOO_LARGE', 'Selected skill content exceeded the size limit.');
         loadedSkill = input.skill_id;
-        return ok({ skill_id: skill.id, name: skill.name, version: skill.version, content: skill.content });
+        return ok({ skill_id: skill.id, name: skill.name, version: skill.version, content });
       },
     },
     {
       name: 'read_skill_reference', description: 'Read one bounded reference file from the selected skill.', inputSchema: TOOL_SCHEMAS.read_skill_reference,
       parseInput: parseReferenceInput,
-      execute: async (raw) => {
+      execute: async (raw, context) => {
         const input = parseReferenceInput(raw);
         if (loadedSkill !== input.skill_id) return failure('SKILL_NOT_LOADED', 'Load the selected skill before reading references.');
         if (++referenceReads > MAX_REFERENCE_READS) return failure('REFERENCE_READ_LIMIT', 'Skill reference read budget exhausted.');
         const skill = skillById(input.skill_id);
-        const content = skill?.references?.[input.path];
-        if (typeof content !== 'string') return failure('REFERENCE_NOT_FOUND', 'Skill reference was not supplied by FastAPI.');
+        if (!skill) return failure('SKILL_UNAVAILABLE', 'Selected skill is unavailable.');
+        let content = skill.references?.[input.path];
+        if (typeof content !== 'string') {
+          const query = new URLSearchParams({ path: input.path });
+          const fetched = await callFastApi(
+            `${skillPath(input.skill_id, '/reference')}?${query.toString()}`,
+            { method: 'GET', headers: { Accept: 'application/json' } },
+            context,
+          );
+          if (!fetched.ok) return fetched;
+          if (!isRecord(fetched.data) || typeof fetched.data.content !== 'string') return failure('FASTAPI_PROTOCOL_ERROR', 'FastAPI returned invalid skill reference content.');
+          content = fetched.data.content;
+        }
         if (content.length > MAX_REFERENCE_CHARS) return failure('REFERENCE_TOO_LARGE', 'Skill reference exceeded the size limit.');
         return ok({ skill_id: input.skill_id, path: input.path, content });
       },

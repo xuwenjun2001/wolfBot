@@ -236,6 +236,35 @@ describe('governed market tools', () => {
     }, context)).rejects.toThrow();
     expect(calls).toHaveLength(2);
   });
+
+  it('loads skill content and references through the local FastAPI API', async () => {
+    const calls: string[] = [];
+    const fetchImpl: typeof fetch = async (input, init) => {
+      const url = String(input);
+      calls.push(`${init?.method ?? 'GET'} ${url}`);
+      if (url.endsWith('/api/v1/skills/wolf-investing/SKILL.md')) {
+        return new Response(JSON.stringify({ content: '# Wolf Investing', version: '0.1.0' }), { status: 200, headers: { 'content-type': 'application/json' } });
+      }
+      if (url.includes('/api/v1/skills/wolf-investing/reference?path=references%2Fmarket-fields.md')) {
+        return new Response(JSON.stringify({ content: '# Market fields' }), { status: 200, headers: { 'content-type': 'application/json' } });
+      }
+      return new Response(JSON.stringify({ error: 'unexpected path' }), { status: 404, headers: { 'content-type': 'application/json' } });
+    };
+    const tools = createGovernedTools({
+      skills: [{ id: 'wolf-investing', name: 'Wolf Investing', version: '0.1.0', description: 'Market research.' }],
+      fetchImpl,
+    });
+    const context = { runId: 'skill-test', turn: 1, toolCallId: 'call', signal: new AbortController().signal };
+    const load = tools.find((tool) => tool.name === 'load_skill')!;
+    const reference = tools.find((tool) => tool.name === 'read_skill_reference')!;
+
+    await expect(load.execute({ skill_id: 'wolf-investing' }, context)).resolves.toMatchObject({ ok: true, data: { content: '# Wolf Investing' } });
+    await expect(reference.execute({ skill_id: 'wolf-investing', path: 'references/market-fields.md' }, context)).resolves.toMatchObject({ ok: true, data: { content: '# Market fields' } });
+    expect(calls).toEqual([
+      'GET http://127.0.0.1:8787/api/v1/skills/wolf-investing/SKILL.md',
+      'GET http://127.0.0.1:8787/api/v1/skills/wolf-investing/reference?path=references%2Fmarket-fields.md',
+    ]);
+  });
 });
 
 describe('sidecar HTTP contract', () => {
@@ -273,7 +302,20 @@ describe('sidecar HTTP contract', () => {
 
     const first = await fetch(`${base}/internal/v1/runs`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ run_id: 'active-run', question: 'wait' }),
+      body: JSON.stringify({
+        run_id: 'active-run',
+        question: 'wait',
+        skills: [{
+          id: 'wolf-investing',
+          name: 'Wolf Investing',
+          version: '0.1.0',
+          description: 'Market research skill.',
+          scope: 'market-analysis',
+          applicable_scope: 'stocks, indices, ETFs',
+          source: 'builtin',
+          content_sha256: 'a'.repeat(64),
+        }],
+      }),
     });
     expect(first.status).toBe(200);
     const second = await fetch(`${base}/internal/v1/runs`, {

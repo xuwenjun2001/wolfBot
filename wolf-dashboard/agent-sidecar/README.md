@@ -34,6 +34,10 @@ cancellation. A new run while another is active returns `409`.
 The sidecar never accesses WolfBot's SQLite database or arbitrary files. Its
 market tools call only `http://127.0.0.1:8787/api/v1/` allowlisted read-only
 paths; `screen_stocks` alone may call the dedicated screener POST endpoint.
+The initial skill descriptors contain bounded metadata only; `load_skill` and
+`read_skill_reference` fetch the selected enabled skill content through the
+fixed local FastAPI skill endpoints. No arbitrary URL or filesystem access is
+added by these reads.
 There is no shell, script, arbitrary HTTP, write, database, or trading tool.
 
 ## Tests

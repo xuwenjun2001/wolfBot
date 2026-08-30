@@ -118,3 +118,7 @@ FastAPI 启动会初始化 SQLite、读取本地种子并启动 scheduler；`sta
 以下变化必须同步更新本图和相关 README：新增/删除/移动模块、脚本、入口或测试；运行时依赖、环境变量、外部服务或持久化介质变化；数据流、启动方式、部署约束、用户页面或测试命令变化。只调整措辞且不改变结构时不必更新本图，但 README、规范和代码事实必须一致。
 
 `docs/improvement-plans/` 是计划索引，保留其计划态说明。每个提交仍须按 `AGENTS.md` 更新 `COMMIT_LOG.md`；`feat`/`fix` 还须更新 `CHANGELOG.md`。本任务未授权提交或推送。
+
+## Agent skill data flow
+
+`wolf-dashboard/agent-sidecar/src/tools.ts` keeps the initial skill descriptors bounded to metadata. `load_skill` and `read_skill_reference` fetch the selected enabled skill content through the fixed local FastAPI skill endpoints (`/api/v1/skills/{skill_id}/SKILL.md` and `/reference?path=...`); no arbitrary URL or filesystem access is added.

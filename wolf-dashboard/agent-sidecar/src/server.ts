@@ -83,7 +83,10 @@ function parseSkills(value: unknown): SkillPackageInput[] | undefined {
   const ids = new Set<string>();
   return value.map((raw) => {
     if (!isRecord(raw)) throw new Error('skill descriptor must be an object.');
-    const allowedKeys = new Set(['id', 'name', 'version', 'description', 'enabled', 'content', 'references']);
+    const allowedKeys = new Set([
+      'id', 'name', 'version', 'description', 'enabled', 'content', 'references',
+      'scope', 'applicable_scope', 'source', 'content_sha256',
+    ]);
     if (Object.keys(raw).some((key) => !allowedKeys.has(key))) throw new Error('skill descriptor contains an unsupported field.');
     const id = boundedString(raw.id, 'skill id', 128, true)!;
     if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(id)) throw new Error('skill id has an invalid format.');
@@ -92,6 +95,10 @@ function parseSkills(value: unknown): SkillPackageInput[] | undefined {
     const name = boundedString(raw.name, 'skill name', 256, true)!;
     const version = boundedString(raw.version, 'skill version', 64, true)!;
     const description = boundedString(raw.description, 'skill description', 2_000);
+    const scope = boundedString(raw.scope, 'skill scope', 256);
+    const applicableScope = boundedString(raw.applicable_scope, 'skill applicable_scope', 512);
+    const source = boundedString(raw.source, 'skill source', 128);
+    const contentSha256 = boundedString(raw.content_sha256, 'skill content_sha256', 128);
     const content = boundedString(raw.content, 'skill content', 256_000);
     if (raw.enabled !== undefined && typeof raw.enabled !== 'boolean') throw new Error('skill enabled must be boolean.');
     let references: Record<string, string> | undefined;
@@ -104,7 +111,19 @@ function parseSkills(value: unknown): SkillPackageInput[] | undefined {
         references[path] = item;
       }
     }
-    return { id, name, version, ...(description === undefined ? {} : { description }), ...(content === undefined ? {} : { content }), ...(references === undefined ? {} : { references }), enabled: raw.enabled !== false };
+    return {
+      id,
+      name,
+      version,
+      ...(description === undefined ? {} : { description }),
+      ...(scope === undefined ? {} : { scope }),
+      ...(applicableScope === undefined ? {} : { applicable_scope: applicableScope }),
+      ...(source === undefined ? {} : { source }),
+      ...(contentSha256 === undefined ? {} : { content_sha256: contentSha256 }),
+      ...(content === undefined ? {} : { content }),
+      ...(references === undefined ? {} : { references }),
+      enabled: raw.enabled !== false,
+    };
   });
 }
 
