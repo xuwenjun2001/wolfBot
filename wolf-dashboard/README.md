@@ -29,7 +29,7 @@ Pop-Location
 .\scripts\start.ps1
 ```
 
-`start.ps1` 会验证 `backend/.venv/Scripts/python.exe` 及其中的 FastAPI/Uvicorn、Node/npm 版本、sidecar `package.json`/`package-lock.json`、PI 依赖目录和 `dist/main.js`。它直接管理 FastAPI 和已构建的 sidecar 两个前台进程；任一进程异常退出时停止另一进程并返回非零码，Ctrl+C 同样清理两个进程。脚本不会在启动时联网初始化全市场数据。
+`start.ps1` 会验证 `backend/.venv/Scripts/python.exe` 及其中的 FastAPI/Uvicorn、Node/npm 版本、sidecar `package.json`/`package-lock.json`、PI 依赖目录和 `dist/main.js`。它只在当前进程尚未设置对应变量时，从 `wolf-dashboard/.env` 或仓库根 `.env` 补充 `OPENAI_API_KEY`、`OPENAI_BASE_URL`、`OPENAI_MODEL` 和 `OPENAI_REASONING_EFFORT`，不会把 Cookie 等无关配置传给 sidecar。脚本直接管理 FastAPI 和已构建的 sidecar 两个前台进程；任一进程异常退出时停止另一进程并返回非零码，Ctrl+C 同样清理两个进程。脚本不会在启动时联网初始化全市场数据。
 
 打开 <http://127.0.0.1:8787/>。Windows 登录后启动任务：
 
@@ -150,6 +150,28 @@ $null=[System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path ..
 ```
 
 sidecar 运行时依赖固定为 `@earendil-works/pi-agent-core@0.82.1` 和 `@earendil-works/pi-ai@0.82.1`；`npm ci` 应使用锁文件安装，`dist` 为本地构建产物，不提交。
+
+## Agent 工具契约
+
+模型看到的是按业务语义拆分的专用工具，每个工具由 sidecar 固定映射到一个 FastAPI 端点；模型不能传 URL、路径、HTTP 方法或 query key，通用 `quant_api_get` 已从新运行中移除（历史 run 事件仍可读）。
+
+| 工具 | 模型输入 | 固定请求 |
+| --- | --- | --- |
+| `resolve_symbol` | `query` | `GET /api/v1/symbols/resolve` |
+| `get_realtime_quote` | `symbol` | `GET /api/v1/quotes/realtime/{symbol}` |
+| `get_price_history` | `symbol`、`adjustment?`、`limit?` | `GET /api/v1/quotes/history/{symbol}` |
+| `get_technical_indicators` | `symbol`、`adjustment?`、`limit?` | `GET /api/v1/indicators/technical/{symbol}` |
+| `get_universe_summary` | 空对象 | `GET /api/v1/research/universes/summary` |
+| `get_universe_members` | `page?`、`page_size?` | `GET /api/v1/research/universes/a-share/members` |
+| `get_preset_candidates` | `mode`、`as_of?`、`limit?` | `GET /api/v1/research/screeners/a-share/short-term-candidates` |
+| `screen_stocks` | `conditions`、`sort`、`as_of?`、`limit?` | `POST /api/v1/research/screeners/a-share/query` |
+| `submit_analysis` | 结构化终态 | sidecar 本地终端工具 |
+
+`symbol` 必须匹配 `^(?:sh|sz|bj)[0-9]{6}$`，名称问题必须先调用 `resolve_symbol`。`load_skill`、`read_skill_reference` 只在本次 run 确实有可用已启用 skill 时注册；`skill_mode=none` 或自动模式无已启用 skill 时模型看不到这两个工具。`load_skill` 返回精确的 `available_references`，其他引用路径一律拒绝。
+
+单轮最多接纳 3 个工具调用，超出的批次整批以 `TOOL_BATCH_LIMIT` 拒绝且不消耗预算；参数校验在预算之前执行，失败返回 `INVALID_TOOL_INPUT`；连续 3 个工具轮全部失败以 `REPEATED_TOOL_FAILURE` 结束。每个调用恰好产生一条 `tool_started` 和一条 `tool_completed`/`tool_failed`。成功结果会向模型返回精确 `tool_call_id`，`submit_analysis.evidence` 必须原样复制该值，不能使用工具名或 `functions.<name>`；Schema 拒绝消息不会持久化完整原始参数。
+
+真实 Provider 验收不进 CI，需在 FastAPI、sidecar 已启动、A 股目录能把“药明康德”解析为 `sh603259` 且无其他活动 run 时显式执行 `npm.cmd run smoke:provider`。脚本要求 run 为 `completed`、必需工具成功、生命周期成对、终端证据引用成功 call ID，并只输出 run ID、状态、工具名、错误码、计数和数据时点。
 
 ## 已知限制与故障恢复
 

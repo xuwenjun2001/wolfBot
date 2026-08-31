@@ -274,11 +274,15 @@ function ingestEvent(rawEvent, fallbackType = '') {
       state.run.answer = payload;
     }
   }
+  if (event.type === 'tool_failed' && ['screen_stocks', 'get_preset_candidates'].includes(toolName(event))) {
+    const message = event.payload?.error?.message || '候选工具调用失败。';
+    state.candidateError = `候选工具失败：${message}`;
+  }
   renderRun();
   renderTrace();
   renderEvidence();
   renderCandidates();
-  if (event.type === 'tool_started' && toolName(event) === 'screen_stocks') hydrateCandidates(event);
+  if (event.type === 'tool_started' || event.type === 'tool_completed') hydrateCandidates(event);
   if (event.type === 'run_finished' || event.type === 'run_failed' || event.type === 'run_cancelled') {
     window.setTimeout(() => syncRun({ closeWhenFinal: true }), 80);
   }
@@ -694,17 +698,49 @@ function renderCandidates() {
 
 async function hydrateCandidates(event) {
   const payload = event.payload || {};
-  const argumentsValue = payload.tool_call?.arguments || payload.toolCall?.arguments;
-  if (!isObject(argumentsValue) || !Array.isArray(argumentsValue.conditions) || !Array.isArray(argumentsValue.sort)) return;
-  const hydrationKey = String(event.event_id || event.sequence || 'screen_stocks');
-  if (state.candidateHydrationKey) return;
-  state.candidateHydrationKey = hydrationKey;
-  try {
-    const result = await getJson('/api/v1/research/screeners/a-share/query', {
+  const callId = String(payload.tool_call?.id || payload.toolCall?.id || '');
+  if (!callId) return;
+  const started = [...state.events].reverse().find((item) => {
+    if (item.type !== 'tool_started') return false;
+    const startedPayload = item.payload || {};
+    const startedId = String(startedPayload.tool_call?.id || startedPayload.toolCall?.id || '');
+    return startedId && startedId === callId;
+  });
+  const completed = [...state.events].reverse().find((item) => {
+    if (item.type !== 'tool_completed') return false;
+    const completedPayload = item.payload || {};
+    const completedId = String(completedPayload.tool_call?.id || completedPayload.toolCall?.id || '');
+    return completedId && completedId === callId && completedPayload.ok !== false;
+  });
+  if (!started || !completed) return;
+  const tool = toolName(completed);
+  if (tool !== 'screen_stocks' && tool !== 'get_preset_candidates') return;
+  const startedPayload = started?.payload || {};
+  const argumentsValue = startedPayload.tool_call?.arguments || startedPayload.toolCall?.arguments;
+  if (!isObject(argumentsValue)) return;
+  let request;
+  if (tool === 'screen_stocks') {
+    if (!Array.isArray(argumentsValue.conditions) || !Array.isArray(argumentsValue.sort)) return;
+    request = { path: '/api/v1/research/screeners/a-share/query', init: {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify(argumentsValue),
-    });
+      body: JSON.stringify({ ...argumentsValue, universe_id: 'a-share' }),
+    } };
+  } else {
+    if (typeof argumentsValue.mode !== 'string') return;
+    const query = new URLSearchParams({ universe_id: 'a-share', mode: argumentsValue.mode });
+    if (typeof argumentsValue.as_of === 'string' && argumentsValue.as_of) query.set('as_of', argumentsValue.as_of);
+    if (Number.isInteger(argumentsValue.limit)) query.set('limit', String(argumentsValue.limit));
+    request = { path: `/api/v1/research/screeners/a-share/short-term-candidates?${query.toString()}`, init: {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    } };
+  }
+  const hydrationKey = callId || String(event.event_id || event.sequence || tool);
+  if (state.candidateHydrationKey === hydrationKey) return;
+  state.candidateHydrationKey = hydrationKey;
+  try {
+    const result = await getJson(request.path, request.init);
     if (state.candidateHydrationKey !== hydrationKey) return;
     state.candidateData = result;
     state.candidateError = '';

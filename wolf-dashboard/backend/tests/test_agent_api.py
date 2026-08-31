@@ -120,10 +120,81 @@ def test_agent_run_persists_public_projection_and_sse_resume(tmp_path) -> None:
 
         rows = client.get(f"/api/v1/runs/{run_id}").json()
         assert rows["evidence"]
-        assert rows["artifacts"]
+        # Historical ``quant_api_get`` runs stay readable as market evidence.
+        assert [item["artifact_type"] for item in rows["artifacts"]] == ["market_evidence"]
         stored = app.state.wolf.db.one("SELECT payload_json FROM agent_events WHERE run_id=?", (run_id,))
         assert stored is not None
         assert len(stored["payload_json"].encode()) < 64 * 1024
+
+
+def _dedicated_tool_events(run_id: str) -> str:
+    """Sidecar events for the current dedicated market tool contract."""
+
+    events: list[dict] = [
+        {"type": "run_started", "runId": run_id, "sequence": 1, "eventId": f"{run_id}:1", "timestamp": 1},
+    ]
+    sequence = 1
+    completed = [
+        ("resolve_symbol", {"symbol": "sh603259", "name": "WuXi AppTec", "source": "catalog"}),
+        ("get_price_history", {"symbol": "sh603259", "source": "tencent", "as_of": "2026-08-28", "adjustment": "qfq"}),
+        ("get_preset_candidates", {"universe_id": "a-share", "as_of": "2026-08-28", "candidate_count": 3}),
+    ]
+    for index, (tool, data) in enumerate(completed):
+        call_id = f"call-{index}"
+        sequence += 1
+        events.append({
+            "type": "tool_started", "runId": run_id, "sequence": sequence, "eventId": f"{run_id}:{sequence}",
+            "timestamp": sequence, "toolCall": {"id": call_id, "name": tool, "arguments": {"symbol": "sh603259"}},
+        })
+        sequence += 1
+        events.append({
+            "type": "tool_completed", "runId": run_id, "sequence": sequence, "eventId": f"{run_id}:{sequence}",
+            "timestamp": sequence, "toolCall": {"id": call_id, "name": tool}, "result": {"ok": True, "data": data},
+        })
+    sequence += 1
+    events.append({
+        "type": "tool_failed", "runId": run_id, "sequence": sequence, "eventId": f"{run_id}:{sequence}",
+        "timestamp": sequence, "toolCall": {"id": "call-bad", "name": "get_price_history"},
+        "result": {"ok": False, "error": {"code": "INVALID_TOOL_INPUT", "message": "symbol must use a canonical sh/sz/bj prefix"}},
+    })
+    sequence += 1
+    events.append({
+        "type": "terminal_submitted", "runId": run_id, "sequence": sequence, "eventId": f"{run_id}:{sequence}",
+        "timestamp": sequence,
+        "submission": {
+            "status": "completed",
+            "answer": "Weekly trend backed by fixture bars.",
+            "evidence": [{"toolCallId": "call-1", "summary": "Daily bars", "asOf": "2026-08-28"}],
+            "limitations": ["Fixture data only"],
+            "riskDisclaimer": "Not investment advice.",
+        },
+    })
+    sequence += 1
+    events.append({
+        "type": "run_finished", "runId": run_id, "sequence": sequence, "eventId": f"{run_id}:{sequence}",
+        "timestamp": sequence, "result": {"status": "completed", "turns": 4, "usage": {"outputTokens": 9}},
+    })
+    return "".join(json.dumps(event) + "\n" for event in events)
+
+
+def test_dedicated_market_tools_map_to_artifacts_and_keep_error_codes(tmp_path) -> None:
+    received: list[dict] = []
+    app = _app(tmp_path, lambda run_id: httpx.Response(200, headers={"content-type": "application/x-ndjson"}, content=_dedicated_tool_events(run_id)), received)
+    with TestClient(app) as client:
+        created = client.post("/api/v1/runs", json={"question": "trend", "skill_mode": "none"})
+        assert created.status_code == 202, created.text
+        run_id = created.json()["id"]
+        assert _wait_for_final(client, run_id)["status"] == "completed"
+
+        detail = client.get(f"/api/v1/runs/{run_id}").json()
+        artifacts = {item["artifact_type"] for item in detail["artifacts"]}
+        assert artifacts == {"market_evidence", "candidate_table"}
+        tools = {item["tool"] for item in detail["evidence"]}
+        assert {"resolve_symbol", "get_price_history", "get_preset_candidates"} <= tools
+
+        failed = [event for event in detail["events"] if event["type"] == "tool_failed"]
+        assert failed and failed[0]["payload"]["error"]["code"] == "INVALID_TOOL_INPUT"
+        assert "canonical" in failed[0]["payload"]["error"]["message"]
 
 
 def test_agent_active_run_conflict_and_manual_skill_validation(tmp_path) -> None:

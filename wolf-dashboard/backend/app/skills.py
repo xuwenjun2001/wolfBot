@@ -35,6 +35,8 @@ MAX_ARCHIVE_ENTRIES = 250
 MAX_EXTRACTED_FILE_BYTES = 10 * 1024 * 1024
 MAX_EXTRACTED_TOTAL_BYTES = 50 * 1024 * 1024
 MAX_REFERENCE_BYTES = MAX_EXTRACTED_FILE_BYTES
+# Upper bound on the reference index handed to the agent sidecar.
+MAX_AVAILABLE_REFERENCES = 32
 MAX_REQUEST_BODY_BYTES = 8 * 1024 * 1024
 
 _SKILL_ID = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$")
@@ -519,6 +521,36 @@ def _safe_reference_path(relative_path: str) -> str:
     if parts[0] != "references" or not value.lower().endswith(".md"):
         raise SkillValidationError("only references/*.md files are readable")
     return "/".join(parts)
+
+
+def _list_available_references(root: Path) -> list[str]:
+    """Return sorted, safe ``references/**/*.md`` paths for an installed skill.
+
+    Only the relative paths are exposed; installation directories never leave
+    this module.
+    """
+
+    references_root = root / "references"
+    if not references_root.is_dir():
+        return []
+    paths: list[str] = []
+    for candidate in sorted(references_root.rglob("*")):
+        if len(paths) >= MAX_AVAILABLE_REFERENCES:
+            break
+        try:
+            resource_stat = _lstat_checked(candidate, label="skill reference")
+        except SkillValidationError:
+            continue
+        if not stat.S_ISREG(resource_stat.st_mode) or resource_stat.st_size > MAX_REFERENCE_BYTES:
+            continue
+        relative = candidate.relative_to(root).as_posix()
+        try:
+            safe_path = _safe_reference_path(relative)
+            _safe_skill_path(root, candidate)
+        except SkillValidationError:
+            continue
+        paths.append(safe_path)
+    return sorted(paths)
 
 
 def _safe_skill_path(root: Path, candidate: Path) -> None:
@@ -1037,6 +1069,7 @@ class SkillManager:
             "content": content,
             "sha256": _sha256(content.encode("utf-8")),
             "version": row["version"],
+            "available_references": _list_available_references(root),
         }
 
     # Sidecar-friendly alias.

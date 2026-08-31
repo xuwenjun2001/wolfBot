@@ -277,6 +277,17 @@ def test_reference_reads_are_enabled_and_path_bounded(manager: SkillManager) -> 
             manager.read_reference("safe", path)
 
 
+def test_skill_content_lists_only_safe_reference_paths(manager: SkillManager) -> None:
+    install_zip(manager)
+    references = manager.read_skill("safe")["available_references"]
+    # Only integrity-checked references/**/*.md paths are advertised, and every
+    # advertised path must actually be readable.
+    assert references == ["references/fields.md"]
+    for path in references:
+        assert manager.read_reference("safe", path)["path"] == path
+    assert not any(path.startswith("scripts/") or path.endswith("SKILL.md") for path in references)
+
+
 def test_sidecar_fails_closed_after_local_content_tampering(manager: SkillManager) -> None:
     install_zip(manager)
     skill_file = manager.user_skills_dir / "safe" / "SKILL.md"
@@ -298,7 +309,9 @@ def test_router_exposes_management_and_sidecar_contract(manager: SkillManager) -
         assert response.status_code == 200, response.text
         assert client.get("/api/v1/skills").json()["items"][0]["id"] == "safe"
         assert client.get("/api/v1/skills/enabled").json()["items"][0]["id"] == "safe"
-        assert client.get("/api/v1/skills/safe/SKILL.md").json()["content"].startswith("---")
+        skill_content = client.get("/api/v1/skills/safe/SKILL.md").json()
+        assert skill_content["content"].startswith("---")
+        assert skill_content["available_references"] == ["references/fields.md"]
         assert client.get("/api/v1/skills/safe/references/fields.md").status_code == 200
         assert client.patch("/api/v1/skills/safe", json={"enabled": False}).status_code == 200
         assert client.get("/api/v1/skills/safe/SKILL.md").status_code == 409

@@ -1,6 +1,38 @@
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
+function Import-ProviderEnvironment {
+    param([Parameter(Mandatory = $true)][string[]]$Paths)
+
+    $allowedKeys = @(
+        "OPENAI_API_KEY",
+        "OPENAI_BASE_URL",
+        "OPENAI_MODEL",
+        "OPENAI_REASONING_EFFORT"
+    )
+    foreach ($path in $Paths) {
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+            continue
+        }
+        foreach ($raw in Get-Content -LiteralPath $path -Encoding UTF8) {
+            $line = $raw.Trim()
+            if (-not $line -or $line.StartsWith("#") -or -not $line.Contains("=")) {
+                continue
+            }
+            $key, $value = $line.Split("=", 2)
+            $key = $key.Trim()
+            if ($allowedKeys -notcontains $key) {
+                continue
+            }
+            if ($null -ne [Environment]::GetEnvironmentVariable($key, "Process")) {
+                continue
+            }
+            $value = $value.Trim().Trim('"').Trim("'")
+            [Environment]::SetEnvironmentVariable($key, $value, "Process")
+        }
+    }
+}
+
 function Resolve-RequiredFile {
     param(
         [Parameter(Mandatory = $true)][string]$Path,
@@ -60,6 +92,10 @@ function Stop-ManagedProcess {
 }
 
 $dashboardRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).Path
+Import-ProviderEnvironment -Paths @(
+    (Join-Path $dashboardRoot ".env"),
+    (Join-Path (Split-Path $dashboardRoot) ".env")
+)
 $backendRoot = Resolve-RequiredFile -Path (Join-Path $dashboardRoot "backend\requirements.txt") -Description "Backend requirements file" | Split-Path
 $sidecarRoot = (Resolve-Path -LiteralPath (Join-Path $dashboardRoot "agent-sidecar")).Path
 $pythonPath = Resolve-RequiredFile -Path (Join-Path $backendRoot ".venv\Scripts\python.exe") -Description "Python virtual environment"

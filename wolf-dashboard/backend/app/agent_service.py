@@ -35,6 +35,20 @@ MAX_QUESTION_BYTES = 32 * 1024
 MAX_STRING_CHARS = 2_048
 MAX_COLLECTION_ITEMS = 64
 
+# Artifact projection for successful sidecar tool calls. ``quant_api_get`` is the
+# retired generic market tool: new runs never emit it, historical runs still read.
+_ARTIFACT_TYPES = {
+    "quant_api_get": "market_evidence",
+    "resolve_symbol": "market_evidence",
+    "get_realtime_quote": "market_evidence",
+    "get_price_history": "market_evidence",
+    "get_technical_indicators": "market_evidence",
+    "get_universe_summary": "market_evidence",
+    "get_universe_members": "market_evidence",
+    "get_preset_candidates": "candidate_table",
+    "screen_stocks": "candidate_table",
+}
+
 _SECRET_KEY = re.compile(
     r"(?:token|secret|password|authorization|cookie|api[_-]?key|credential|private[_-]?key|access[_-]?key)",
     re.IGNORECASE,
@@ -710,8 +724,8 @@ class AgentService:
             "INSERT INTO agent_evidence(run_id,tool,endpoint,symbol,as_of,summary,content_sha256,payload_json,created_at) VALUES(?,?,?,?,?,?,?,?,?)",
             (run_id, tool, endpoint, symbol, as_of, summary, digest, json.dumps(safe_payload, ensure_ascii=False, separators=(",", ":")), utc_now()),
         )
-        if tool in {"quant_api_get", "screen_stocks"}:
-            artifact_type = "candidate_table" if tool == "screen_stocks" else "market_evidence"
+        artifact_type = _ARTIFACT_TYPES.get(tool)
+        if artifact_type is not None:
             self.db.execute(
                 "INSERT INTO agent_artifacts(run_id,artifact_type,reference,content_sha256,metadata_json,created_at) VALUES(?,?,?,?,?,?)",
                 (run_id, artifact_type, f"agent_events:{run_id}:{_int(event.get('sequence'))}", digest, json.dumps(safe_payload, ensure_ascii=False, separators=(",", ":")), utc_now()),

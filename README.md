@@ -46,7 +46,7 @@ Pop-Location
 .\scripts\start.ps1
 ```
 
-启动脚本会检查 venv 中的 FastAPI/Uvicorn、Node/npm、sidecar 依赖和 `dist/main.js`，然后以前台方式管理两个进程：FastAPI `127.0.0.1:8787` 与 sidecar `127.0.0.1:8790`。任一进程异常退出时会停止另一进程并返回非零码；Ctrl+C 也会清理两个进程。启动不会执行全市场初始化。
+启动脚本会检查 venv 中的 FastAPI/Uvicorn、Node/npm、sidecar 依赖和 `dist/main.js`，并在当前进程未设置对应值时，只从本地 `.env` 补充 sidecar 所需的 4 个 Provider `OPENAI_*` 变量，不传递 Cookie 等无关配置。随后它以前台方式管理两个进程：FastAPI `127.0.0.1:8787` 与 sidecar `127.0.0.1:8790`。任一进程异常退出时会停止另一进程并返回非零码；Ctrl+C 也会清理两个进程。启动不会执行全市场初始化。
 
 打开 <http://127.0.0.1:8787/>。登录后启动任务可执行：
 

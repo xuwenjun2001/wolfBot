@@ -70,7 +70,11 @@ export type ToolResult<T = unknown> =
   | { ok: true; data: T }
   | { ok: false; error: { code: string; message: string; details?: JsonValue } };
 
+/** Internal budget/artifact classification. Never sent to the provider. */
+export type ToolCategory = 'skill' | 'market' | 'terminal';
+
 export interface RegisteredTool extends ToolDefinition {
+  category: ToolCategory;
   terminal?: boolean;
   parseInput?: (value: unknown) => unknown;
   execute(input: unknown, context: ToolCallContext): Promise<ToolResult>;
@@ -90,8 +94,6 @@ export interface SkillPackageInput {
   version: string;
   description?: string;
   enabled?: boolean;
-  content?: string;
-  references?: Record<string, string>;
   /** Optional metadata sent by FastAPI for routing and audit display. */
   scope?: string;
   applicable_scope?: string;

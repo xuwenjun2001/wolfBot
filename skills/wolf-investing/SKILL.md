@@ -18,6 +18,22 @@ screening fields. Use the field contract in
 [references/market-fields.md](references/market-fields.md) when choosing or
 checking fields.
 
+## Tool workflow
+
+- Resolve a name or code with `resolve_symbol` before any other market tool,
+  then reuse the canonical symbol it returns (for example `sh603259`).
+- For a single-instrument trend question, take the smallest useful
+  `get_price_history` window first. Only call `get_technical_indicators` or
+  `get_realtime_quote` when the question still needs moving averages,
+  volatility, drawdown, or an intraday price.
+- Call only the semantic tools present in the tool definitions for this run.
+  There is no generic HTTP, path, or query tool; do not invent one.
+- Read only the paths listed in `load_skill.available_references`. Never guess a
+  reference path.
+- Prefer one tool call per turn. Correct a rejected argument once; if the same
+  validation error repeats, submit `insufficient_evidence` instead of issuing a
+  batch of guesses.
+
 Treat source, `as_of`, adjustment, coverage, freshness, and missing fields as
 part of the evidence. Do not invent prices, candles, indicators, screen
 coverage, or a data source. If the available evidence cannot verify the

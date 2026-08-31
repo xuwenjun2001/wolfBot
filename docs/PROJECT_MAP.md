@@ -1,6 +1,6 @@
 # WolfBot 项目全景图
 
-状态：Wolf Dashboard Agent MVP 实现已进入工作区，最终端到端验收待完成（2026-08-29）。
+状态：Wolf Dashboard Agent 工具契约可靠性修复已通过自动回归与真实 Provider 验收（2026-08-31）。
 
 ## 当前范围
 
@@ -21,7 +21,8 @@ wolfBot/
 ├── docs/
 │   ├── PROJECT_MAP.md                 # 本文件：全景、索引与同步规则
 │   └── improvement-plans/             # 产品与工程改进方案
-│       └── wolfbot-agent-mvp.md        # Agent MVP 计划与验收矩阵
+│       ├── wolfbot-agent-mvp.md        # Agent MVP 计划与验收矩阵
+│       └── wolfbot-agent-tool-contract-reliability.md # 工具契约与运行可靠性修复计划
 ├── skills/
 │   └── wolf-investing/                # 公开、脱敏的内置 skill
 └── wolf-dashboard/
@@ -34,6 +35,7 @@ wolfBot/
     ├── agent-sidecar/
     │   ├── src/                       # PI Agent、Provider、工具边界和 HTTP 服务
     │   ├── test/                      # Vitest 测试
+    │   ├── scripts/                   # 显式执行的真实 Provider smoke
     │   ├── package.json                # Node 脚本与固定依赖
     │   ├── package-lock.json           # npm 锁文件
     │   └── THIRD_PARTY_NOTICE.md       # sidecar 局部 QuantPilot 归因
@@ -60,6 +62,7 @@ wolfBot/
 | 项目状态和启动入口 | `README.md` | 维护者概览、前置条件和限制 |
 | 目录级运行、API、市场初始化 | `wolf-dashboard/README.md` | 代码事实对应的操作步骤 |
 | 产品边界和验收矩阵 | `docs/improvement-plans/wolfbot-agent-mvp.md` | MVP 计划；计划态不等于验收完成 |
+| Agent 工具调用与 `TOOL_LIMIT` 修复记录 | `docs/improvement-plans/wolfbot-agent-tool-contract-reliability.md` | 专用工具契约、失败语义、预算和真实 Provider 验收结果 |
 | feat/fix 原因与修改记录 | `CHANGELOG.md` | 按变更 ID 追溯 |
 | 所有提交的原因与验证 | `COMMIT_LOG.md` | 按提交标题和日期集中审阅 |
 | QuantPilot 改编归因 | `THIRD_PARTY_NOTICES.md` | MIT 文本、commit 和实际文件范围 |
@@ -73,11 +76,11 @@ wolfBot/
 | `wolf-dashboard/backend/app/market_data.py`、`market_store.py` | 证券身份、EastMoney A 股目录导入、腾讯报价/日线、指标、本地同步和覆盖率 | `/api/v1/symbols/*`、`/api/v1/quotes/*`、`/api/v1/indicators/*` | EastMoney clist（目录）+ Tencent（日线）+ SQLite | `test_market_mvp.py`、`test_eastmoney_universe.py`、router tests | 已实现，数据源有限制 |
 | `wolf-dashboard/backend/app/market_router.py`、`screener.py` | 行情/研究 API、固定模式和白名单 DSL 筛选 | `/api/v1/research/*` | `MarketStore`、只读 provider | `test_market_router_mvp.py`、`test_screener_mvp.py` | 已实现 |
 | `wolf-dashboard/backend/app/skills.py` | 内置/上传 skill 发现、归档安全、启停、卸载和内容读取 | `/api/v1/skills/*` | SQLite、`skills/`、`data/skills/` | `test_skills.py`、skill validator | 已实现 |
-| `wolf-dashboard/agent-sidecar/src` | PI Agent 循环、OpenAI-compatible Provider、五工具边界和取消 | `:8790/healthz`、`/internal/v1/runs` | Node >=22、PI 0.82.1、FastAPI 只读 allowlist | typecheck、build、Vitest | 已实现 |
+| `wolf-dashboard/agent-sidecar/src` | PI Agent 循环、OpenAI-compatible Provider、专用市场工具契约、预算与取消 | `:8790/healthz`、`/internal/v1/runs` | Node >=22、PI 0.82.1、FastAPI 固定端点映射 | typecheck、build、Vitest、`npm run smoke:provider`（显式） | 已实现并通过真实 Provider smoke |
 | `wolf-dashboard/frontend/agent.*` | Agent 工作台、事件轨迹、证据、候选和 SVG K 线 | `/` | 原生浏览器 API、FastAPI SSE | 桌面/移动 HTTP 与浏览器检查 | 已实现 |
 | `wolf-dashboard/frontend/skills.*` | skill 上传、启停、卸载和内容查看 | `/skills` | FormData、Skill API | HTTP 与浏览器检查 | 已实现 |
 | `wolf-dashboard/frontend/index.html`、`app.js`、`styles.css` | 原有发言监控、行情和策略页 | `/monitor` | 旧 `/api/*`、NGA 数据 | API 回归与浏览器检查 | 已迁移 |
-| `wolf-dashboard/scripts/start.ps1` | 检查前置条件、启动/监控/清理 FastAPI 与 sidecar | Windows PowerShell | venv、Node/npm、built sidecar | PowerShell parser、手工双进程检查 | 已实现 |
+| `wolf-dashboard/scripts/start.ps1` | 检查前置条件、按白名单加载 Provider 环境并启动/监控/清理 FastAPI 与 sidecar | Windows PowerShell | `.env` 中 4 个 `OPENAI_*` 变量、venv、Node/npm、built sidecar | PowerShell parser、双进程健康检查、真实 Provider smoke | 已实现 |
 | `wolf-dashboard/scripts/initialize-market.py` | 显式 symbol 恢复或 EastMoney 全 A 普通股目录导入后同步腾讯前复权日线与派生特征 | CLI `--help`、`--dry-run`、`--max-symbols`、`--history-limit` | `EastMoneyUniverseProvider`、`MarketStore`、`MarketSyncService`、`TencentProvider` | help/dry-run、导入器 fixtures、安全失败检查 | 已实现，启动不自动执行 |
 
 ## 数据流和运行约束
@@ -94,14 +97,14 @@ FastAPI :8787 ── SQLite (唯一持久化所有者)
        │ internal NDJSON / cancellation
        ▼
 PI sidecar :8790 ── OpenAI-compatible Provider
-  └─ 只能通过受控五工具访问 FastAPI `/api/v1/`
+  └─ 只能通过按业务语义拆分的专用工具访问 FastAPI `/api/v1/` 固定端点
 
 EastMoney ── paginated security catalog ──> explicit initialize-market CLI
 Tencent ─── realtime/history ────────────> FastAPI market layer / initialize-market CLI
 NGA ─────── posts/strategy ───────────────> FastAPI legacy monitor layer
 ```
 
-FastAPI 启动会初始化 SQLite、读取本地种子并启动 scheduler；`start.ps1` 不调用市场初始化 CLI。Agent sidecar 不访问 SQLite、任意文件、Shell 或外部行情接口。sidecar 不可用时 Agent 创建请求返回 503，`/monitor` 和普通行情 API 仍可用。
+FastAPI 启动会初始化 SQLite、读取本地种子并启动 scheduler；`start.ps1` 不调用市场初始化 CLI。启动脚本只在对应进程环境尚未设置时，从 `wolf-dashboard/.env` 或仓库根 `.env` 补充 4 个 Provider `OPENAI_*` 变量，不向 sidecar 导入 Cookie 等无关配置。Agent sidecar 不访问 SQLite、任意文件、Shell 或外部行情接口。sidecar 不可用时 Agent 创建请求返回 503，`/monitor` 和普通行情 API 仍可用。
 
 市场 CLI 无显式 symbol 时通过 EastMoney `push2/api/qt/clist/get` 分页导入沪深和当前北交所 920xxx 普通 A 股；导入复用单一 session、串行请求并在分页间至少等待 1 秒加抖动，连接/429/5xx 退避重试，403、畸形 JSON、空或不完整响应明确失败。显式 `sh/sz/bj` symbol 或文本文件仍用于受控恢复。导入排除 ETF、指数、B 股及旧北交所 43/83/87 代码；`default_catalog()` 仍只是 fixture，`/api/v1/symbols/resolve` 使用本地已导入目录而不宣称远程搜索。同步使用 upsert，可通过 `/api/v1/research/universes/summary` 和 `/members` 检查覆盖率，失败后重跑受影响标的。
 
@@ -109,7 +112,8 @@ FastAPI 启动会初始化 SQLite、读取本地种子并启动 scheduler；`sta
 
 - Python：在 `backend/.venv` 安装 `backend/requirements.txt`，`$env:PYTHONPATH` 指向 `backend` 后运行 `python -m pytest -q`。
 - Node：Node.js >=22；在 `agent-sidecar` 运行 `npm.cmd ci`、`npm.cmd run typecheck`、`npm.cmd test`、`npm.cmd run build`。
-- 启动：先安装 Python 依赖并构建 sidecar，再运行 `scripts/start.ps1`；脚本会探测 FastAPI/Uvicorn，并要求 `node_modules`、PI 依赖目录和 `dist/main.js` 均存在。
+- 真实 Provider 验收（不进 CI，需显式执行）：FastAPI 与 sidecar 已启动、A 股目录已初始化、无其他活动 run 时，在 `agent-sidecar` 运行 `npm.cmd run smoke:provider`；结果必须与普通测试分开记录。
+- 启动：先安装 Python 依赖并构建 sidecar，再运行 `scripts/start.ps1`；脚本会探测 FastAPI/Uvicorn，要求 `node_modules`、PI 依赖目录和 `dist/main.js` 均存在，并按白名单把本地 Provider 配置传给 sidecar。
 - CLI：`backend/.venv/Scripts/python.exe scripts/initialize-market.py --help`；显式 symbol 的 `--dry-run` 不联网、不写库，全量 `--dry-run` 只读取 EastMoney 目录、不写 SQLite、不调用 Tencent 历史。全量历史同步应使用 `--max-symbols`/`--history-limit` 做 smoke 或恢复边界。
 - 完成前：运行 `git diff --check`、文档链接/路径检查、敏感文件扫描和 `git status --short`；不要提交 `node_modules`、`dist`、缓存、SQLite、日志或 `data/skills`。
 

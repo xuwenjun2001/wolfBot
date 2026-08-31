@@ -84,7 +84,7 @@ function parseSkills(value: unknown): SkillPackageInput[] | undefined {
   return value.map((raw) => {
     if (!isRecord(raw)) throw new Error('skill descriptor must be an object.');
     const allowedKeys = new Set([
-      'id', 'name', 'version', 'description', 'enabled', 'content', 'references',
+      'id', 'name', 'version', 'description', 'enabled',
       'scope', 'applicable_scope', 'source', 'content_sha256',
     ]);
     if (Object.keys(raw).some((key) => !allowedKeys.has(key))) throw new Error('skill descriptor contains an unsupported field.');
@@ -99,18 +99,7 @@ function parseSkills(value: unknown): SkillPackageInput[] | undefined {
     const applicableScope = boundedString(raw.applicable_scope, 'skill applicable_scope', 512);
     const source = boundedString(raw.source, 'skill source', 128);
     const contentSha256 = boundedString(raw.content_sha256, 'skill content_sha256', 128);
-    const content = boundedString(raw.content, 'skill content', 256_000);
     if (raw.enabled !== undefined && typeof raw.enabled !== 'boolean') throw new Error('skill enabled must be boolean.');
-    let references: Record<string, string> | undefined;
-    if (raw.references !== undefined) {
-      if (!isRecord(raw.references) || Object.keys(raw.references).length > 64) throw new Error('skill references are invalid.');
-      references = {};
-      for (const [path, item] of Object.entries(raw.references)) {
-        if (!/^[A-Za-z0-9._/-]+$/.test(path) || path.startsWith('/') || path.split('/').some((part) => part === '..' || part === '.')) throw new Error('skill reference path is invalid.');
-        if (typeof item !== 'string' || item.length > 64_000) throw new Error('skill reference content is invalid.');
-        references[path] = item;
-      }
-    }
     return {
       id,
       name,
@@ -120,8 +109,6 @@ function parseSkills(value: unknown): SkillPackageInput[] | undefined {
       ...(applicableScope === undefined ? {} : { applicable_scope: applicableScope }),
       ...(source === undefined ? {} : { source }),
       ...(contentSha256 === undefined ? {} : { content_sha256: contentSha256 }),
-      ...(content === undefined ? {} : { content }),
-      ...(references === undefined ? {} : { references }),
       enabled: raw.enabled !== false,
     };
   });
