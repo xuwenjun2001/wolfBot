@@ -48,6 +48,13 @@ const MAX_TOOL_RESULT_CHARS = 256_000;
 export const MAX_TOOL_CALLS_PER_TURN = 3;
 /** Consecutive tool turns with zero successes before the run stops guessing. */
 export const MAX_CONSECUTIVE_FAILED_TOOL_TURNS = 3;
+/**
+ * Minimum sufficient evidence for a completed board answer. Enforced only when
+ * the run actually resolved a board, so single-instrument questions are
+ * unaffected and an unreachable provider can still end in
+ * ``insufficient_evidence``.
+ */
+export const BOARD_EVIDENCE_TOOLS = ['get_board_snapshot', 'get_board_breadth'] as const;
 const MAX_PUBLIC_MESSAGE_CHARS = 400;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -368,6 +375,8 @@ export class SidecarRunEngine {
     const blockedCalls = new Map<string, PublicError>();
     const operationIds = new Map<string, string>();
     const completedToolCalls = new Set<string>();
+    /** Tool name behind each successful call id, for evidence-shape checks. */
+    const completedToolNames = new Map<string, string>();
     const seenToolCallIds = new Set<string>();
     let turnRecoverableToolsAttempted = 0;
     let turnRecoverableToolsCompleted = 0;
@@ -431,10 +440,15 @@ export class SidecarRunEngine {
           const timedOut = signal.reason instanceof DOMException && signal.reason.name === 'TimeoutError';
           fail(timedOut ? 'TIMEOUT' : 'CANCELLED', timedOut ? 'The run timed out.' : 'The run was cancelled.', timedOut ? 'timeout' : 'cancelled');
         }
-        if (result.ok && !tool.terminal) completedToolCalls.add(toolCallId);
+        if (result.ok && !tool.terminal) {
+          completedToolCalls.add(toolCallId);
+          completedToolNames.set(toolCallId, tool.name);
+        }
         if (tool.terminal && result.ok && isRecord(result.data)) {
           const candidate = result.data as Partial<AnalysisSubmission>;
-          if ((candidate.status === 'completed' || candidate.status === 'insufficient_evidence') && Array.isArray(candidate.evidence) && candidate.evidence.some((item) => !isRecord(item) || typeof item.toolCallId !== 'string' || !completedToolCalls.has(item.toolCallId))) {
+          const isSubmission = candidate.status === 'completed' || candidate.status === 'insufficient_evidence';
+          const evidence = Array.isArray(candidate.evidence) ? candidate.evidence : [];
+          if (isSubmission && evidence.some((item) => !isRecord(item) || typeof item.toolCallId !== 'string' || !completedToolCalls.has(item.toolCallId))) {
             result = {
               ok: false,
               error: {
@@ -443,6 +457,26 @@ export class SidecarRunEngine {
                 details: { available_tool_call_ids: [...completedToolCalls] },
               },
             };
+          } else if (isSubmission && candidate.status === 'completed' && [...completedToolNames.values()].includes('resolve_board')) {
+            // A board question resolved to a board object: a completed answer
+            // has to rest on the board's own quote and breadth, not on a
+            // universe summary or the resolution alone.
+            const citedTools = new Set(
+              evidence
+                .map((item) => (isRecord(item) && typeof item.toolCallId === 'string' ? completedToolNames.get(item.toolCallId) : undefined))
+                .filter((name): name is string => typeof name === 'string'),
+            );
+            const missing = BOARD_EVIDENCE_TOOLS.filter((name) => !citedTools.has(name));
+            if (missing.length) {
+              result = {
+                ok: false,
+                error: {
+                  code: 'BOARD_EVIDENCE_INCOMPLETE',
+                  message: `A completed board answer must cite a successful ${missing.join(' and ')} result. Call the missing tool, or submit status insufficient_evidence.`,
+                  details: { missing_tools: missing, available_tool_call_ids: [...completedToolCalls] },
+                },
+              };
+            }
           }
         }
         executedResults.set(toolCallId, result);
@@ -877,8 +911,12 @@ function buildSystemPrompt(request: RunRequest): string {
     'You are the WolfBot research agent.',
     'Use only the registered governed tools. Do not claim facts without tool evidence.',
     'Every market tool maps to one fixed backend endpoint. You never supply a URL, path or query key — only the documented arguments.',
-    'Resolve a name or code with resolve_symbol first, then pass the returned canonical symbol (for example sh603259) to the other market tools.',
+    'Resolve relative dates first. When the question says today, yesterday, this week or recently, call get_market_session_context before any market data tool and use the effective_trade_date it returns. State that absolute date in your answer, and when fallback_reason is set, say the requested day had no usable data yet.',
+    'Route by market object kind. A stock, index or ETF goes to resolve_symbol; a sector, concept, industry, theme, track or region (板块 / 概念 / 行业 / 赛道 / 主题 / 地域) goes to resolve_board. Never send a board name to resolve_symbol.',
+    'For a board trend question, take get_board_snapshot and get_board_breadth first, then get_board_members only when the answer still needs leaders or laggards. Report the provider, board_type, constituent_basis and coverage together with the numbers.',
     'For a single-instrument trend question, start with the smallest useful get_price_history window and only add get_technical_indicators or get_realtime_quote when the question still needs them.',
+    'A completed board answer needs the board identity, the market phase and effective trade date, the board change, and advance/decline counts with their coverage. Leaders and laggards are recommended; capital flow and news are enhancements that can never replace the board quote and breadth.',
+    'Treat backend error codes as routing instructions. BOARD_NOT_FOUND or AMBIGUOUS_BOARD means re-route or state the missing classification; UPSTREAM_UNAVAILABLE, UPSTREAM_RATE_LIMITED or UPSTREAM_INVALID_RESPONSE means the source failed and never means the board does not exist; NO_SESSION_DATA means use the latest completed trade date; INSUFFICIENT_COVERAGE means report the coverage and downgrade the claim. Make at most one compliant retry per code and never guess a new URL or argument.',
     `Prefer one tool call per turn; at most ${MAX_TOOL_CALLS_PER_TURN} tool calls are accepted in a turn and a larger batch is rejected whole.`,
     'Correct a rejected argument once. If it fails again, submit status insufficient_evidence instead of guessing more arguments.',
     'The only successful final action is submit_analysis with status completed or insufficient_evidence.',

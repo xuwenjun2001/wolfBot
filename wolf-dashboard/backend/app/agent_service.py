@@ -47,7 +47,63 @@ _ARTIFACT_TYPES = {
     "get_universe_members": "market_evidence",
     "get_preset_candidates": "candidate_table",
     "screen_stocks": "candidate_table",
+    "get_market_session_context": "market_context",
+    "resolve_board": "board_evidence",
+    "get_board_snapshot": "board_evidence",
+    "get_board_breadth": "board_evidence",
+    "get_board_members": "board_members",
 }
+
+# Keys projected out of a successful tool result into events, evidence, and
+# artifacts.  Board answers are unusable without their identity, basis,
+# observation point, breadth, and coverage, so those travel with the quote.
+_PUBLIC_DATA_KEYS = (
+    "symbol",
+    "code",
+    "name",
+    "asset_type",
+    "exchange",
+    "source",
+    "as_of",
+    "fetched_at",
+    "adjustment",
+    "data_quality",
+    "coverage",
+    "candidate_count",
+    "universe_id",
+    "board_id",
+    "board_type",
+    "provider",
+    "constituent_basis",
+    "change_pct",
+    "trade_date",
+    "snapshot_at",
+    "market_phase",
+    "market_context",
+    "timezone",
+    "phase",
+    "observed_at",
+    "calendar_date",
+    "requested_date",
+    "effective_trade_date",
+    "latest_completed_trade_date",
+    "next_trade_date",
+    "fallback_reason",
+    "is_trading_day",
+    "intraday",
+    "calendar_basis",
+    "breadth",
+    "insufficient_coverage",
+    "leaders",
+    "laggards",
+    "member_count",
+    "membership_as_of",
+    "status",
+    "match_basis",
+    "warnings",
+    "limitations",
+    "data_basis",
+)
 
 _SECRET_KEY = re.compile(
     r"(?:token|secret|password|authorization|cookie|api[_-]?key|credential|private[_-]?key|access[_-]?key)",
@@ -660,7 +716,7 @@ class AgentService:
                     if isinstance(data, Mapping):
                         projected["data"] = {
                             key: _public_value(data[key])
-                            for key in ("symbol", "code", "name", "asset_type", "exchange", "source", "as_of", "fetched_at", "adjustment", "data_quality", "coverage", "candidate_count", "universe_id")
+                            for key in _PUBLIC_DATA_KEYS
                             if key in data
                         }
                     else:
@@ -712,13 +768,11 @@ class AgentService:
         data_map = data if isinstance(data, Mapping) else {}
         summary = _redact_text(_text(data_map.get("summary"), f"{tool} completed"))[:2_000]
         endpoint = _redact_text(_text(data_map.get("path"), data_map.get("endpoint", "")))[:512]
-        symbol = _redact_text(_text(data_map.get("symbol"), data_map.get("code", "")))[:128]
-        as_of = _text(data_map.get("as_of"), data_map.get("asOf", ""))[:64]
+        symbol = _redact_text(_text(data_map.get("symbol"), data_map.get("code", data_map.get("board_id", ""))))[:128]
+        as_of = _text(data_map.get("as_of"), data_map.get("asOf", data_map.get("effective_trade_date", "")))[:64]
         digest = _sha256_json(_public_value(data))
         safe_payload: dict[str, Any] = {
-            key: _public_value(data_map[key])
-            for key in ("symbol", "code", "name", "asset_type", "exchange", "source", "as_of", "fetched_at", "adjustment", "data_quality", "coverage", "candidate_count", "universe_id")
-            if key in data_map
+            key: _public_value(data_map[key]) for key in _PUBLIC_DATA_KEYS if key in data_map
         }
         self.db.execute(
             "INSERT INTO agent_evidence(run_id,tool,endpoint,symbol,as_of,summary,content_sha256,payload_json,created_at) VALUES(?,?,?,?,?,?,?,?,?)",

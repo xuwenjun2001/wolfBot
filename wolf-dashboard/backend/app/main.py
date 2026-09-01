@@ -16,7 +16,12 @@ from .config import Settings, settings
 from .db import Database
 from .agent_router import create_agent_router
 from .agent_service import AgentService
+from .board_router import create_board_router
+from .board_service import BoardService
+from .board_store import BoardStore
 from .market import latest_snapshots, normalize_ticker
+from .market_boards import EastMoneyBoardProvider
+from .market_calendar import calendar_from_store
 from .market_router import create_market_router
 from .market_store import MarketStore
 from .nga import NGAClient, crawl_incremental
@@ -66,6 +71,15 @@ class AppState:
         self.strategy = StrategyService(db, config)
         self.scheduler = SchedulerController(db, config)
         self.market_store = MarketStore(db)
+        self.board_store = BoardStore(db)
+        # Trading days come from what the local database has actually observed;
+        # the calendar reports when it had to fall back to the weekday rule.
+        self.calendar = calendar_from_store(self.market_store)
+        self.board_service = BoardService(
+            self.board_store,
+            EastMoneyBoardProvider(),
+            self.calendar,
+        )
         self.skills = skill_manager or create_skill_manager(db, config)
         self.agent = agent_service or AgentService(db, config, self.skills)
         if self.agent.skills is None:
@@ -135,6 +149,7 @@ def create_app(
         return Response(status_code=204)
 
     app.include_router(create_market_router(store=state.market_store))
+    app.include_router(create_board_router(service=state.board_service, calendar=state.calendar))
     app.include_router(create_skills_router(state.skills))
     app.include_router(create_agent_router(state.agent))
     # A descriptive alias is useful to clients that namespace Agent APIs;

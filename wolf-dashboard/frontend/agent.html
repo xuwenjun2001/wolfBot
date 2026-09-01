@@ -126,6 +126,32 @@
             <div id="answer-meta" class="answer-meta" hidden></div>
           </section>
 
+          <section id="board-surface" class="surface board-surface" aria-labelledby="board-title" hidden>
+            <div class="section-heading compact-heading">
+              <div>
+                <p class="eyebrow">Board evidence</p>
+                <h2 id="board-title">市场时点与板块</h2>
+              </div>
+              <span id="board-state" class="quiet-state">等待板块数据</span>
+            </div>
+            <div id="board-context" class="board-context" role="status" hidden></div>
+            <div id="board-identity" class="board-identity" hidden></div>
+            <div id="board-metrics" class="board-metrics" hidden></div>
+            <div id="board-warnings" class="quality-line" hidden></div>
+            <div id="board-members" class="board-members" hidden>
+              <div class="table-wrap">
+                <table class="candidate-table board-member-table">
+                  <caption class="sr-only">板块领涨与拖累成分股</caption>
+                  <thead>
+                    <tr><th scope="col">方向</th><th scope="col">代码</th><th scope="col">名称</th><th scope="col">涨跌幅</th><th scope="col">最新</th><th scope="col">成交额</th></tr>
+                  </thead>
+                  <tbody id="board-member-body"></tbody>
+                </table>
+              </div>
+            </div>
+            <p id="board-limitations" class="board-limitations" hidden></p>
+          </section>
+
           <section class="surface candidates-surface" aria-labelledby="candidates-title">
             <div class="section-heading compact-heading">
               <div>

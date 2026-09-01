@@ -43,11 +43,11 @@ Pop-Location
 
 ### `/`
 
-Agent 工作台。每次提问都是独立 run，可选择自动选择 skill、指定一个已启用 skill 或不使用 skill。页面展示运行状态、预算、公开工具轨迹、证据、终端回答、候选表和本地 SVG 前复权 K 线；候选行可切换图表。SSE 断线后按最后 event ID 重新连接，避免重复展示。
+Agent 工作台。每次提问都是独立 run，可选择自动选择 skill、指定一个已启用 skill 或不使用 skill。页面展示运行状态、预算、公开工具轨迹、证据、终端回答、候选表和本地 SVG 前复权 K 线；候选行可切换图表。运行触及板块工具时会额外出现「市场时点与板块」区块：市场阶段与回退提示（例如“当日尚无可用行情，已回退至 2026-08-31”）、板块涨跌/涨跌家数/成分覆盖率/数据时点卡片、领涨与拖累表格，以及来源与成分口径说明。覆盖不足、数据过期和上游降级警告始终显示，不会被卡片掩盖。SSE 断线后按最后 event ID 重新连接，避免重复展示。
 
 ### `/skills`
 
-Skill 注册表。列出内置和本地上传 skill 的版本、来源、SHA-256、安装时间及启用状态；支持 ZIP、TGZ、TAR.GZ 上传、启停和查看 `SKILL.md`。内置 `skills/wolf-investing` 可以停用但不能卸载；上传 skill 存放在 `data/skills`，安装校验会拒绝路径穿越、链接和不支持的归档。
+Skill 注册表。列出内置和本地上传 skill 的版本、来源、SHA-256、安装时间及启用状态；支持 ZIP、TGZ、TAR.GZ 上传、启停和查看 `SKILL.md`。内置 `skills/wolf-investing`（单标的行情与筛选）和 `skills/wolf-sector-research`（板块走势、宽度与成分领导力）可以停用但不能卸载；上传 skill 存放在 `data/skills`，安装校验会拒绝路径穿越、链接和不支持的归档。板块工具属于市场基础能力，停用 `wolf-sector-research` 只会失去分析方法与措辞，不会失去板块数据访问。
 
 ### `/monitor`
 
@@ -65,11 +65,21 @@ Agent API：
 
 市场/研究 API：
 
+- `GET /api/v1/market/session` 返回北京时间查询时点、A 股交易阶段、是否交易日、最近完整交易日、有效交易日和回退原因。
 - `GET /api/v1/symbols/resolve?query=...` 解析带市场前缀的股票、指数和 ETF；裸 `000001` 保持沪深歧义。
 - `GET /api/v1/quotes/realtime/{symbol}`、`GET /api/v1/quotes/history/{symbol}`、`GET /api/v1/indicators/technical/{symbol}` 获取腾讯报价、日线和确定性指标。
 - `GET /api/v1/research/universes/summary`、`GET /api/v1/research/universes/{universe_id}/members` 查看本地股票池覆盖率。
 - `GET /api/v1/research/screeners/a-share/short-term-candidates` 执行固定筛选模式。
 - `POST /api/v1/research/screeners/a-share/query` 执行白名单条件 DSL；不接受 SQL、脚本、公式或任意表达式。
+
+板块 API（行业、概念、主题、地域）：
+
+- `GET /api/v1/boards/resolve?query=...&board_type=...` 把板块名解析为不透明 `board_id`，并返回分类、来源和成分口径。
+- `GET /api/v1/boards/{board_id}/snapshot` 返回板块涨跌、数据时点、市场阶段、宽度和覆盖率。
+- `GET /api/v1/boards/{board_id}/breadth` 与 snapshot 同源，突出涨跌家数与覆盖明细。
+- `GET /api/v1/boards/{board_id}/members?sort=&direction=&limit=` 返回成分股及领涨/拖累排序。
+
+板块失败按语义分类，不会互相伪装：`BOARD_NOT_FOUND`（404）、`AMBIGUOUS_BOARD`（409，附候选）、`UPSTREAM_RATE_LIMITED`（429）、`UPSTREAM_UNAVAILABLE` 与 `UPSTREAM_INVALID_RESPONSE`（502）、`NO_SESSION_DATA`（409）。上游断线绝不会被报成“板块不存在”或空成分列表。覆盖率低于阈值时仍返回 200，但带 `insufficient_coverage` 与覆盖明细，由调用方决定降级。
 
 Skill API：`GET /api/v1/skills`、`POST /api/v1/skills/install`、`PATCH /api/v1/skills/{skill_id}`、`DELETE /api/v1/skills/{skill_id}`，以及受治理的内容读取端点。
 
@@ -157,7 +167,12 @@ sidecar 运行时依赖固定为 `@earendil-works/pi-agent-core@0.82.1` 和 `@ea
 
 | 工具 | 模型输入 | 固定请求 |
 | --- | --- | --- |
+| `get_market_session_context` | 空对象 | `GET /api/v1/market/session` |
 | `resolve_symbol` | `query` | `GET /api/v1/symbols/resolve` |
+| `resolve_board` | `query`、`board_type?` | `GET /api/v1/boards/resolve` |
+| `get_board_snapshot` | `board_id`、`trade_date?` | `GET /api/v1/boards/{board_id}/snapshot` |
+| `get_board_breadth` | `board_id`、`trade_date?` | `GET /api/v1/boards/{board_id}/breadth` |
+| `get_board_members` | `board_id`、`trade_date?`、`sort?`、`direction?`、`limit?` | `GET /api/v1/boards/{board_id}/members` |
 | `get_realtime_quote` | `symbol` | `GET /api/v1/quotes/realtime/{symbol}` |
 | `get_price_history` | `symbol`、`adjustment?`、`limit?` | `GET /api/v1/quotes/history/{symbol}` |
 | `get_technical_indicators` | `symbol`、`adjustment?`、`limit?` | `GET /api/v1/indicators/technical/{symbol}` |
@@ -167,7 +182,11 @@ sidecar 运行时依赖固定为 `@earendil-works/pi-agent-core@0.82.1` 和 `@ea
 | `screen_stocks` | `conditions`、`sort`、`as_of?`、`limit?` | `POST /api/v1/research/screeners/a-share/query` |
 | `submit_analysis` | 结构化终态 | sidecar 本地终端工具 |
 
-`symbol` 必须匹配 `^(?:sh|sz|bj)[0-9]{6}$`，名称问题必须先调用 `resolve_symbol`。`load_skill`、`read_skill_reference` 只在本次 run 确实有可用已启用 skill 时注册；`skill_mode=none` 或自动模式无已启用 skill 时模型看不到这两个工具。`load_skill` 返回精确的 `available_references`，其他引用路径一律拒绝。
+`symbol` 必须匹配 `^(?:sh|sz|bj)[0-9]{6}$`，`board_id` 必须匹配 `^[a-f0-9]{8,64}$`，二者都只能来自对应的解析工具；模型不能传板块名或 `BK1138` 之类的来源板块代码。名称问题必须先调用 `resolve_symbol` 或 `resolve_board`。上表全部工具都属于市场基础能力，`skill_mode=none` 下同样注册。`load_skill`、`read_skill_reference` 只在本次 run 确实有可用已启用 skill 时注册；`skill_mode=none` 或自动模式无已启用 skill 时模型看不到这两个工具。`load_skill` 返回精确的 `available_references`，其他引用路径一律拒绝。
+
+对象路由由系统提示词固定：相对日期先走 `get_market_session_context` 并在回答中写出绝对日期；股票/指数/ETF 走 `resolve_symbol`，板块/概念/行业/赛道/主题/地域走 `resolve_board`。后端返回的板块错误码（`BOARD_NOT_FOUND`、`AMBIGUOUS_BOARD`、`UPSTREAM_UNAVAILABLE`、`UPSTREAM_RATE_LIMITED`、`NO_SESSION_DATA`、`STALE_BOARD_DATA`、`INSUFFICIENT_COVERAGE`、`UPSTREAM_INVALID_RESPONSE`）按白名单透传给模型作为路由依据；不在白名单内的响应体一律退回 `FASTAPI_HTTP_ERROR`，后端文本无法定义新的错误词汇。
+
+板块问题的最小充分证据由 sidecar 机械校验：本次 run 一旦有成功的 `resolve_board`，`completed` 提交就必须引用成功的 `get_board_snapshot` 和 `get_board_breadth` 的 `tool_call_id`，否则返回可恢复的 `BOARD_EVIDENCE_INCOMPLETE`。该规则只在确实走了板块路由时生效，`insufficient_evidence` 不受约束，因此上游不可达时仍能正常降级。
 
 单轮最多接纳 3 个工具调用，超出的批次整批以 `TOOL_BATCH_LIMIT` 拒绝且不消耗预算；参数校验在预算之前执行，失败返回 `INVALID_TOOL_INPUT`；连续 3 个工具轮全部失败以 `REPEATED_TOOL_FAILURE` 结束。每个调用恰好产生一条 `tool_started` 和一条 `tool_completed`/`tool_failed`。成功结果会向模型返回精确 `tool_call_id`，`submit_analysis.evidence` 必须原样复制该值，不能使用工具名或 `functions.<name>`；Schema 拒绝消息不会持久化完整原始参数。
 
@@ -177,4 +196,4 @@ sidecar 运行时依赖固定为 `@earendil-works/pi-agent-core@0.82.1` 和 `@ea
 
 MVP 只允许一个活动 Agent run，sidecar 不可用时创建 run 返回 HTTP 503；Provider 未配置返回 `needs_configuration`；超时、取消、无终端提交、工具协议错误和数据源失败均保留可审计错误，不拼接半截模型文本。sidecar 运行期间 `/monitor` 和普通行情 API 仍由 FastAPI 提供。
 
-当前未接入财务三表、估值、行业、主力资金、新闻、公告或自动交易。Tencent/EastMoney 接口可能限流或变更字段；EastMoney 导入只覆盖普通 A 股，不包含 ETF、指数、B 股和旧北交所代码，且不会为每次解析请求远程搜索。NGA 抓取需要 cookie 且可能受站点限制。不要用模型记忆补造行情，也不要把覆盖不足解释成“没有候选”。
+当前未接入财务三表、估值、主力资金、新闻、公告或自动交易。板块数据来自东方财富，默认启用：目录、快照和成分复用单一 session、串行分页并限速，连接被断开、429、5xx、403、畸形 JSON 和空页分别映射到 `UPSTREAM_UNAVAILABLE`、`UPSTREAM_RATE_LIMITED` 和 `UPSTREAM_INVALID_RESPONSE`，绝不降级成空数据。板块成分是该来源的口径，其他平台对同一题材的分类可能不同，不能据此推断下一交易日表现。上游快照未发布涨跌家数时，宽度由同一时点的成分行情计算，并记录 `breadth_basis` 与覆盖率。交易日历优先使用本地已观测到的交易日；没有历史数据时退回工作日规则，此时 `calendar_basis` 为 `weekday_only`，表示未核验节假日。Tencent/EastMoney 接口可能限流或变更字段；EastMoney 股票池导入只覆盖普通 A 股，不包含 ETF、指数、B 股和旧北交所代码，且不会为每次解析请求远程搜索。NGA 抓取需要 cookie 且可能受站点限制。不要用模型记忆补造行情，也不要把覆盖不足解释成“没有候选”。

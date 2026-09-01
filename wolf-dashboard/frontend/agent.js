@@ -229,6 +229,7 @@ function resetRunState() {
   renderRun();
   renderCandidates();
   renderEvidence();
+  renderBoard();
   renderChartEmpty('点击候选行查看 K 线与成交量。', '选择候选');
 }
 
@@ -282,6 +283,7 @@ function ingestEvent(rawEvent, fallbackType = '') {
   renderTrace();
   renderEvidence();
   renderCandidates();
+  renderBoard();
   if (event.type === 'tool_started' || event.type === 'tool_completed') hydrateCandidates(event);
   if (event.type === 'run_finished' || event.type === 'run_failed' || event.type === 'run_cancelled') {
     window.setTimeout(() => syncRun({ closeWhenFinal: true }), 80);
@@ -362,6 +364,7 @@ function updateRunFromRecord(record) {
   renderTrace();
   renderEvidence();
   renderCandidates();
+  renderBoard();
 }
 
 async function syncRun(options = {}) {
@@ -752,6 +755,199 @@ async function hydrateCandidates(event) {
   }
 }
 
+const BOARD_TOOLS = new Set(['get_market_session_context', 'resolve_board', 'get_board_snapshot', 'get_board_breadth', 'get_board_members']);
+const PHASE_LABELS = {
+  pre_open: '盘前',
+  opening_auction: '集合竞价',
+  morning_session: '早盘',
+  lunch_break: '午间休市',
+  afternoon_session: '午盘',
+  post_close: '盘后',
+  non_trading_day: '非交易日',
+};
+
+/** Collect the most recent successful payload of each board tool. */
+function boardEvidence() {
+  const byTool = new Map();
+  state.events.forEach((event) => {
+    if (event.type !== 'tool_completed') return;
+    const payload = event.payload || {};
+    if (payload.ok === false) return;
+    const tool = payload.tool_call?.name || payload.toolCall?.name || '';
+    if (!BOARD_TOOLS.has(tool) || !isObject(payload.data)) return;
+    byTool.set(tool, payload.data);
+  });
+  (state.run?.artifacts || []).forEach((artifact) => {
+    const metadata = artifact.metadata;
+    if (!isObject(metadata)) return;
+    const type = String(artifact.artifact_type || '');
+    if (type === 'market_context' && !byTool.has('get_market_session_context')) byTool.set('get_market_session_context', metadata);
+    if (type === 'board_evidence' && !byTool.has('get_board_snapshot')) byTool.set('get_board_snapshot', metadata);
+    if (type === 'board_members' && !byTool.has('get_board_members')) byTool.set('get_board_members', metadata);
+  });
+  return byTool;
+}
+
+function marketContextFrom(byTool) {
+  for (const key of ['get_board_snapshot', 'get_board_breadth', 'get_board_members']) {
+    const value = byTool.get(key);
+    if (isObject(value?.market_context)) return value.market_context;
+  }
+  const session = byTool.get('get_market_session_context');
+  return isObject(session) ? session : null;
+}
+
+function renderBoardContext(context) {
+  const element = $('#board-context');
+  if (!element) return;
+  if (!context) {
+    element.hidden = true;
+    return;
+  }
+  const phase = PHASE_LABELS[context.phase] || context.phase || '';
+  const effective = context.effective_trade_date || '';
+  const parts = [];
+  if (context.fallback_reason && effective) {
+    const requested = context.requested_date || context.calendar_date || '';
+    parts.push(`${requested} ${phase}，当日尚无可用行情，已回退至 ${effective}`);
+  } else if (context.intraday) {
+    parts.push(`${phase} · 当前交易日 ${effective} 仍在变化`);
+  } else if (effective) {
+    parts.push(`${phase} · 数据日期 ${effective}`);
+  }
+  if (context.observed_at) parts.push(`查询时点 ${formatDate(context.observed_at)}（${context.timezone || 'Asia/Shanghai'}）`);
+  if (context.calendar_basis === 'weekday_only') parts.push('交易日仅按工作日规则推断，未核验节假日');
+  element.className = `board-context${context.fallback_reason ? ' fallback' : ''}${context.intraday ? ' intraday' : ''}`;
+  element.textContent = parts.join(' · ');
+  element.hidden = !parts.length;
+}
+
+function renderBoardIdentity(board) {
+  const element = $('#board-identity');
+  if (!element) return;
+  if (!board) {
+    element.hidden = true;
+    return;
+  }
+  const rows = [
+    ['板块', board.name],
+    ['分类', board.board_type],
+    ['来源', board.provider],
+    ['成分口径', board.constituent_basis],
+  ].filter(([, value]) => value);
+  element.innerHTML = rows.map(([label, value]) => `<span><strong>${escapeHtml(label)}</strong> ${escapeHtml(value)}</span>`).join('');
+  element.hidden = !rows.length;
+}
+
+function renderBoardMetrics(snapshot) {
+  const element = $('#board-metrics');
+  if (!element) return;
+  if (!snapshot) {
+    element.hidden = true;
+    return;
+  }
+  const breadth = isObject(snapshot.breadth) ? snapshot.breadth : {};
+  const coverage = isObject(snapshot.coverage) ? snapshot.coverage : {};
+  const change = snapshot.change_pct;
+  const changeClass = !Number.isFinite(Number(change)) ? '' : Number(change) >= 0 ? ' up' : ' down';
+  const advancers = breadth.advancers;
+  const decliners = breadth.decliners;
+  const cells = [
+    {
+      label: '板块涨跌',
+      value: Number.isFinite(Number(change)) ? `${formatNumber(change)}%` : '--',
+      hint: snapshot.trade_date ? `交易日 ${snapshot.trade_date}` : '',
+      klass: changeClass,
+    },
+    {
+      label: '上涨 / 下跌',
+      value: `${advancers ?? '--'} / ${decliners ?? '--'}`,
+      hint: breadth.unchanged === null || breadth.unchanged === undefined ? '' : `平盘 ${breadth.unchanged}`,
+    },
+    {
+      label: '成分覆盖',
+      value: Number.isFinite(Number(coverage.coverage_pct)) ? `${formatNumber(coverage.coverage_pct)}%` : '--',
+      hint: coverage.total_members ? `${coverage.covered_members ?? '--'} / ${coverage.total_members}` : '',
+      klass: snapshot.insufficient_coverage ? ' warn' : '',
+    },
+    {
+      label: '数据时点',
+      value: formatDate(snapshot.snapshot_at || snapshot.as_of),
+      hint: breadth.breadth_basis === 'computed_from_members' ? '宽度由成分行情计算' : breadth.breadth_basis === 'provider' ? '宽度由来源发布' : '',
+    },
+  ];
+  element.innerHTML = cells.map((cell) => `<div class="board-metric${cell.klass || ''}"><span class="board-metric-label">${escapeHtml(cell.label)}</span><strong class="board-metric-value">${escapeHtml(cell.value)}</strong><span class="board-metric-hint">${escapeHtml(cell.hint || '')}</span></div>`).join('');
+  element.hidden = false;
+}
+
+function boardMemberRow(direction, member) {
+  const change = member.change_pct;
+  const klass = !Number.isFinite(Number(change)) ? '' : Number(change) >= 0 ? 'up' : 'down';
+  return `<tr><td>${escapeHtml(direction)}</td><td>${escapeHtml(member.code || member.symbol || '--')}</td><td>${escapeHtml(member.name || '--')}</td><td class="${klass}">${escapeHtml(formatNumber(change))}${Number.isFinite(Number(change)) ? '%' : ''}</td><td>${escapeHtml(formatNumber(member.close))}</td><td>${escapeHtml(formatCompactNumber(member.amount))}</td></tr>`;
+}
+
+function renderBoardMembers(members) {
+  const wrap = $('#board-members');
+  const body = $('#board-member-body');
+  if (!wrap || !body) return;
+  const leaders = Array.isArray(members?.leaders) ? members.leaders.slice(0, 5) : [];
+  const laggards = Array.isArray(members?.laggards) ? members.laggards.slice(0, 5) : [];
+  if (!leaders.length && !laggards.length) {
+    wrap.hidden = true;
+    body.innerHTML = '';
+    return;
+  }
+  body.innerHTML = [
+    ...leaders.map((item) => boardMemberRow('领涨', item)),
+    ...laggards.map((item) => boardMemberRow('拖累', item)),
+  ].join('');
+  wrap.hidden = false;
+}
+
+function renderBoard() {
+  const surface = $('#board-surface');
+  if (!surface) return;
+  const byTool = boardEvidence();
+  const snapshot = byTool.get('get_board_snapshot') || byTool.get('get_board_breadth') || null;
+  const resolution = byTool.get('resolve_board') || null;
+  const members = byTool.get('get_board_members') || null;
+  const context = marketContextFrom(byTool);
+  if (!byTool.size) {
+    surface.hidden = true;
+    return;
+  }
+  surface.hidden = false;
+  const label = $('#board-state');
+  if (label) {
+    label.textContent = snapshot ? (snapshot.insufficient_coverage ? '覆盖不足' : '已读取板块行情') : resolution ? '已解析板块' : '已读取市场时点';
+  }
+  renderBoardContext(context);
+  renderBoardIdentity(snapshot || resolution);
+  renderBoardMetrics(snapshot);
+  renderBoardMembers(members);
+
+  // Coverage, staleness and source-degradation warnings must never be hidden
+  // behind the summary cards.
+  const warningElement = $('#board-warnings');
+  if (warningElement) {
+    const warnings = [
+      ...(Array.isArray(snapshot?.warnings) ? snapshot.warnings : []),
+      ...(Array.isArray(members?.warnings) ? members.warnings : []),
+      ...(Array.isArray(snapshot?.data_quality?.warnings) ? snapshot.data_quality.warnings : []),
+    ];
+    const unique = [...new Set(warnings.filter(Boolean))];
+    warningElement.textContent = unique.join('；');
+    warningElement.hidden = !unique.length;
+  }
+  const limitationElement = $('#board-limitations');
+  if (limitationElement) {
+    const limitations = Array.isArray(snapshot?.limitations) ? snapshot.limitations : [];
+    const text = limitations.length ? limitations.join('；') : snapshot ? '不同平台的板块成分口径可能不同。' : '';
+    limitationElement.textContent = text;
+    limitationElement.hidden = !text;
+  }
+}
+
 function evidenceObjects() {
   const rows = Array.isArray(state.run?.evidence) ? state.run.evidence.map((item) => ({ ...item })) : [];
   state.events.forEach((event) => {
@@ -1014,6 +1210,7 @@ renderRun();
 renderTrace();
 renderEvidence();
 renderCandidates();
+renderBoard();
 renderChartEmpty('点击候选行查看 K 线与成交量。', '选择候选');
 const previousRun = sessionStorage.getItem('wolf.agent.run');
 loadSkills();

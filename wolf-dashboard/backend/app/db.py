@@ -292,6 +292,79 @@ CREATE TABLE IF NOT EXISTS market_daily_features (
 CREATE INDEX IF NOT EXISTS idx_market_features_date ON market_daily_features(trade_date DESC, symbol);
 CREATE INDEX IF NOT EXISTS idx_market_features_symbol_date ON market_daily_features(symbol, timeframe, adjustment, trade_date DESC);
 
+-- Board (industry/concept/theme/region) identity, membership, and snapshots.
+-- ``id`` is an opaque internal identifier derived from provider + provider code
+-- so the model never receives or supplies a provider-specific board code.
+CREATE TABLE IF NOT EXISTS market_boards (
+    id TEXT PRIMARY KEY,
+    provider TEXT NOT NULL,
+    provider_board_code TEXT NOT NULL,
+    name TEXT NOT NULL,
+    normalized_name TEXT NOT NULL DEFAULT '',
+    aliases_json TEXT NOT NULL DEFAULT '[]',
+    board_type TEXT NOT NULL DEFAULT 'concept',
+    definition TEXT NOT NULL DEFAULT '',
+    constituent_basis TEXT NOT NULL DEFAULT 'provider-defined',
+    source_ref TEXT NOT NULL DEFAULT '',
+    active INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0, 1)),
+    fetched_at TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    metadata_json TEXT NOT NULL DEFAULT '{}',
+    UNIQUE(provider, provider_board_code)
+);
+CREATE INDEX IF NOT EXISTS idx_market_boards_name ON market_boards(normalized_name, board_type);
+CREATE INDEX IF NOT EXISTS idx_market_boards_type_active ON market_boards(board_type, active, name);
+
+CREATE TABLE IF NOT EXISTS market_board_memberships (
+    board_id TEXT NOT NULL REFERENCES market_boards(id) ON DELETE CASCADE,
+    symbol TEXT NOT NULL,
+    code TEXT NOT NULL DEFAULT '',
+    name TEXT NOT NULL DEFAULT '',
+    valid_from TEXT NOT NULL,
+    valid_to TEXT NOT NULL DEFAULT '',
+    source TEXT NOT NULL DEFAULT '',
+    as_of TEXT NOT NULL DEFAULT '',
+    fetched_at TEXT NOT NULL,
+    metadata_json TEXT NOT NULL DEFAULT '{}',
+    PRIMARY KEY(board_id, symbol, valid_from)
+);
+CREATE INDEX IF NOT EXISTS idx_board_memberships_board_valid
+    ON market_board_memberships(board_id, valid_from DESC, valid_to);
+
+CREATE TABLE IF NOT EXISTS market_board_snapshots (
+    board_id TEXT NOT NULL REFERENCES market_boards(id) ON DELETE CASCADE,
+    trade_date TEXT NOT NULL,
+    snapshot_at TEXT NOT NULL,
+    market_phase TEXT NOT NULL DEFAULT '',
+    open REAL,
+    high REAL,
+    low REAL,
+    last REAL,
+    previous_close REAL,
+    change_pct REAL,
+    amount REAL,
+    volume REAL,
+    turnover REAL,
+    advancers INTEGER,
+    decliners INTEGER,
+    unchanged INTEGER,
+    limit_up_count INTEGER,
+    limit_down_count INTEGER,
+    covered_members INTEGER,
+    total_members INTEGER,
+    coverage_pct REAL,
+    breadth_basis TEXT NOT NULL DEFAULT '',
+    algorithm_version TEXT NOT NULL DEFAULT '',
+    source TEXT NOT NULL DEFAULT '',
+    data_quality TEXT NOT NULL DEFAULT 'ok',
+    fetched_at TEXT NOT NULL,
+    metadata_json TEXT NOT NULL DEFAULT '{}',
+    PRIMARY KEY(board_id, trade_date, snapshot_at)
+);
+CREATE INDEX IF NOT EXISTS idx_board_snapshots_board_date
+    ON market_board_snapshots(board_id, trade_date DESC, snapshot_at DESC);
+
 CREATE TABLE IF NOT EXISTS market_sync_runs (
     id TEXT PRIMARY KEY,
     universe_id TEXT NOT NULL DEFAULT 'a-share',

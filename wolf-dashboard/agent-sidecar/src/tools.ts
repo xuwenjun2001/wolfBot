@@ -12,7 +12,12 @@ export const FASTAPI_ORIGIN = 'http://127.0.0.1:8787' as const;
 
 /** Model-visible market and terminal tools. Skill tools are added per run. */
 export const MARKET_TOOL_NAMES = [
+  'get_market_session_context',
   'resolve_symbol',
+  'resolve_board',
+  'get_board_snapshot',
+  'get_board_breadth',
+  'get_board_members',
   'get_realtime_quote',
   'get_price_history',
   'get_technical_indicators',
@@ -40,10 +45,35 @@ const MAX_AVAILABLE_REFERENCES = 32;
 const DEFAULT_TOOL_TIMEOUT_MS = 15_000;
 
 const SYMBOL_PATTERN = /^(?:sh|sz|bj)[0-9]{6}$/;
+const BOARD_ID_PATTERN = /^[a-f0-9]{8,64}$/;
 const DATE_PATTERN = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
 const ADJUSTMENTS = ['none', 'qfq', 'hfq'] as const;
 const PRESET_MODES = ['short_term', 'limit_up_relay', 'trend_liquidity'] as const;
+const BOARD_TYPES = ['industry', 'concept', 'theme', 'region'] as const;
+const BOARD_MEMBER_SORTS = ['change_pct', 'amount', 'turnover', 'close'] as const;
+const SORT_DIRECTIONS = ['asc', 'desc'] as const;
 export const UNIVERSE_ID = 'a-share' as const;
+
+/**
+ * Classified backend failures the model is allowed to see verbatim. The
+ * allowlist stops an arbitrary backend response body from defining a new error
+ * code, while still letting the agent tell "no such board" apart from "the
+ * upstream dropped the connection" and choose a different next step.
+ */
+export const GOVERNED_ERROR_CODES = [
+  'BOARD_NOT_FOUND',
+  'AMBIGUOUS_BOARD',
+  'UPSTREAM_UNAVAILABLE',
+  'UPSTREAM_RATE_LIMITED',
+  'NO_SESSION_DATA',
+  'STALE_BOARD_DATA',
+  'INSUFFICIENT_COVERAGE',
+  'UPSTREAM_INVALID_RESPONSE',
+  'INVALID_BOARD_TYPE',
+  'INVALID_SORT_FIELD',
+  'INVALID_SORT_DIRECTION',
+] as const;
+const governedErrorCodes = new Set<string>(GOVERNED_ERROR_CODES);
 
 export const SCREEN_FIELDS = [
   'exchange', 'board', 'asset_type', 'close', 'change_pct', 'amount', 'turnover',
@@ -103,6 +133,16 @@ const barLimitProperty = {
   maximum: 800,
   description: 'Number of most recent daily bars to return. Ask for the smallest window that answers the question.',
 } as const;
+const boardIdProperty = {
+  type: 'string',
+  pattern: '^[a-f0-9]{8,64}$',
+  description: 'Opaque board_id returned by resolve_board. Never a provider board code, a name, or a URL.',
+} as const;
+const boardTradeDateProperty = {
+  type: 'string',
+  pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$',
+  description: 'Optional trade date. Omit to use the effective trade date from get_market_session_context.',
+} as const;
 
 export const TOOL_SCHEMAS: Record<(typeof TOOL_NAMES)[number], Record<string, unknown>> = {
   load_skill: {
@@ -122,8 +162,40 @@ export const TOOL_SCHEMAS: Record<(typeof TOOL_NAMES)[number], Record<string, un
   },
   resolve_symbol: {
     type: 'object', properties: {
-      query: { type: 'string', minLength: 1, maxLength: 80, description: 'Chinese name, six-digit code, or canonical symbol to resolve.' },
+      query: { type: 'string', minLength: 1, maxLength: 80, description: 'Chinese name, six-digit code, or canonical symbol of one tradable security or index.' },
     }, required: ['query'], additionalProperties: false,
+  },
+  get_market_session_context: {
+    type: 'object', properties: {}, additionalProperties: false,
+  },
+  resolve_board: {
+    type: 'object', properties: {
+      query: {
+        type: 'string', minLength: 1, maxLength: 40,
+        description: 'Sector, concept, industry, theme or region name, e.g. 液冷板块. Suffixes like 板块/概念/行业 are accepted.',
+      },
+      board_type: {
+        type: 'string', enum: [...BOARD_TYPES],
+        description: 'Optional filter when the question names the classification explicitly.',
+      },
+    }, required: ['query'], additionalProperties: false,
+  },
+  get_board_snapshot: {
+    type: 'object', properties: { board_id: boardIdProperty, trade_date: boardTradeDateProperty },
+    required: ['board_id'], additionalProperties: false,
+  },
+  get_board_breadth: {
+    type: 'object', properties: { board_id: boardIdProperty, trade_date: boardTradeDateProperty },
+    required: ['board_id'], additionalProperties: false,
+  },
+  get_board_members: {
+    type: 'object', properties: {
+      board_id: boardIdProperty,
+      trade_date: boardTradeDateProperty,
+      sort: { type: 'string', enum: [...BOARD_MEMBER_SORTS], description: 'Ranking field. Defaults to change_pct.' },
+      direction: { type: 'string', enum: [...SORT_DIRECTIONS], description: 'Ranking direction. Defaults to desc.' },
+      limit: { type: 'integer', minimum: 1, maximum: 50, description: 'Members per list (1-50).' },
+    }, required: ['board_id'], additionalProperties: false,
   },
   get_realtime_quote: {
     type: 'object', properties: { symbol: symbolProperty }, required: ['symbol'], additionalProperties: false,
@@ -304,6 +376,69 @@ export function parseResolveInput(value: unknown): { query: string } {
   const query = input.query.trim();
   if (!query || query.length > 80 || /[\u0000-\u001f\u007f]/.test(query)) throw new Error('resolve_symbol query must be 1 to 80 printable characters.');
   return { query };
+}
+
+/** Reject C0 controls and DEL without relying on an escaped character class. */
+function hasControlCharacters(value: string): boolean {
+  for (const character of value) {
+    const code = character.codePointAt(0) ?? 0;
+    if (code < 0x20 || code === 0x7f) return true;
+  }
+  return false;
+}
+
+function parseSessionInput(value: unknown): Record<string, never> {
+  assertObject('get_market_session_context', value ?? {}, []);
+  return {};
+}
+
+export function parseResolveBoardInput(value: unknown): { query: string; board_type?: string } {
+  const input = assertObject('resolve_board', value, ['query', 'board_type']);
+  if (typeof input.query !== 'string') throw new Error('resolve_board query must be a string.');
+  const query = input.query.trim();
+  if (!query || query.length > 40 || hasControlCharacters(query)) {
+    throw new Error('resolve_board query must be 1 to 40 printable characters.');
+  }
+  if (input.board_type !== undefined && (typeof input.board_type !== 'string' || !(BOARD_TYPES as readonly string[]).includes(input.board_type))) {
+    throw new Error(`resolve_board board_type must be one of ${BOARD_TYPES.join(', ')}.`);
+  }
+  return { query, ...(input.board_type === undefined ? {} : { board_type: input.board_type as string }) };
+}
+
+function parseBoardId(name: string, value: unknown): string {
+  if (typeof value !== 'string' || !BOARD_ID_PATTERN.test(value)) {
+    throw new Error(`${name} requires the opaque board_id returned by resolve_board; a board name or a provider board code is not valid.`);
+  }
+  return value;
+}
+
+function parseBoardQuoteInput(name: string, value: unknown): { board_id: string; trade_date?: string } {
+  const input = assertObject(name, value, ['board_id', 'trade_date']);
+  const tradeDate = parseAsOf(input.trade_date);
+  return {
+    board_id: parseBoardId(name, input.board_id),
+    ...(tradeDate === undefined ? {} : { trade_date: tradeDate }),
+  };
+}
+
+export function parseBoardMembersInput(value: unknown): {
+  board_id: string; trade_date?: string; sort?: string; direction?: string; limit?: number;
+} {
+  const input = assertObject('get_board_members', value, ['board_id', 'trade_date', 'sort', 'direction', 'limit']);
+  const tradeDate = parseAsOf(input.trade_date);
+  if (input.sort !== undefined && (typeof input.sort !== 'string' || !(BOARD_MEMBER_SORTS as readonly string[]).includes(input.sort))) {
+    throw new Error(`get_board_members sort must be one of ${BOARD_MEMBER_SORTS.join(', ')}.`);
+  }
+  if (input.direction !== undefined && (typeof input.direction !== 'string' || !(SORT_DIRECTIONS as readonly string[]).includes(input.direction))) {
+    throw new Error(`get_board_members direction must be one of ${SORT_DIRECTIONS.join(', ')}.`);
+  }
+  return {
+    board_id: parseBoardId('get_board_members', input.board_id),
+    ...(tradeDate === undefined ? {} : { trade_date: tradeDate }),
+    ...(input.sort === undefined ? {} : { sort: input.sort as string }),
+    ...(input.direction === undefined ? {} : { direction: input.direction as string }),
+    ...(input.limit === undefined ? {} : { limit: parseIntegerInRange('limit', input.limit, 1, 50) }),
+  };
 }
 
 function parseSymbolOnlyInput(name: string, value: unknown): { symbol: string } {
@@ -512,6 +647,31 @@ function queryString(entries: Record<string, string | number | undefined>): stri
   return serialized ? `?${serialized}` : '';
 }
 
+/**
+ * Extract a classified backend error the model may act on.
+ *
+ * Only codes on {@link GOVERNED_ERROR_CODES} are surfaced verbatim, so a
+ * backend response body can never invent a new error vocabulary. Anything else
+ * stays an opaque transport failure.
+ */
+function governedFailure(status: number, body: unknown): ToolResult<never> | undefined {
+  const detail = isRecord(body) && isRecord(body.detail) ? body.detail : isRecord(body) ? body : undefined;
+  if (!detail || typeof detail.code !== 'string' || !governedErrorCodes.has(detail.code)) return undefined;
+  const message = typeof detail.message === 'string' && detail.message.trim()
+    ? detail.message.slice(0, 500)
+    : 'The market backend rejected the request.';
+  const details: Record<string, JsonValue> = { status };
+  if (Array.isArray(detail.candidates)) {
+    details.candidates = detail.candidates.slice(0, 8).map((item) => ({
+      board_id: isRecord(item) && typeof item.board_id === 'string' ? item.board_id : '',
+      name: isRecord(item) && typeof item.name === 'string' ? item.name : '',
+      board_type: isRecord(item) && typeof item.board_type === 'string' ? item.board_type : '',
+      provider: isRecord(item) && typeof item.provider === 'string' ? item.provider : '',
+    }));
+  }
+  return failure(detail.code, message, details);
+}
+
 export interface ToolRuntimeOptions {
   skills?: SkillPackageInput[];
   /** undefined means automatic model selection; null or "none" means no skill. */
@@ -547,7 +707,19 @@ export function createGovernedTools(options: ToolRuntimeOptions = {}): Registere
   const callFastApi = async (path: string, init: RequestInit, context: ToolCallContext): Promise<ToolResult> => {
     try {
       const response = await fetchWithTimeout(fetchImpl, `${FASTAPI_ORIGIN}${path}`, init, context.signal, requestTimeoutMs);
-      if (!response.ok) return failure('FASTAPI_HTTP_ERROR', `FastAPI read-only request failed with HTTP ${response.status}.`, { status: response.status });
+      if (!response.ok) {
+        // A classified backend failure ("no such board" vs "the upstream
+        // dropped the connection") has to reach the model, or it cannot choose
+        // between re-routing, falling back, and ending the run.
+        let body: unknown;
+        try {
+          body = await readResponseJson(response);
+        } catch {
+          body = undefined;
+        }
+        return governedFailure(response.status, body)
+          ?? failure('FASTAPI_HTTP_ERROR', `FastAPI read-only request failed with HTTP ${response.status}.`, { status: response.status });
+      }
       return ok(await readResponseJson(response));
     } catch (error) {
       if (context.signal.aborted) return failure('CANCELLED', 'Tool request was cancelled.');
@@ -623,13 +795,74 @@ export function createGovernedTools(options: ToolRuntimeOptions = {}): Registere
 
   const marketTools: RegisteredTool[] = [
     {
+      name: 'get_market_session_context', category: 'market',
+      description: 'Read the Beijing-time observation point, A-share market phase, and the effective trade date. Call this first whenever the question says today, yesterday, or recently.',
+      inputSchema: TOOL_SCHEMAS.get_market_session_context,
+      parseInput: parseSessionInput,
+      execute: async (raw, context) => {
+        parseSessionInput(raw);
+        return getJson('/api/v1/market/session', context);
+      },
+    },
+    {
       name: 'resolve_symbol', category: 'market',
-      description: 'Resolve a Chinese name, six-digit code or alias to the canonical symbol every other market tool requires.',
+      description: 'Resolve one tradable security or index (stock, ETF, index) to the canonical symbol the quote tools require. Not for sectors, concepts, industries or themes.',
       inputSchema: TOOL_SCHEMAS.resolve_symbol,
       parseInput: parseResolveInput,
       execute: async (raw, context) => {
         const input = parseResolveInput(raw);
         return getJson(`/api/v1/symbols/resolve${queryString({ query: input.query })}`, context);
+      },
+    },
+    {
+      name: 'resolve_board', category: 'market',
+      description: 'Resolve a sector, concept, industry, theme or region name to one board object with its type, provider and constituent basis. Use this, not resolve_symbol, for 板块/概念/行业/赛道/主题 questions.',
+      inputSchema: TOOL_SCHEMAS.resolve_board,
+      parseInput: parseResolveBoardInput,
+      execute: async (raw, context) => {
+        const input = parseResolveBoardInput(raw);
+        return getJson(`/api/v1/boards/resolve${queryString({ query: input.query, board_type: input.board_type })}`, context);
+      },
+    },
+    {
+      name: 'get_board_snapshot', category: 'market',
+      description: 'Read one board change percent, observation point, market phase, source and constituent basis for the effective trade date.',
+      inputSchema: TOOL_SCHEMAS.get_board_snapshot,
+      parseInput: (value) => parseBoardQuoteInput('get_board_snapshot', value),
+      execute: async (raw, context) => {
+        const input = parseBoardQuoteInput('get_board_snapshot', raw);
+        return getJson(
+          `/api/v1/boards/${encodeURIComponent(input.board_id)}/snapshot${queryString({ trade_date: input.trade_date })}`,
+          context,
+        );
+      },
+    },
+    {
+      name: 'get_board_breadth', category: 'market',
+      description: 'Read advancing/declining constituent counts and the constituent coverage the counts were computed from.',
+      inputSchema: TOOL_SCHEMAS.get_board_breadth,
+      parseInput: (value) => parseBoardQuoteInput('get_board_breadth', value),
+      execute: async (raw, context) => {
+        const input = parseBoardQuoteInput('get_board_breadth', raw);
+        return getJson(
+          `/api/v1/boards/${encodeURIComponent(input.board_id)}/breadth${queryString({ trade_date: input.trade_date })}`,
+          context,
+        );
+      },
+    },
+    {
+      name: 'get_board_members', category: 'market',
+      description: 'Read board constituents with leaders and laggards for the effective trade date.',
+      inputSchema: TOOL_SCHEMAS.get_board_members,
+      parseInput: parseBoardMembersInput,
+      execute: async (raw, context) => {
+        const input = parseBoardMembersInput(raw);
+        return getJson(
+          `/api/v1/boards/${encodeURIComponent(input.board_id)}/members${queryString({
+            trade_date: input.trade_date, sort: input.sort, direction: input.direction, limit: input.limit,
+          })}`,
+          context,
+        );
       },
     },
     {
