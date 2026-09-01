@@ -1,5 +1,10 @@
 const $ = (selector) => document.querySelector(selector);
 
+// Pure target-selection and OHLCV/MA merge rules live in agent-market.js so
+// they can be covered by `node --test` without a browser.
+const marketHelpers = globalThis.WolfAgentMarket || null;
+const CHART_IDLE_HINT = '识别到唯一标的后将自动显示；也可点击候选行切换。';
+
 const FINAL_STATUSES = new Set([
   'completed',
   'insufficient_evidence',
@@ -36,6 +41,8 @@ const state = {
   reconnectTimer: null,
   reconnectAttempt: 0,
   selectedCandidate: null,
+  chartSelectionMode: 'auto',
+  chartAutoLoadKey: '',
   marketRequest: 0,
   candidateResult: null,
   candidateData: null,
@@ -221,6 +228,8 @@ function resetRunState() {
   state.seenSequences = new Set();
   state.cursor = 0;
   state.selectedCandidate = null;
+  state.chartSelectionMode = 'auto';
+  state.chartAutoLoadKey = '';
   state.candidateResult = null;
   state.candidateData = null;
   state.candidateHydrationKey = '';
@@ -230,7 +239,8 @@ function resetRunState() {
   renderCandidates();
   renderEvidence();
   renderBoard();
-  renderChartEmpty('点击候选行查看 K 线与成交量。', '选择候选');
+  setChartIdentity(null);
+  renderChartEmpty(CHART_IDLE_HINT, '等待标的');
 }
 
 function normalizeRunEvent(event, fallbackType = '') {
@@ -285,6 +295,7 @@ function ingestEvent(rawEvent, fallbackType = '') {
   renderCandidates();
   renderBoard();
   if (event.type === 'tool_started' || event.type === 'tool_completed') hydrateCandidates(event);
+  if (event.type === 'tool_completed') maybeAutoLoadChart();
   if (event.type === 'run_finished' || event.type === 'run_failed' || event.type === 'run_cancelled') {
     window.setTimeout(() => syncRun({ closeWhenFinal: true }), 80);
   }
@@ -365,6 +376,7 @@ function updateRunFromRecord(record) {
   renderEvidence();
   renderCandidates();
   renderBoard();
+  maybeAutoLoadChart();
 }
 
 async function syncRun(options = {}) {
@@ -619,6 +631,7 @@ function renderAnswer() {
 }
 
 function candidateObjects() {
+  const candidateTools = new Set(['screen_stocks', 'get_preset_candidates']);
   const results = [];
   const visit = (value, depth = 0) => {
     if (!value || depth > 4) return;
@@ -637,9 +650,14 @@ function candidateObjects() {
     if (isObject(value.data)) visit(value.data, depth + 1);
     if (isObject(value.metadata)) visit(value.metadata, depth + 1);
   };
-  state.events.forEach((event) => visit(event.payload, 0));
+  state.events.forEach((event) => {
+    if (event.type !== 'tool_completed' || event.payload?.ok === false || !candidateTools.has(toolName(event))) return;
+    visit(event.payload?.data || event.payload, 0);
+  });
   if (state.candidateData) visit(state.candidateData, 0);
-  (state.run?.artifacts || []).forEach((artifact) => visit(artifact.metadata, 0));
+  (state.run?.artifacts || []).forEach((artifact) => {
+    if (artifact.artifact_type === 'candidate_table') visit(artifact.metadata, 0);
+  });
   const unique = new Map();
   results.forEach((item) => {
     const key = String(item.symbol || item.code);
@@ -990,35 +1008,38 @@ function renderEvidence() {
 }
 
 function normalizeChartPoints(history, indicators) {
-  const source = Array.isArray(indicators?.points) && indicators.points.length ? indicators.points : Array.isArray(history?.bars) ? history.bars : [];
-  return source.map((point) => {
-    if (!isObject(point)) return null;
-    const close = Number(point.close);
-    const open = Number(point.open ?? point.close);
-    const high = Number(point.high ?? Math.max(open, close));
-    const low = Number(point.low ?? Math.min(open, close));
-    const volume = Number(point.volume);
-    if ((!point.date && !point.trade_date) || !Number.isFinite(close)) return null;
-    return {
-      date: String(point.date || point.trade_date),
-      open: Number.isFinite(open) ? open : close,
-      high: Number.isFinite(high) ? high : close,
-      low: Number.isFinite(low) ? low : close,
-      close,
-      volume: Number.isFinite(volume) ? volume : null,
-      ma5: Number.isFinite(Number(point.ma5)) ? Number(point.ma5) : null,
-      ma10: Number.isFinite(Number(point.ma10)) ? Number(point.ma10) : null,
-      ma20: Number.isFinite(Number(point.ma20)) ? Number(point.ma20) : null,
-      ma30: Number.isFinite(Number(point.ma30)) ? Number(point.ma30) : null,
-      ma60: Number.isFinite(Number(point.ma60)) ? Number(point.ma60) : null,
-    };
-  }).filter(Boolean).sort((left, right) => left.date.localeCompare(right.date));
+  if (!marketHelpers) return { points: [], warnings: ['图表模块未加载。'], maCovered: 0 };
+  return marketHelpers.mergeChartPoints(history, indicators);
+}
+
+function setChartState(label) {
+  const element = $('#chart-state');
+  if (element) element.textContent = label;
+}
+
+/** Chart-local data quality and partial-failure notes stay inside the chart. */
+function setChartQuality(message) {
+  const element = $('#chart-quality');
+  if (!element) return;
+  element.textContent = message || '';
+  element.hidden = !message;
+}
+
+function setChartIdentity(target) {
+  const symbol = String(target?.symbol || target?.code || '').trim();
+  const code = String(target?.code || symbol).trim();
+  const name = String(target?.name || '').trim();
+  const title = $('#chart-symbol');
+  if (title) title.textContent = symbol ? (name ? `${name} · ${code}` : symbol) : '尚未选择标的';
+  const asOf = $('#chart-asof');
+  if (asOf) asOf.textContent = symbol ? `${symbol} · 前复权日线` : '前复权日线';
+  const refresh = $('#chart-refresh');
+  if (refresh) refresh.disabled = !symbol;
 }
 
 function renderChartEmpty(message, stateLabel = '无数据') {
   const svg = $('#price-chart');
   const empty = $('#chart-empty');
-  const chartState = $('#chart-state');
   if (svg) {
     svg.hidden = true;
     svg.innerHTML = '';
@@ -1027,7 +1048,8 @@ function renderChartEmpty(message, stateLabel = '无数据') {
     empty.textContent = message;
     empty.hidden = false;
   }
-  if (chartState) chartState.textContent = stateLabel;
+  setChartState(stateLabel);
+  setChartQuality('');
   const summary = $('#chart-summary');
   if (summary) {
     summary.innerHTML = '';
@@ -1061,7 +1083,6 @@ function linePath(points, key, x, y) {
 function renderSvgChart(points) {
   const svg = $('#price-chart');
   const empty = $('#chart-empty');
-  const chartState = $('#chart-state');
   if (!svg || !empty) return;
   if (!points.length) {
     renderChartEmpty('没有可绘制的有效日线数据。', '无有效数据');
@@ -1113,21 +1134,24 @@ function renderSvgChart(points) {
   svg.innerHTML = `<rect x="0" y="0" width="${width}" height="${height}" fill="#fbfcfc"/><text x="${left}" y="12" fill="#829095" font-size="10">价格</text><text x="${left}" y="289" fill="#829095" font-size="10">成交量</text>${grid}<line x1="${left}" y1="${volumeBottom}" x2="${width - right}" y2="${volumeBottom}" stroke="#dbe4e5" stroke-width="1"/>${volumes}${candles}${mas}${labels}`;
   svg.hidden = false;
   empty.hidden = true;
-  if (chartState) chartState.textContent = `${points.length} 个交易日`;
 }
 
 function selectedCandidateByKey(key) {
   return candidateObjects().find((candidate) => String(candidate.symbol || candidate.code) === key) || null;
 }
 
-async function loadCandidateMarket(candidate) {
+/**
+ * Load the chart for one security.  `options.manual` records that the user
+ * chose it, which permanently disables automatic retargeting for this run.
+ */
+async function loadCandidateMarket(candidate, options = {}) {
   if (!candidate) return;
+  const symbol = String(candidate.symbol || candidate.code || '').trim();
+  if (!symbol) return;
+  if (options.manual) state.chartSelectionMode = 'manual';
   state.selectedCandidate = candidate;
   renderCandidates();
-  const symbol = String(candidate.symbol || candidate.code || '').trim();
-  $('#chart-symbol').textContent = candidate.name ? `${candidate.name} · ${candidate.code || symbol}` : symbol;
-  $('#chart-asof').textContent = `${symbol} · 前复权日线`;
-  $('#chart-refresh').disabled = false;
+  setChartIdentity(candidate);
   renderChartEmpty('正在读取行情与技术指标。', '加载中');
   const requestId = ++state.marketRequest;
   const encoded = encodeURIComponent(symbol);
@@ -1138,21 +1162,57 @@ async function loadCandidateMarket(candidate) {
   if (requestId !== state.marketRequest) return;
   const history = historyResult.status === 'fulfilled' ? historyResult.value : null;
   const indicators = indicatorResult.status === 'fulfilled' ? indicatorResult.value : null;
-  if (!history && !indicators) {
-    const error = historyResult.reason || indicatorResult.reason;
-    renderChartEmpty(`行情读取失败：${errorMessage(error)}`, '读取失败');
-    setAlert(`无法读取 ${symbol} 的行情：${errorMessage(error)}`);
+  const historyError = historyResult.status === 'rejected' ? historyResult.reason : null;
+  const indicatorError = indicatorResult.status === 'rejected' ? indicatorResult.reason : null;
+  if (historyError && indicatorError) {
+    renderChartEmpty(`行情读取失败：${errorMessage(historyError)}`, '读取失败');
+    setChartQuality(`技术指标同时失败：${errorMessage(indicatorError)}`);
+    setAlert(`无法读取 ${symbol} 的行情：${errorMessage(historyError)}`);
     return;
   }
-  const points = normalizeChartPoints(history, indicators);
-  if (!points.length) {
-    renderChartEmpty('接口返回了空数据，未绘制占位图。', '无数据');
+  const merged = normalizeChartPoints(history, indicators);
+  const notes = [
+    ...merged.warnings,
+    ...(Array.isArray(history?.data_quality?.warnings) ? history.data_quality.warnings : []),
+    ...(Array.isArray(indicators?.data_quality?.warnings) ? indicators.data_quality.warnings : []),
+  ];
+  if (historyError) notes.push(`历史行情读取失败：${errorMessage(historyError)}`);
+  if (indicatorError) notes.push(`均线读取失败：${errorMessage(indicatorError)}`);
+  if (!merged.points.length) {
+    if (historyError) {
+      // Indicator points carry no real open/high/low, so no candle is drawn.
+      renderChartEmpty('历史日线读取失败，未用指标点合成 K 线。', '部分可用');
+      renderChartSummary(indicators, merged.points);
+    } else {
+      renderChartEmpty('接口返回了空数据，未绘制占位行情。', '无有效数据');
+    }
+    setChartQuality([...new Set(notes.filter(Boolean))].join('；'));
     return;
   }
-  renderChartSummary(indicators, points);
-  renderSvgChart(points);
-  const asOf = indicators?.as_of || history?.as_of || points.at(-1)?.date;
+  renderChartSummary(indicators, merged.points);
+  renderSvgChart(merged.points);
+  if (!indicatorError && merged.maCovered === 0) notes.push('本次未取得可叠加的均线。');
+  const partial = Boolean(indicatorError) || merged.maCovered === 0;
+  setChartState(`${partial ? '部分可用' : '已加载'} · ${merged.points.length} 个交易日`);
+  setChartQuality([...new Set(notes.filter(Boolean))].join('；'));
+  const asOf = history?.as_of || indicators?.as_of || merged.points.at(-1)?.date;
   $('#chart-asof').textContent = `${symbol} · 前复权 · ${asOf || '时间待核验'}`;
+}
+
+/**
+ * Display the run's single security automatically.  Each `run_id + symbol`
+ * loads at most once, and a manual candidate selection is never overridden.
+ */
+function maybeAutoLoadChart() {
+  if (!marketHelpers || !state.runId || state.chartSelectionMode === 'manual') return;
+  const target = marketHelpers.chartTargetFromRun(state.run, state.events);
+  if (!target) return;
+  const key = `${state.runId}:${target.symbol}`;
+  if (state.chartAutoLoadKey === key) return;
+  state.chartAutoLoadKey = key;
+  setChartIdentity(target);
+  setChartState('已识别');
+  loadCandidateMarket(target);
 }
 
 function renderRecentRuns(items) {
@@ -1198,7 +1258,9 @@ $('#refresh-runs')?.addEventListener('click', () => loadRecentRuns());
 $('#chart-refresh')?.addEventListener('click', () => loadCandidateMarket(state.selectedCandidate));
 $('#candidate-body')?.addEventListener('click', (event) => {
   const button = event.target.closest('.candidate-select');
-  if (button) loadCandidateMarket(selectedCandidateByKey(button.dataset.symbol));
+  if (!button) return;
+  const candidate = selectedCandidateByKey(button.dataset.symbol);
+  if (candidate) loadCandidateMarket(candidate, { manual: true });
 });
 $('#recent-runs')?.addEventListener('click', (event) => {
   const button = event.target.closest('[data-run-id]');
@@ -1211,7 +1273,9 @@ renderTrace();
 renderEvidence();
 renderCandidates();
 renderBoard();
-renderChartEmpty('点击候选行查看 K 线与成交量。', '选择候选');
+setChartIdentity(null);
+if (marketHelpers) renderChartEmpty(CHART_IDLE_HINT, '等待标的');
+else renderChartEmpty('图表模块 agent-market.js 未加载，无法显示行情。', '读取失败');
 const previousRun = sessionStorage.getItem('wolf.agent.run');
 loadSkills();
 loadRecentRuns({ attachActive: !previousRun });

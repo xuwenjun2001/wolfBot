@@ -197,6 +197,218 @@ def test_dedicated_market_tools_map_to_artifacts_and_keep_error_codes(tmp_path) 
         assert "canonical" in failed[0]["payload"]["error"]["message"]
 
 
+def _security(symbol: str, code: str, name: str, asset_type: str = "stock", exchange: str = "SH") -> dict:
+    """One catalog row shaped like ``Security.as_dict()``."""
+
+    return {
+        "symbol": symbol,
+        "code": code,
+        "name": name,
+        "asset_type": asset_type,
+        "exchange": exchange,
+        "board": "main",
+        "universe_id": "a-share",
+        "is_st": False,
+        "enabled": True,
+        "status": "active",
+        "source": "local-catalog",
+        "metadata": {"cookie": "session=secret-value"},
+        "secid": f"1.{code}",
+        "market": exchange,
+    }
+
+
+def _single_symbol_events(run_id: str) -> str:
+    """A direct single-security run: resolve, then daily bars and indicators."""
+
+    bars = [
+        {"date": f"2026-08-{day:02d}", "trade_date": f"2026-08-{day:02d}", "open": 10.0, "high": 10.9, "low": 9.8, "close": 10.6, "volume": 1000.0}
+        for day in range(1, 29)
+    ]
+    points = [{"date": bar["date"], "close": bar["close"], "volume": bar["volume"], "ma5": 10.4} for bar in bars]
+    completed = [
+        (
+            "resolve_symbol",
+            {
+                "query": "生益",
+                "status": "resolved",
+                "ambiguous": False,
+                "candidates": [_security("sh600183", "600183", "生益科技")],
+                "results": [_security("sh600183", "600183", "生益科技")],
+                "asset_type": "stock",
+                "exchange": "SH",
+                "message": "",
+                "source": "local-catalog",
+                "fetched_at": "2026-09-01T01:00:00+00:00",
+                "data_quality": {"status": "ok", "missing_fields": [], "warnings": []},
+            },
+        ),
+        (
+            "get_price_history",
+            {
+                "symbol": "sh600183", "code": "600183", "name": "生益科技", "asset_type": "stock", "exchange": "SH",
+                "source": "tencent", "as_of": "2026-08-28", "adjustment": "qfq", "bars": bars,
+                "data_quality": {"status": "ok", "missing_fields": [], "warnings": []},
+            },
+        ),
+        (
+            "get_technical_indicators",
+            {
+                "symbol": "sh600183", "code": "600183", "name": "生益科技", "asset_type": "stock", "exchange": "SH",
+                "source": "tencent", "as_of": "2026-08-28", "adjustment": "qfq", "points": points,
+                "summary": {"latest_close": 10.6},
+            },
+        ),
+    ]
+    events: list[dict] = [{"type": "run_started", "runId": run_id, "sequence": 1, "eventId": f"{run_id}:1", "timestamp": 1}]
+    sequence = 1
+    for index, (tool, data) in enumerate(completed):
+        sequence += 1
+        events.append({
+            "type": "tool_started", "runId": run_id, "sequence": sequence, "eventId": f"{run_id}:{sequence}",
+            "timestamp": sequence, "toolCall": {"id": f"call-{index}", "name": tool, "arguments": {"symbol": "sh600183"}},
+        })
+        sequence += 1
+        events.append({
+            "type": "tool_completed", "runId": run_id, "sequence": sequence, "eventId": f"{run_id}:{sequence}",
+            "timestamp": sequence, "toolCall": {"id": f"call-{index}", "name": tool}, "result": {"ok": True, "data": data},
+        })
+    sequence += 1
+    events.append({
+        "type": "terminal_submitted", "runId": run_id, "sequence": sequence, "eventId": f"{run_id}:{sequence}",
+        "timestamp": sequence,
+        "submission": {
+            "status": "completed",
+            "answer": "Weekly trend backed by fixture bars.",
+            "evidence": [{"toolCallId": "call-1", "summary": "Daily bars", "asOf": "2026-08-28"}],
+            "limitations": ["Fixture data only"],
+            "riskDisclaimer": "Not investment advice.",
+        },
+    })
+    sequence += 1
+    events.append({
+        "type": "run_finished", "runId": run_id, "sequence": sequence, "eventId": f"{run_id}:{sequence}",
+        "timestamp": sequence, "result": {"status": "completed", "turns": 3, "usage": {"outputTokens": 9}},
+    })
+    return "".join(json.dumps(event) + "\n" for event in events)
+
+
+def test_unique_resolution_projects_a_bounded_chart_target(tmp_path) -> None:
+    received: list[dict] = []
+    app = _app(tmp_path, lambda run_id: httpx.Response(200, headers={"content-type": "application/x-ndjson"}, content=_single_symbol_events(run_id)), received)
+    with TestClient(app) as client:
+        run_id = client.post("/api/v1/runs", json={"question": "生益最近一周的走势如何", "skill_mode": "none"}).json()["id"]
+        assert _wait_for_final(client, run_id)["status"] == "completed"
+        detail = client.get(f"/api/v1/runs/{run_id}").json()
+
+        resolve = next(
+            event for event in detail["events"]
+            if event["type"] == "tool_completed" and event["payload"]["tool_call"]["name"] == "resolve_symbol"
+        )
+        data = resolve["payload"]["data"]
+        # The browser must be able to name the chart target from this event alone.
+        assert data["symbol"] == "sh600183"
+        assert data["code"] == "600183"
+        assert data["name"] == "生益科技"
+        assert data["asset_type"] == "stock"
+        assert data["exchange"] == "SH"
+        assert data["query"] == "生益"
+        assert data["status"] == "resolved"
+        assert data["ambiguous"] is False
+        assert data["candidate_count"] == 1
+        assert data["candidates"] == [
+            {"symbol": "sh600183", "code": "600183", "name": "生益科技", "asset_type": "stock", "exchange": "SH"}
+        ]
+
+        # Bars and points stay out of every public record; only identity travels.
+        serialized = json.dumps(detail, ensure_ascii=False)
+        assert "session=secret-value" not in serialized
+        for tool in ("get_price_history", "get_technical_indicators"):
+            payload = next(
+                event["payload"]["data"] for event in detail["events"]
+                if event["type"] == "tool_completed" and event["payload"]["tool_call"]["name"] == tool
+            )
+            assert payload["symbol"] == "sh600183"
+            assert "bars" not in payload and "points" not in payload and "summary" not in payload
+
+        # SSE, evidence and artifacts agree on the same security identity.
+        resolve_evidence = next(item for item in detail["evidence"] if item["tool"] == "resolve_symbol")
+        assert resolve_evidence["symbol"] == "sh600183"
+        assert resolve_evidence["payload"]["symbol"] == "sh600183"
+        artifacts = [item for item in detail["artifacts"] if item["artifact_type"] == "market_evidence"]
+        assert {item["metadata"].get("symbol") for item in artifacts} == {"sh600183"}
+        assert {item["metadata"].get("tool") for item in artifacts} == {
+            "resolve_symbol", "get_price_history", "get_technical_indicators"
+        }
+        assert all("bars" not in item["metadata"] and "points" not in item["metadata"] for item in artifacts)
+        stream = client.get(f"/api/v1/runs/{run_id}/events")
+        assert '"symbol":"sh600183"' in stream.text
+        assert '"bars"' not in stream.text
+
+
+def _ambiguous_resolution_events(run_id: str) -> str:
+    candidates = [
+        _security("sh000001", "000001", "SSE Composite", asset_type="index"),
+        _security("sz000001", "000001", "Ping An Bank", exchange="SZ"),
+    ]
+    candidates.extend(
+        _security(f"sz00000{index}" if index < 10 else f"sz0000{index}", f"00000{index}", f"Filler {index}", exchange="SZ")
+        for index in range(2, 14)
+    )
+    data = {
+        "query": "000001",
+        "status": "ambiguous",
+        "ambiguous": True,
+        "candidates": candidates,
+        "results": candidates,
+        "asset_type": "mixed",
+        "exchange": "UNKNOWN",
+        "message": "bare code requires an explicit exchange prefix",
+        "source": "local-catalog",
+        "data_quality": {"status": "warning", "missing_fields": [], "warnings": ["explicit exchange prefix required"]},
+    }
+    events = [
+        {"type": "run_started", "runId": run_id, "sequence": 1},
+        {"type": "tool_completed", "runId": run_id, "sequence": 2, "toolCall": {"id": "r", "name": "resolve_symbol"}, "result": {"ok": True, "data": data}},
+        {
+            "type": "terminal_submitted", "runId": run_id, "sequence": 3,
+            "submission": {
+                "status": "insufficient_evidence",
+                "answer": "000001 matches more than one security.",
+                "evidence": [],
+                "limitations": ["Ambiguous query"],
+                "riskDisclaimer": "Not investment advice.",
+            },
+        },
+        {"type": "run_finished", "runId": run_id, "sequence": 4, "result": {"status": "insufficient_evidence"}},
+    ]
+    return "".join(json.dumps(event) + "\n" for event in events)
+
+
+def test_ambiguous_resolution_never_projects_a_top_level_symbol(tmp_path) -> None:
+    received: list[dict] = []
+    app = _app(tmp_path, lambda run_id: httpx.Response(200, headers={"content-type": "application/x-ndjson"}, content=_ambiguous_resolution_events(run_id)), received)
+    with TestClient(app) as client:
+        run_id = client.post("/api/v1/runs", json={"question": "000001", "skill_mode": "none"}).json()["id"]
+        assert _wait_for_final(client, run_id)["status"] == "insufficient_evidence"
+        detail = client.get(f"/api/v1/runs/{run_id}").json()
+
+        data = next(
+            event["payload"]["data"] for event in detail["events"]
+            if event["type"] == "tool_completed" and event["payload"]["tool_call"]["name"] == "resolve_symbol"
+        )
+        assert "symbol" not in data and "name" not in data and "code" not in data
+        assert data["ambiguous"] is True
+        assert data["status"] == "ambiguous"
+        # The true candidate count is reported even though the list is capped.
+        assert data["candidate_count"] == 14
+        assert len(data["candidates"]) == 8
+        assert {key for item in data["candidates"] for key in item} == {"symbol", "code", "name", "asset_type", "exchange"}
+        assert "session=secret-value" not in json.dumps(detail, ensure_ascii=False)
+        evidence = next(item for item in detail["evidence"] if item["tool"] == "resolve_symbol")
+        assert evidence["symbol"] == ""
+
+
 def test_agent_active_run_conflict_and_manual_skill_validation(tmp_path) -> None:
     received: list[dict] = []
     app = _app(tmp_path, lambda run_id: httpx.Response(200, headers={"content-type": "application/x-ndjson"}, content=_terminal_events(run_id)), received)

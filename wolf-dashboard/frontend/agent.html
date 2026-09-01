@@ -192,7 +192,7 @@
                 <p class="eyebrow">Local SVG / QFQ</p>
                 <h2 id="chart-title">行情与均线</h2>
               </div>
-              <span id="chart-state" class="quiet-state">选择候选</span>
+              <span id="chart-state" class="quiet-state">等待标的</span>
             </div>
             <div class="chart-heading">
               <div>
@@ -203,9 +203,10 @@
             </div>
             <div id="chart-summary" class="chart-summary" hidden></div>
             <div id="chart-wrap" class="chart-wrap" aria-live="polite">
-              <div id="chart-empty" class="chart-empty">点击候选行查看 K 线与成交量。</div>
-              <svg id="price-chart" class="price-chart" viewBox="0 0 900 390" role="img" aria-label="候选标的 K 线图" hidden></svg>
+              <div id="chart-empty" class="chart-empty">识别到唯一标的后将自动显示；也可点击候选行切换。</div>
+              <svg id="price-chart" class="price-chart" viewBox="0 0 900 390" role="img" aria-label="标的 K 线图" hidden></svg>
             </div>
+            <p id="chart-quality" class="quality-line" hidden></p>
             <div class="chart-legend" aria-label="均线图例">
               <span class="legend-ma ma5">MA5</span><span class="legend-ma ma10">MA10</span><span class="legend-ma ma20">MA20</span><span class="legend-ma ma30">MA30</span><span class="legend-ma ma60">MA60</span>
             </div>
@@ -226,6 +227,7 @@
     </main>
 
     <footer class="page-footer">Wolf Dashboard · 本机私有运行 · <a href="/monitor">打开 Monitor</a></footer>
+    <script src="/static/agent-market.js" defer></script>
     <script src="/static/agent.js" defer></script>
   </body>
 </html>

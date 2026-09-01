@@ -105,6 +105,17 @@ _PUBLIC_DATA_KEYS = (
     "data_basis",
 )
 
+# Canonical A-share symbol contract shared by the sidecar, the market API and
+# the browser.  Only a value matching this pattern may become a chart target.
+_CANONICAL_SYMBOL = re.compile(r"^(?:sh|sz|bj)[0-9]{6}$")
+
+# ``resolve_symbol`` returns its securities inside nested ``candidates``/
+# ``results`` arrays.  Those arrays are projected through this identity
+# whitelist only, so no other tool can smuggle an arbitrary same-named array
+# into the public record by widening ``_PUBLIC_DATA_KEYS``.
+_SECURITY_IDENTITY_KEYS = ("code", "name", "asset_type", "exchange")
+MAX_RESOLVE_CANDIDATES = 8
+
 _SECRET_KEY = re.compile(
     r"(?:token|secret|password|authorization|cookie|api[_-]?key|credential|private[_-]?key|access[_-]?key)",
     re.IGNORECASE,
@@ -218,6 +229,65 @@ def _int(value: Any, default: int = 0) -> int:
 def _redact_text(value: str) -> str:
     value = re.sub(r"Bearer\s+[A-Za-z0-9._~+/=-]+", "Bearer [redacted]", value, flags=re.IGNORECASE)
     return re.sub(r"\bsk-[A-Za-z0-9_-]{8,}\b", "[redacted]", value)
+
+
+def _security_identity(value: Any) -> dict[str, Any] | None:
+    """Project one resolver candidate into a bounded canonical security identity."""
+
+    if not isinstance(value, Mapping):
+        return None
+    symbol = _text(value.get("symbol")).strip().lower()
+    if not _CANONICAL_SYMBOL.fullmatch(symbol):
+        return None
+    identity: dict[str, Any] = {"symbol": symbol}
+    for key in _SECURITY_IDENTITY_KEYS:
+        item = value.get(key)
+        if isinstance(item, str) and item.strip():
+            identity[key] = _public_value(item.strip())
+    return identity
+
+
+def _project_public_tool_data(tool: str, data: Any) -> Any:
+    """Project one successful tool result into the bounded public contract.
+
+    Every consumer of a tool result - SSE events, evidence rows and artifacts -
+    goes through this function, so the browser can never see a field in one
+    place that was filtered out in another.
+    """
+
+    if not isinstance(data, Mapping):
+        return _public_value(data)
+    projected: dict[str, Any] = {key: _public_value(data[key]) for key in _PUBLIC_DATA_KEYS if key in data}
+    if tool != "resolve_symbol":
+        return projected
+    # Resolver identity is authoritative only when it is derived from exactly
+    # one bounded candidate below.  Do not trust a stray top-level identity in
+    # a malformed or legacy tool result.
+    for key in ("symbol", "code", "name"):
+        projected.pop(key, None)
+    raw = data.get("candidates")
+    if not isinstance(raw, (list, tuple)):
+        raw = data.get("results")
+    candidates = list(raw) if isinstance(raw, (list, tuple)) else []
+    identities = [
+        identity
+        for identity in (_security_identity(item) for item in candidates[:MAX_RESOLVE_CANDIDATES])
+        if identity is not None
+    ]
+    status = _text(data.get("status"))[:64]
+    ambiguous = bool(data.get("ambiguous")) or status == "ambiguous"
+    query = _text(data.get("query"))
+    if query:
+        projected["query"] = _public_value(query)
+    projected["ambiguous"] = ambiguous
+    projected["candidate_count"] = len(candidates)
+    if identities:
+        projected["candidates"] = identities
+    # Only an unambiguous single-candidate resolution names a chart target.
+    # Anything else stays locatable without inventing a security identity.
+    if status == "resolved" and not ambiguous and len(candidates) == 1 and len(identities) == 1:
+        projected.update(identities[0])
+    return projected
 
 
 def _submission(value: Any) -> dict[str, Any]:
@@ -705,22 +775,15 @@ class AgentService:
             call = event.get("toolCall")
             result = event.get("result")
             projected: dict[str, Any] = {"turn": _int(event.get("turn")), "operation_id": _text(event.get("operationId"))[:256]}
+            tool_name = _text(call.get("name"))[:128] if isinstance(call, Mapping) else ""
             if isinstance(call, Mapping):
-                projected["tool_call"] = {"id": _text(call.get("id"))[:256], "name": _text(call.get("name"))[:128]}
+                projected["tool_call"] = {"id": _text(call.get("id"))[:256], "name": tool_name}
             if isinstance(result, Mapping):
                 projected["ok"] = bool(result.get("ok"))
                 if not result.get("ok"):
                     projected["error"] = _public_value(result.get("error"))
                 else:
-                    data = result.get("data")
-                    if isinstance(data, Mapping):
-                        projected["data"] = {
-                            key: _public_value(data[key])
-                            for key in _PUBLIC_DATA_KEYS
-                            if key in data
-                        }
-                    else:
-                        projected["data"] = _public_value(data)
+                    projected["data"] = _project_public_tool_data(tool_name, result.get("data"))
             return projected
         if event_type == "terminal_submitted":
             submission = event.get("submission")
@@ -766,23 +829,33 @@ class AgentService:
         tool = _text(call.get("name"))[:128]
         data = result.get("data")
         data_map = data if isinstance(data, Mapping) else {}
+        safe_payload = _project_public_tool_data(tool, data)
+        if not isinstance(safe_payload, dict):
+            safe_payload = {"value": safe_payload}
         summary = _redact_text(_text(data_map.get("summary"), f"{tool} completed"))[:2_000]
         endpoint = _redact_text(_text(data_map.get("path"), data_map.get("endpoint", "")))[:512]
-        symbol = _redact_text(_text(data_map.get("symbol"), data_map.get("code", data_map.get("board_id", ""))))[:128]
+        # ``safe_payload`` is used here so a normalized resolution keeps the
+        # same symbol in evidence, artifacts and SSE events.
+        symbol = _redact_text(
+            _text(safe_payload.get("symbol"), _text(safe_payload.get("code"), _text(data_map.get("board_id"))))
+        )[:128]
         as_of = _text(data_map.get("as_of"), data_map.get("asOf", data_map.get("effective_trade_date", "")))[:64]
         digest = _sha256_json(_public_value(data))
-        safe_payload: dict[str, Any] = {
-            key: _public_value(data_map[key]) for key in _PUBLIC_DATA_KEYS if key in data_map
-        }
         self.db.execute(
             "INSERT INTO agent_evidence(run_id,tool,endpoint,symbol,as_of,summary,content_sha256,payload_json,created_at) VALUES(?,?,?,?,?,?,?,?,?)",
             (run_id, tool, endpoint, symbol, as_of, summary, digest, json.dumps(safe_payload, ensure_ascii=False, separators=(",", ":")), utc_now()),
         )
         artifact_type = _ARTIFACT_TYPES.get(tool)
         if artifact_type is not None:
+            artifact_payload = dict(safe_payload)
+            # Evidence rows already have a dedicated ``tool`` column.  Artifact
+            # metadata did not, which made future market_evidence types
+            # indistinguishable to the browser.  Persist the governed tool name
+            # so chart recovery can remain fail-closed.
+            artifact_payload["tool"] = tool
             self.db.execute(
                 "INSERT INTO agent_artifacts(run_id,artifact_type,reference,content_sha256,metadata_json,created_at) VALUES(?,?,?,?,?,?)",
-                (run_id, artifact_type, f"agent_events:{run_id}:{_int(event.get('sequence'))}", digest, json.dumps(safe_payload, ensure_ascii=False, separators=(",", ":")), utc_now()),
+                (run_id, artifact_type, f"agent_events:{run_id}:{_int(event.get('sequence'))}", digest, json.dumps(artifact_payload, ensure_ascii=False, separators=(",", ":")), utc_now()),
             )
 
     def _persist_submission_evidence(self, run_id: str, submission: Mapping[str, Any]) -> None:
