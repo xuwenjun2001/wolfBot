@@ -1,10 +1,10 @@
 # WolfBot 项目全景图
 
-状态：Wolf Dashboard Agent 工具契约可靠性修复已通过自动回归与真实 Provider 验收（2026-08-31）。
+状态：Wolf Dashboard Agent 工具契约可靠性修复已通过自动回归与真实 Provider 验收（2026-08-31）；`wolf-dashboard` 的研究与评测能力已重构为独立的 `wolf-research` 切片（2026-09-05）。核心研究流程、评测 contract、DeepSeek 官方 live-model E2E 和 Windows 本地预览已有历史通过记录；Eval schedule 自动调度仍为非核心 BLOCKED。
 
 ## 当前范围
 
-仓库包含维护规范、策略证据材料和 `wolf-dashboard` 本地服务。服务由 FastAPI/SQLite、原生三页面前端和本地 TypeScript PI Agent sidecar 组成。后续结构变化仍需在本文件登记；不要把本地数据库、Cookie、原始导出、上传 skill、依赖或构建产物写入仓库。
+仓库包含维护规范、策略证据材料、`wolf-dashboard` 本地服务，以及由其研究与评测能力重构形成的独立 `wolf-research`。`wolf-research` 使用 Next.js/TypeScript、Prisma/PostgreSQL 和独立 FastAPI 市场服务，不得依赖 `wolf-dashboard`。生产模式本机评测写操作默认关闭，只有绑定 loopback 时显式设置 `WOLF_RESEARCH_ALLOW_LOOPBACK_MUTATIONS=1` 才开放；已配置管理令牌时仍必须走 server-only token。后续结构变化仍需在本文件登记；不要把本地数据库、Cookie、原始导出、上传 skill、依赖或构建产物写入仓库。
 
 ## 当前文件树
 
@@ -28,6 +28,13 @@ wolfBot/
 ├── skills/
 │   ├── wolf-investing/                # 公开、脱敏的单标的内置 skill
 │   └── wolf-sector-research/          # 公开、脱敏的板块走势内置 skill
+├── wolf-research/
+│   ├── src/app/                       # `/`、`/eval-platform` 和服务端 API
+│   ├── src/lib/ports/                 # DB、Auth、市场、Preview 等边界契约
+│   ├── src/lib/startup/               # 显式环境 preflight 与本机 mutation 配置报告
+│   ├── prisma/                        # 独立 PostgreSQL schema
+│   ├── services/market-data/          # 独立 FastAPI 市场服务
+│   └── docs/migration/                # 调查、方案、源快照和验证记录
 └── wolf-dashboard/
     ├── .env.example                   # 无凭据配置样例
     ├── README.md                      # 目录级运行、API、初始化和恢复说明
@@ -75,6 +82,7 @@ wolfBot/
 | feat/fix 原因与修改记录 | `CHANGELOG.md` | 按变更 ID 追溯 |
 | 所有提交的原因与验证 | `COMMIT_LOG.md` | 按提交标题和日期集中审阅 |
 | QuantPilot 改编归因 | `THIRD_PARTY_NOTICES.md` | MIT 文本、commit 和实际文件范围 |
+| wolf-dashboard 研究能力重构边界与批次 | `wolf-research/docs/migration/MIGRATION_PLAN.md` | 研究工作台、评测中心、适配层和验收门禁 |
 
 ## 模块登记
 
@@ -93,7 +101,9 @@ wolfBot/
 | `wolf-dashboard/frontend/agent.*` | Agent 工作台、事件轨迹、证据、市场时点与板块卡片、候选表、单标的图表自动加载和 SVG K 线 | `/` | 原生浏览器 API、FastAPI SSE、`agent-market.js` | `node --check`、桌面/移动 HTTP 与浏览器检查 | 已实现 |
 | `wolf-dashboard/frontend/agent-market.js`、`frontend/tests/` | 图表标的发现优先级、canonical symbol 校验、按交易日合并真实 OHLCV 与均线的纯函数及其回归 | 浏览器全局 `WolfAgentMarket`；Node `require` | 无第三方依赖 | `node --test frontend/tests/*.test.mjs` | 已实现 |
 | `wolf-dashboard/frontend/skills.*` | skill 上传、启停、卸载和内容查看 | `/skills` | FormData、Skill API | HTTP 与浏览器检查 | 已实现 |
-| `wolf-dashboard/frontend/index.html`、`app.js`、`styles.css` | 原有发言监控、行情和策略页 | `/monitor` | 旧 `/api/*`、NGA 数据 | API 回归与浏览器检查 | 已迁移 |
+| `wolf-research/src/app`、`src/lib/ports`、`src/lib/startup` | `wolf-dashboard` 重构后的独立 Next 壳、研究工作台、评测中心、边界契约与显式 preflight | `/`、`/eval-platform`、`/api/health` | Node.js >=22.19；Windows 预览默认拒绝，安装不写环境文件；评测队列严格保留注册模型并支持 `deepseek-v4-flash` 官方直连；live-model E2E 4/4 | `npm run preflight`、`type-check`、`lint`、`test:unit`、`build`、`benchmark:quant:contract/e2e` | 重构切片已实现；核心流程有通过记录；Eval schedule 自动调度为非核心 BLOCKED |
+| `wolf-research/services/market-data` | 独立 FastAPI 市场服务及研究所需行情、指标、财务、公告、回测端点 | `/health`、`/ready`、`/api/v1/**` | Python 3.14、uv；EastMoney/Tencent 适配和 TimescaleDB 路径，ClickHouse 不进入该重构切片 | `uv run --project services/market-data pytest`、`npm run market:test`、独立 HTTP smoke | 核心端点通过；外部 Provider 仍按显式错误语义处理 |
+| `wolf-dashboard/frontend/index.html`、`app.js`、`styles.css` | 原有发言监控、行情和策略页 | `/monitor` | 旧 `/api/*`、NGA 数据 | API 回归与浏览器检查 | 既有模块 |
 | `wolf-dashboard/scripts/start.ps1` | 检查前置条件、按白名单加载 Provider 环境并启动/监控/清理 FastAPI 与 sidecar | Windows PowerShell | `.env` 中 4 个 `OPENAI_*` 变量、venv、Node/npm、built sidecar | PowerShell parser、双进程健康检查、真实 Provider smoke | 已实现 |
 | `wolf-dashboard/scripts/initialize-market.py` | 显式 symbol 恢复或 EastMoney 全 A 普通股目录导入后同步腾讯前复权日线与派生特征 | CLI `--help`、`--dry-run`、`--max-symbols`、`--history-limit` | `EastMoneyUniverseProvider`、`MarketStore`、`MarketSyncService`、`TencentProvider` | help/dry-run、导入器 fixtures、安全失败检查 | 已实现，启动不自动执行 |
 
@@ -133,6 +143,9 @@ FastAPI 启动会初始化 SQLite、读取本地种子并启动 scheduler；`sta
 - Python：在 `backend/.venv` 安装 `backend/requirements.txt`，`$env:PYTHONPATH` 指向 `backend` 后运行 `python -m pytest -q`。
 - Node：Node.js >=22；在 `agent-sidecar` 运行 `npm.cmd ci`、`npm.cmd run typecheck`、`npm.cmd test`、`npm.cmd run build`。
 - 前端：`node --check wolf-dashboard/frontend/agent.js`、`node --check wolf-dashboard/frontend/agent-market.js`、`node --test wolf-dashboard/frontend/tests/*.test.mjs`（Node 内置测试，无第三方依赖）。
+- Wolf Research Web：在 `wolf-research` 运行 `npm.cmd ci`、`npm.cmd run type-check`、`npm.cmd run lint`、`npm.cmd run test:unit`、`npm.cmd run build`；`npm.cmd run preflight` 只校验显式环境，不写 `.env*`。
+- Wolf Research 官方 DeepSeek 验收：只在目标自己的忽略环境文件或 Secret Manager 注入 `DEEPSEEK_API_KEY`，研究项目显式选择 `deepseek-v4-flash`；评测中心 Agent reviewer 和 `npm.cmd run benchmark:quant:e2e -- --model=deepseek-v4-flash` 使用同一注册 profile。未知 runtime/model 明确失败，不回退 Qwen；不得复制 QuantPilot 凭据。
+- Wolf Research 市场服务：`uv sync --project wolf-research/services/market-data --group dev`，然后运行 `uv run --project wolf-research/services/market-data pytest -q wolf-research/services/market-data/tests`。
 - 真实 Provider 验收（不进 CI，需显式执行）：FastAPI 与 sidecar 已启动、A 股目录已初始化、无其他活动 run 时，在 `agent-sidecar` 运行 `npm.cmd run smoke:provider`；结果必须与普通测试分开记录。
 - 启动：先安装 Python 依赖并构建 sidecar，再运行 `scripts/start.ps1`；脚本会探测 FastAPI/Uvicorn，要求 `node_modules`、PI 依赖目录和 `dist/main.js` 均存在，并按白名单把本地 Provider 配置传给 sidecar。
 - CLI：`backend/.venv/Scripts/python.exe scripts/initialize-market.py --help`；显式 symbol 的 `--dry-run` 不联网、不写库，全量 `--dry-run` 只读取 EastMoney 目录、不写 SQLite、不调用 Tencent 历史。全量历史同步应使用 `--max-symbols`/`--history-limit` 做 smoke 或恢复边界。
@@ -142,7 +155,7 @@ FastAPI 启动会初始化 SQLite、读取本地种子并启动 scheduler；`sta
 
 以下变化必须同步更新本图和相关 README：新增/删除/移动模块、脚本、入口或测试；运行时依赖、环境变量、外部服务或持久化介质变化；数据流、启动方式、部署约束、用户页面或测试命令变化。只调整措辞且不改变结构时不必更新本图，但 README、规范和代码事实必须一致。
 
-`docs/improvement-plans/` 是计划索引，保留其计划态说明。每个提交仍须按 `AGENTS.md` 更新 `COMMIT_LOG.md`；`feat`/`fix` 还须更新 `CHANGELOG.md`。本任务未授权提交或推送。
+`docs/improvement-plans/` 是计划索引，保留其计划态说明。每个提交仍须按 `AGENTS.md` 更新 `COMMIT_LOG.md`；`feat`/`fix` 还须更新 `CHANGELOG.md`。提交必须获得明确授权；本次仅提交，不推送。
 
 ## Agent skill data flow
 

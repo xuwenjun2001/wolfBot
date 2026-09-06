@@ -1,0 +1,1329 @@
+{
+  "schemaVersion": 1,
+  "batch": 2,
+  "sourceCommit": "2015ecdc8f3d891f81ff0a5a8d42a2d2f2dd0a5c",
+  "generatedAt": "2026-09-04T17:35:17+08:00",
+  "fileCount": 220,
+  "files": [
+    {
+      "sourcePath": ".pi/skills.changelog.json",
+      "targetPath": ".pi/skills.changelog.json",
+      "sha256": "6bb7378af3d03e9949031c7aacefd633d94d391d34c00bec96c2cac2c58f2795",
+      "bytes": 50665
+    },
+    {
+      "sourcePath": ".pi/skills.registry.json",
+      "targetPath": ".pi/skills.registry.json",
+      "sha256": "1a82280aeb10101fd94e1d25595386a80289a081c7f1ff1137fb603a8b4563d2",
+      "bytes": 16802
+    },
+    {
+      "sourcePath": ".pi/skills/dashboard-visualization/agents/openai.yaml",
+      "targetPath": ".pi/skills/dashboard-visualization/agents/openai.yaml",
+      "sha256": "d82e66c3356236676bd9b073ebfd3dbfc76855f441cf956d7d6c685032555f5f",
+      "bytes": 294
+    },
+    {
+      "sourcePath": ".pi/skills/dashboard-visualization/references/dashboard-data-contract.md",
+      "targetPath": ".pi/skills/dashboard-visualization/references/dashboard-data-contract.md",
+      "sha256": "01604d36a48cf298e8188a27b987010c4014e3883304a053653c9e3b6f6db0ff",
+      "bytes": 2245
+    },
+    {
+      "sourcePath": ".pi/skills/dashboard-visualization/references/scenario_templates.md",
+      "targetPath": ".pi/skills/dashboard-visualization/references/scenario_templates.md",
+      "sha256": "1f355c7559f68a0340f7cb3377f3d210c77df0033497518cb2ad5c69cd39ad36",
+      "bytes": 10138
+    },
+    {
+      "sourcePath": ".pi/skills/dashboard-visualization/references/visual_judgement.md",
+      "targetPath": ".pi/skills/dashboard-visualization/references/visual_judgement.md",
+      "sha256": "848467444edf75e0c774748b9c5257113198e4c9e63d39b137e92b04c64bd1ac",
+      "bytes": 5611
+    },
+    {
+      "sourcePath": ".pi/skills/dashboard-visualization/scripts/validate_dashboard_contract.py",
+      "targetPath": ".pi/skills/dashboard-visualization/scripts/validate_dashboard_contract.py",
+      "sha256": "b31f5eb583e3ba6ffbdd316f812fb57b809c06bcd7b9582594a62ea727f8fafa",
+      "bytes": 5478
+    },
+    {
+      "sourcePath": ".pi/skills/dashboard-visualization/SKILL.md",
+      "targetPath": ".pi/skills/dashboard-visualization/SKILL.md",
+      "sha256": "a704ea97bbb993d5991858c04e778aaf2fa138d61f320b9954660dde275a6190",
+      "bytes": 38567
+    },
+    {
+      "sourcePath": ".pi/skills/data-quality/agents/openai.yaml",
+      "targetPath": ".pi/skills/data-quality/agents/openai.yaml",
+      "sha256": "017f6690971e1e2019c6bcdc51e67972e5ec83a3b6d8811c588ef76a67492895",
+      "bytes": 278
+    },
+    {
+      "sourcePath": ".pi/skills/data-quality/references/evidence-contract.md",
+      "targetPath": ".pi/skills/data-quality/references/evidence-contract.md",
+      "sha256": "10728191378599f91aabfe8b900870ed681e685e399bc8e904a143d105f0c787",
+      "bytes": 4196
+    },
+    {
+      "sourcePath": ".pi/skills/data-quality/scripts/assess_data_quality.py",
+      "targetPath": ".pi/skills/data-quality/scripts/assess_data_quality.py",
+      "sha256": "909168e4f13a64a812935e3038f51fba5a3cab80d57dbdb83b8714d0e52fc404",
+      "bytes": 9154
+    },
+    {
+      "sourcePath": ".pi/skills/data-quality/SKILL.md",
+      "targetPath": ".pi/skills/data-quality/SKILL.md",
+      "sha256": "3652e6d6f11cfc6a48f029edd21901e99657a3eda68c10bc5c0450ad2f4983fe",
+      "bytes": 5215
+    },
+    {
+      "sourcePath": ".pi/skills/image-extraction/agents/openai.yaml",
+      "targetPath": ".pi/skills/image-extraction/agents/openai.yaml",
+      "sha256": "e4e8330800768efcecde07a8bfa129255a3a48a1a3fa103e45643b7c4d56896e",
+      "bytes": 277
+    },
+    {
+      "sourcePath": ".pi/skills/image-extraction/references/portfolio-image-contract.md",
+      "targetPath": ".pi/skills/image-extraction/references/portfolio-image-contract.md",
+      "sha256": "3ef601ffd02e1723a1130c0f5c69b21c44663b3e4d3ab68462f453fc145a8a65",
+      "bytes": 3412
+    },
+    {
+      "sourcePath": ".pi/skills/image-extraction/scripts/normalize_extraction.py",
+      "targetPath": ".pi/skills/image-extraction/scripts/normalize_extraction.py",
+      "sha256": "e5a1a20d365a69208cec8b6487bfac4b9a34f73b15c4918b521e902b1fa67d5f",
+      "bytes": 8233
+    },
+    {
+      "sourcePath": ".pi/skills/image-extraction/SKILL.md",
+      "targetPath": ".pi/skills/image-extraction/SKILL.md",
+      "sha256": "66a8761f3bb2501451f4f9f1be762ad9c8040ed36df96cf4a1535b9a8b74722d",
+      "bytes": 4462
+    },
+    {
+      "sourcePath": ".pi/skills/platform-ui-product-design/agents/openai.yaml",
+      "targetPath": ".pi/skills/platform-ui-product-design/agents/openai.yaml",
+      "sha256": "c6e1ed6e4e7f4b29a79550ac152f5c0b213c1940a3379077d307fd16cccc2b00",
+      "bytes": 278
+    },
+    {
+      "sourcePath": ".pi/skills/platform-ui-product-design/references/platform-ui-contract.md",
+      "targetPath": ".pi/skills/platform-ui-product-design/references/platform-ui-contract.md",
+      "sha256": "10c9b0a2078c5808a29d115edca4e835501676bc981ba7f739a7b17dae36b169",
+      "bytes": 2072
+    },
+    {
+      "sourcePath": ".pi/skills/platform-ui-product-design/references/ui-ux-pro-max-adapter.md",
+      "targetPath": ".pi/skills/platform-ui-product-design/references/ui-ux-pro-max-adapter.md",
+      "sha256": "9fcf7bd5868ab3ea47d16fc28283250a5d8db5864413ef1deb15aa4ddda400ad",
+      "bytes": 6665
+    },
+    {
+      "sourcePath": ".pi/skills/platform-ui-product-design/scripts/validate_state_matrix.py",
+      "targetPath": ".pi/skills/platform-ui-product-design/scripts/validate_state_matrix.py",
+      "sha256": "da74414ba7e094f0ad257799d01ac5d3b831c620b20438f61b49b8178646d451",
+      "bytes": 3388
+    },
+    {
+      "sourcePath": ".pi/skills/platform-ui-product-design/SKILL.md",
+      "targetPath": ".pi/skills/platform-ui-product-design/SKILL.md",
+      "sha256": "2522b48e010b5d8fd337ceb6872aa23b6056ef8eba18b236503681d4ac9db321",
+      "bytes": 8230
+    },
+    {
+      "sourcePath": ".pi/skills/quant-backtest/agents/openai.yaml",
+      "targetPath": ".pi/skills/quant-backtest/agents/openai.yaml",
+      "sha256": "368cdfdef4a6cdf908ccd3cb1c77f6389cf75cbefdf9816acb7147e96ba5994f",
+      "bytes": 277
+    },
+    {
+      "sourcePath": ".pi/skills/quant-backtest/references/backtest-contract.md",
+      "targetPath": ".pi/skills/quant-backtest/references/backtest-contract.md",
+      "sha256": "3f12509e074d23d2f159505485a475a3b5c15fb6253fd5e5e5d8cb22b09f8bfd",
+      "bytes": 2714
+    },
+    {
+      "sourcePath": ".pi/skills/quant-backtest/scripts/validate_backtest.py",
+      "targetPath": ".pi/skills/quant-backtest/scripts/validate_backtest.py",
+      "sha256": "8e7ab86a7b216e0e330ebf47522bbedebc8f8c39439d9ae0a67262dd5c9df96f",
+      "bytes": 11069
+    },
+    {
+      "sourcePath": ".pi/skills/quant-backtest/SKILL.md",
+      "targetPath": ".pi/skills/quant-backtest/SKILL.md",
+      "sha256": "798eb0cad9450bc60fbfdafbc75ee47fccb05a397d1a1f734c1644183c5d0ed3",
+      "bytes": 2302
+    },
+    {
+      "sourcePath": ".pi/skills/quant-data-registry/agents/openai.yaml",
+      "targetPath": ".pi/skills/quant-data-registry/agents/openai.yaml",
+      "sha256": "77bffe6811d1697a0b776f13e32682410854a97c7724e611733f35aee5123615",
+      "bytes": 288
+    },
+    {
+      "sourcePath": ".pi/skills/quant-data-registry/references/registry-routing-contract.md",
+      "targetPath": ".pi/skills/quant-data-registry/references/registry-routing-contract.md",
+      "sha256": "28fd11d1ef535d1e6a0b07806a844ab8a2d8e9c18becdf5f9e0e2fe8be5aefb8",
+      "bytes": 3542
+    },
+    {
+      "sourcePath": ".pi/skills/quant-data-registry/scripts/select_data_route.py",
+      "targetPath": ".pi/skills/quant-data-registry/scripts/select_data_route.py",
+      "sha256": "65abda72189a015c7c5a88d9bf234f44bee27e7d4c8b011e5a5cd94248eea665",
+      "bytes": 7581
+    },
+    {
+      "sourcePath": ".pi/skills/quant-data-registry/SKILL.md",
+      "targetPath": ".pi/skills/quant-data-registry/SKILL.md",
+      "sha256": "10e0b3c8413a1100877d48400db4e3b96bfe37a0e40cc528aa10ad0834537cfb",
+      "bytes": 5787
+    },
+    {
+      "sourcePath": ".pi/skills/quant-fundamentals/agents/openai.yaml",
+      "targetPath": ".pi/skills/quant-fundamentals/agents/openai.yaml",
+      "sha256": "a62e0bfb5b3fe7997174a633e269cba65596aa01d1bdd205b48f3072cb2f2fc6",
+      "bytes": 271
+    },
+    {
+      "sourcePath": ".pi/skills/quant-fundamentals/references/fundamentals-contract.md",
+      "targetPath": ".pi/skills/quant-fundamentals/references/fundamentals-contract.md",
+      "sha256": "71eda1357508f1895b0665c6c313a224454ef9a49664354bca13c78722f42c02",
+      "bytes": 3305
+    },
+    {
+      "sourcePath": ".pi/skills/quant-fundamentals/scripts/valuation_scenarios.py",
+      "targetPath": ".pi/skills/quant-fundamentals/scripts/valuation_scenarios.py",
+      "sha256": "8d15234959d36898cab082f562bc099514827deb0ade719f016e8d5f7c642a2e",
+      "bytes": 9198
+    },
+    {
+      "sourcePath": ".pi/skills/quant-fundamentals/SKILL.md",
+      "targetPath": ".pi/skills/quant-fundamentals/SKILL.md",
+      "sha256": "1db23cf244df768f7c444cf92787e96b92373e11358d4c47f04d822444eb9242",
+      "bytes": 2710
+    },
+    {
+      "sourcePath": ".pi/skills/quant-indicators/agents/openai.yaml",
+      "targetPath": ".pi/skills/quant-indicators/agents/openai.yaml",
+      "sha256": "0117860fd61f836a17359d6d910f12541647414072fccbf719547f688504fce1",
+      "bytes": 276
+    },
+    {
+      "sourcePath": ".pi/skills/quant-indicators/references/technical-risk-methodology.md",
+      "targetPath": ".pi/skills/quant-indicators/references/technical-risk-methodology.md",
+      "sha256": "e0bc00bdd05f6ab1f6878dfed3207d2922e601fe1943dd39c453e1d5352a62d1",
+      "bytes": 2172
+    },
+    {
+      "sourcePath": ".pi/skills/quant-indicators/scripts/correlation.py",
+      "targetPath": ".pi/skills/quant-indicators/scripts/correlation.py",
+      "sha256": "cbf214161d19765746934fbdcccf9647ebf8da4db56c47025928ac0a3d3a1449",
+      "bytes": 6526
+    },
+    {
+      "sourcePath": ".pi/skills/quant-indicators/scripts/liquidity.py",
+      "targetPath": ".pi/skills/quant-indicators/scripts/liquidity.py",
+      "sha256": "a99a892afa7ae8db5349f3b318edc9e98149ce5b7360d978761e41fa6067455a",
+      "bytes": 6910
+    },
+    {
+      "sourcePath": ".pi/skills/quant-indicators/scripts/trend_template.py",
+      "targetPath": ".pi/skills/quant-indicators/scripts/trend_template.py",
+      "sha256": "0edbf5fad434d2cf935a9432c7e2e134a585b38b8bbe81f66f2c42fefd53cc34",
+      "bytes": 7537
+    },
+    {
+      "sourcePath": ".pi/skills/quant-indicators/SKILL.md",
+      "targetPath": ".pi/skills/quant-indicators/SKILL.md",
+      "sha256": "0c0fcb88d2a4e81cb4c1ff154060de25c7d0d8d4c6069bde55a8f65b064ab300",
+      "bytes": 2049
+    },
+    {
+      "sourcePath": ".pi/skills/quant-market-data/agents/openai.yaml",
+      "targetPath": ".pi/skills/quant-market-data/agents/openai.yaml",
+      "sha256": "65e5fce1a4a32bfcf10c6a16084c41334f6a20a6865377056442755f503aa0fa",
+      "bytes": 252
+    },
+    {
+      "sourcePath": ".pi/skills/quant-market-data/references/market-data-contract.md",
+      "targetPath": ".pi/skills/quant-market-data/references/market-data-contract.md",
+      "sha256": "79a99be7347a7b2798491427a1850ce38f471b3e4ce568e0a042a5e7bf922fdf",
+      "bytes": 3881
+    },
+    {
+      "sourcePath": ".pi/skills/quant-market-data/scripts/validate_market_bars.py",
+      "targetPath": ".pi/skills/quant-market-data/scripts/validate_market_bars.py",
+      "sha256": "ef0cb792df5424fa8c6b2d991eadfe350abda6f0c5c7ecfee7977923eaf2dffb",
+      "bytes": 5916
+    },
+    {
+      "sourcePath": ".pi/skills/quant-market-data/SKILL.md",
+      "targetPath": ".pi/skills/quant-market-data/SKILL.md",
+      "sha256": "f352d60ba1dbe9d9bddb36fbacccc28540fd23da08d64591f0e44ffccad37b83",
+      "bytes": 3524
+    },
+    {
+      "sourcePath": ".pi/skills/quant-symbol-resolver/agents/openai.yaml",
+      "targetPath": ".pi/skills/quant-symbol-resolver/agents/openai.yaml",
+      "sha256": "a03481ec96324b636865f046b8266c53ae2fc1821712e5afe939c9fbdd89b493",
+      "bytes": 270
+    },
+    {
+      "sourcePath": ".pi/skills/quant-symbol-resolver/references/symbol-resolution-contract.md",
+      "targetPath": ".pi/skills/quant-symbol-resolver/references/symbol-resolution-contract.md",
+      "sha256": "fb86cc579c9f690ef44fae6ad8a089e3e211937a39cbb27a8408f56b1a4dd48d",
+      "bytes": 2990
+    },
+    {
+      "sourcePath": ".pi/skills/quant-symbol-resolver/scripts/rank_candidates.py",
+      "targetPath": ".pi/skills/quant-symbol-resolver/scripts/rank_candidates.py",
+      "sha256": "77e4a4e05c5163d81d22b12dd326426f11321e9e80557f51e19a9774962c1eb2",
+      "bytes": 6333
+    },
+    {
+      "sourcePath": ".pi/skills/quant-symbol-resolver/SKILL.md",
+      "targetPath": ".pi/skills/quant-symbol-resolver/SKILL.md",
+      "sha256": "958450db98f95b7fcfec13a91eeb0bd3fb21272be3d3df6dbc1d8c508cda4359",
+      "bytes": 3204
+    },
+    {
+      "sourcePath": ".pi/skills/query-rewrite/agents/openai.yaml",
+      "targetPath": ".pi/skills/query-rewrite/agents/openai.yaml",
+      "sha256": "b21081b4bac826e1a642429994f117feb34c7372b61b61ad44ec9e2c41a2620e",
+      "bytes": 278
+    },
+    {
+      "sourcePath": ".pi/skills/query-rewrite/references/query-rewrite-contract.md",
+      "targetPath": ".pi/skills/query-rewrite/references/query-rewrite-contract.md",
+      "sha256": "72d4ea4477b7f5c5eba024f3f1c026e96e03ce2a2ed30d67e6922de3ca28003b",
+      "bytes": 4409
+    },
+    {
+      "sourcePath": ".pi/skills/query-rewrite/scripts/validate_query_rewrite.py",
+      "targetPath": ".pi/skills/query-rewrite/scripts/validate_query_rewrite.py",
+      "sha256": "15052c24867d3c33702651cf48da711be39474e38c2c0a43e0b269dfef0ff036",
+      "bytes": 10133
+    },
+    {
+      "sourcePath": ".pi/skills/query-rewrite/SKILL.md",
+      "targetPath": ".pi/skills/query-rewrite/SKILL.md",
+      "sha256": "a995c22a6a89b30e7e1ec3485e097beabf510bd38f9a4ce7c684b677cc6ea1ad",
+      "bytes": 4817
+    },
+    {
+      "sourcePath": ".pi/skills/run-planner/agents/openai.yaml",
+      "targetPath": ".pi/skills/run-planner/agents/openai.yaml",
+      "sha256": "fe9d05c072e86f1544516e66dc0996a05682c91ca35988bea437d6e160b8c9f6",
+      "bytes": 267
+    },
+    {
+      "sourcePath": ".pi/skills/run-planner/references/run-plan-contract.md",
+      "targetPath": ".pi/skills/run-planner/references/run-plan-contract.md",
+      "sha256": "06f85bf5bf0ceea9923f7f60e596e17d5e1f723ab9cfdc68340950f3443b490c",
+      "bytes": 3523
+    },
+    {
+      "sourcePath": ".pi/skills/run-planner/scripts/intent_clarifier.py",
+      "targetPath": ".pi/skills/run-planner/scripts/intent_clarifier.py",
+      "sha256": "e3fef5732f68889d7cff5f61966165a8b871bdcaabae648af554036f6df18a61",
+      "bytes": 10295
+    },
+    {
+      "sourcePath": ".pi/skills/run-planner/SKILL.md",
+      "targetPath": ".pi/skills/run-planner/SKILL.md",
+      "sha256": "a09d2dcef69332b3ba97e470e500a6c10fc1598beed4a03091d4a6309a3c21ba",
+      "bytes": 9336
+    },
+    {
+      "sourcePath": "components.json",
+      "targetPath": "components.json",
+      "sha256": "5a6f01364f2c73bd74c11e0bd072b057677cf5fe989f135c4d340ae4602ea28b",
+      "bytes": 470
+    },
+    {
+      "sourcePath": "config/llm.json",
+      "targetPath": "config/llm.json",
+      "sha256": "6c440273cdc467c599693192d11ae14b22a7243c3c40efff6ab4d3ec0f55d27e",
+      "bytes": 1222
+    },
+    {
+      "sourcePath": "config/pi-agent-skill-capsules.json",
+      "targetPath": "config/pi-agent-skill-capsules.json",
+      "sha256": "967b13fc840a901dd471f853a524ea385bbbf607efba7ae7772b8020484d61b9",
+      "bytes": 12644
+    },
+    {
+      "sourcePath": "postcss.config.js",
+      "targetPath": "postcss.config.js",
+      "sha256": "b78f5d0a0a449ecf58b6b6252e26cd2216c7aa41235e2d6d01a26b9a065cd439",
+      "bytes": 89
+    },
+    {
+      "sourcePath": "scripts/checks/check-skill-scripts.js",
+      "targetPath": "scripts/checks/check-skill-scripts.js",
+      "sha256": "11bd5b840a50d1b81cd98f58501f2359f91aa7be1b3c410e953ca4bde9a3eb59",
+      "bytes": 3325
+    },
+    {
+      "sourcePath": "scripts/checks/check-skills-registry.js",
+      "targetPath": "scripts/checks/check-skills-registry.js",
+      "sha256": "71ac20443f63b0257a4ddfb347103c5cf2da6414553c95b9b0d66f0b69d235ea",
+      "bytes": 28484
+    },
+    {
+      "sourcePath": "scripts/skills/package-skills.js",
+      "targetPath": "scripts/skills/package-skills.js",
+      "sha256": "ca94580a7de0e0221cab82f2e63c0db05d575ef58d8f0dbfa700ccff935c9221",
+      "bytes": 15678
+    },
+    {
+      "sourcePath": "src/app/globals.css",
+      "targetPath": "src/app/globals.css",
+      "sha256": "03c6cc7faa72002ab77f46148908be001fc5bf362d07abce7eb2f880425d1ca7",
+      "bytes": 12118
+    },
+    {
+      "sourcePath": "src/components/ErrorBoundary.tsx",
+      "targetPath": "src/components/ErrorBoundary.tsx",
+      "sha256": "0c98ab74be38838be280e87ff40eafd02e926b4c37fc2d071fcb3cccf691225a",
+      "bytes": 4135
+    },
+    {
+      "sourcePath": "src/components/ui/alert-dialog.tsx",
+      "targetPath": "src/components/ui/alert-dialog.tsx",
+      "sha256": "3097b835819fb556cc328107bb9feed65c0b8cad2dca69941a8a4fad453af276",
+      "bytes": 4341
+    },
+    {
+      "sourcePath": "src/components/ui/badge.tsx",
+      "targetPath": "src/components/ui/badge.tsx",
+      "sha256": "460b68166cbc41d4d7ce418b408842789de4fb9f71f074148d80c92d4c83d219",
+      "bytes": 1176
+    },
+    {
+      "sourcePath": "src/components/ui/button.tsx",
+      "targetPath": "src/components/ui/button.tsx",
+      "sha256": "693b739ed992865b686865069f164d71a47f11fc4793467e43be6842c1a4a405",
+      "bytes": 1976
+    },
+    {
+      "sourcePath": "src/components/ui/card.tsx",
+      "targetPath": "src/components/ui/card.tsx",
+      "sha256": "3b2ef037e0401ac78c5913cb40ae309197cfc14a12b7621387ffe2c39f772b0e",
+      "bytes": 1977
+    },
+    {
+      "sourcePath": "src/components/ui/empty-state.tsx",
+      "targetPath": "src/components/ui/empty-state.tsx",
+      "sha256": "821d0d3e87f6c5b4e5f25cb5767fc1f7227c85771fa982e402b8d1c25a3cf097",
+      "bytes": 1246
+    },
+    {
+      "sourcePath": "src/components/ui/input.tsx",
+      "targetPath": "src/components/ui/input.tsx",
+      "sha256": "cacc180f0367350b3fe134949e04a562e027878131faadabeb300148c6cd84fb",
+      "bytes": 790
+    },
+    {
+      "sourcePath": "src/components/ui/label.tsx",
+      "targetPath": "src/components/ui/label.tsx",
+      "sha256": "ece819598d95360af8aedf36d90be41a93af49797240a6d6a69181180b095a76",
+      "bytes": 734
+    },
+    {
+      "sourcePath": "src/components/ui/select.tsx",
+      "targetPath": "src/components/ui/select.tsx",
+      "sha256": "6716a21e33d5287e076cea3bf47b2ecfa407aad6e9ff424f5adba3b986e9663b",
+      "bytes": 5828
+    },
+    {
+      "sourcePath": "src/components/ui/separator.tsx",
+      "targetPath": "src/components/ui/separator.tsx",
+      "sha256": "e3e52e31520a5bc2f4309a0167c2de0d5e669e53c7f33f248e5f87a4bc0fec55",
+      "bytes": 657
+    },
+    {
+      "sourcePath": "src/components/ui/sheet.tsx",
+      "targetPath": "src/components/ui/sheet.tsx",
+      "sha256": "fd4bbe2671f642c804b2b131e64e650ff99f349793aec315e5de0d856a5f69a9",
+      "bytes": 3840
+    },
+    {
+      "sourcePath": "src/components/ui/skeleton.tsx",
+      "targetPath": "src/components/ui/skeleton.tsx",
+      "sha256": "90badf0dcd440128b81554c06d56c4f01b1ccf03748ca3adf7e4a41d611acddd",
+      "bytes": 276
+    },
+    {
+      "sourcePath": "src/components/ui/textarea.tsx",
+      "targetPath": "src/components/ui/textarea.tsx",
+      "sha256": "c3b95caa4b59e88f09752932dc93d289f9e3758fd0eff9b029f8e6d453dcea03",
+      "bytes": 671
+    },
+    {
+      "sourcePath": "src/components/ui/theme-toggle.tsx",
+      "targetPath": "src/components/ui/theme-toggle.tsx",
+      "sha256": "9cf909f929d28570cccaabf778cee9d56cb92a4576026134928a90d720b6a598",
+      "bytes": 1806
+    },
+    {
+      "sourcePath": "src/contexts/GlobalSettingsContext.tsx",
+      "targetPath": "src/contexts/GlobalSettingsContext.tsx",
+      "sha256": "1c638e89a0163b3022f54c4f4b9b8e284ab3352e1fc7632bf292e12e16980cfd",
+      "bytes": 2648
+    },
+    {
+      "sourcePath": "src/contexts/ThemeContext.tsx",
+      "targetPath": "src/contexts/ThemeContext.tsx",
+      "sha256": "85a1b1da458685383792160819b7bec5c289a14b44cd5a0f404880c4a7f96527",
+      "bytes": 2410
+    },
+    {
+      "sourcePath": "src/lib/agent/context/context-manager.test.ts",
+      "targetPath": "src/lib/agent/context/context-manager.test.ts",
+      "sha256": "ea8ea107c67352811c85a01f0d83f2a6cfe36cc57c443f98ab67ef67aede55c3",
+      "bytes": 23297
+    },
+    {
+      "sourcePath": "src/lib/agent/context/context-manager.ts",
+      "targetPath": "src/lib/agent/context/context-manager.ts",
+      "sha256": "6b19d44c8a578fefa43acd61b2bba16dd4580f02631a48d61ebd6ccf69551fde",
+      "bytes": 29542
+    },
+    {
+      "sourcePath": "src/lib/agent/context/index.ts",
+      "targetPath": "src/lib/agent/context/index.ts",
+      "sha256": "e995ebc54b33a5b6d8c9f84cd42af960bb52a30b9a047ab7f02e75020ecf77f0",
+      "bytes": 1112
+    },
+    {
+      "sourcePath": "src/lib/agent/context/trusted-context-capsule.test.ts",
+      "targetPath": "src/lib/agent/context/trusted-context-capsule.test.ts",
+      "sha256": "1ca0f11fdb506e084da1698eb3ee08c5301d004ecb2cab849538201dfc44e8f3",
+      "bytes": 19153
+    },
+    {
+      "sourcePath": "src/lib/agent/context/trusted-context-capsule.ts",
+      "targetPath": "src/lib/agent/context/trusted-context-capsule.ts",
+      "sha256": "73fa203685e953d39c34dc175c686b6f991dccf9104580ba5f69b1ecb60bea10",
+      "bytes": 32475
+    },
+    {
+      "sourcePath": "src/lib/agent/core/index.ts",
+      "targetPath": "src/lib/agent/core/index.ts",
+      "sha256": "ee4ce6db0f0b16be22b9e721df542841286b37d4cf07ca8ff2c5dc490990a306",
+      "bytes": 763
+    },
+    {
+      "sourcePath": "src/lib/agent/core/operation-id.ts",
+      "targetPath": "src/lib/agent/core/operation-id.ts",
+      "sha256": "cc141255d9d8ecc314fc6def2fd0673500e60aad12c0ec8421c0e81012ea4181",
+      "bytes": 652
+    },
+    {
+      "sourcePath": "src/lib/agent/core/phase-graph.test.ts",
+      "targetPath": "src/lib/agent/core/phase-graph.test.ts",
+      "sha256": "7d394282fd6706160b86170a7a667c7a52ebcfbe634fd0e72ac40189b30061fb",
+      "bytes": 3084
+    },
+    {
+      "sourcePath": "src/lib/agent/core/phase-graph.ts",
+      "targetPath": "src/lib/agent/core/phase-graph.ts",
+      "sha256": "30df84ac516e7e6c1b641b55315e7cbf549fae1b18d669525499b76c997591bb",
+      "bytes": 4746
+    },
+    {
+      "sourcePath": "src/lib/agent/core/progress-oracle.test.ts",
+      "targetPath": "src/lib/agent/core/progress-oracle.test.ts",
+      "sha256": "3d0070b560d430a314736561b5c95a1bb1856d6c0752c684ec38ba326caaafbe",
+      "bytes": 10802
+    },
+    {
+      "sourcePath": "src/lib/agent/core/progress-oracle.ts",
+      "targetPath": "src/lib/agent/core/progress-oracle.ts",
+      "sha256": "2437d9be1cf07af5b513c51b44f836c87eb0d6ee23044e082cd2f19b7d2f35d1",
+      "bytes": 13744
+    },
+    {
+      "sourcePath": "src/lib/agent/core/tool-approval.ts",
+      "targetPath": "src/lib/agent/core/tool-approval.ts",
+      "sha256": "eaea259b06fb77232d020705ea39632c3dcf297c528d8e187d539df98793a6b2",
+      "bytes": 15155
+    },
+    {
+      "sourcePath": "src/lib/agent/core/tool-arguments.test.ts",
+      "targetPath": "src/lib/agent/core/tool-arguments.test.ts",
+      "sha256": "58bc70a30851385b167ebec586b6c34b236fa702994caac32d6241d99e28dc6a",
+      "bytes": 1157
+    },
+    {
+      "sourcePath": "src/lib/agent/core/tool-arguments.ts",
+      "targetPath": "src/lib/agent/core/tool-arguments.ts",
+      "sha256": "4dd506d6a17f801c7e8eca3cb1a1de2d197c451473a723faeb7388e3abcb6eea",
+      "bytes": 3803
+    },
+    {
+      "sourcePath": "src/lib/agent/core/tool-executor.ts",
+      "targetPath": "src/lib/agent/core/tool-executor.ts",
+      "sha256": "16cd2f01a1e691a5d8bf2fe23b55c1c84d5e0c79c40102a719c5f5a936516a87",
+      "bytes": 6685
+    },
+    {
+      "sourcePath": "src/lib/agent/core/tool-outcome.test.ts",
+      "targetPath": "src/lib/agent/core/tool-outcome.test.ts",
+      "sha256": "63628d1af32eb214d08989f6e7ace9a14b36793fc6ce63b1ebe1252db258f6f4",
+      "bytes": 1916
+    },
+    {
+      "sourcePath": "src/lib/agent/core/tool-outcome.ts",
+      "targetPath": "src/lib/agent/core/tool-outcome.ts",
+      "sha256": "ed1d46567129141b9266056563a2b3642c659c94e3801121c8667774cb7b68aa",
+      "bytes": 2519
+    },
+    {
+      "sourcePath": "src/lib/agent/framework-identity.ts",
+      "targetPath": "src/lib/agent/framework-identity.ts",
+      "sha256": "7f730fe6256e1a4b8a9a7960ca3d21b22991b5bb794e1a6ba489ffcbe47d2bed",
+      "bytes": 7677
+    },
+    {
+      "sourcePath": "src/lib/agent/input-policy.ts",
+      "targetPath": "src/lib/agent/input-policy.ts",
+      "sha256": "30cf720d6c9f4583f02356a8f1560e0c425a5a0a266038c1a4bae1ba474ea576",
+      "bytes": 1501
+    },
+    {
+      "sourcePath": "src/lib/agent/mission/compiler.test.ts",
+      "targetPath": "src/lib/agent/mission/compiler.test.ts",
+      "sha256": "4792b7a7b66eaed210e5d6949cadab5904b9f3920323a8781050e5a0f57395ed",
+      "bytes": 5229
+    },
+    {
+      "sourcePath": "src/lib/agent/mission/compiler.ts",
+      "targetPath": "src/lib/agent/mission/compiler.ts",
+      "sha256": "30b5e383ad6e53443e2de4327be48f7014c6aa5e61646665caf57fdb1bd98e66",
+      "bytes": 8066
+    },
+    {
+      "sourcePath": "src/lib/agent/mission/evidence-verifier.test.ts",
+      "targetPath": "src/lib/agent/mission/evidence-verifier.test.ts",
+      "sha256": "f5652bdbc723b95c604602d887e33f3b8931439b8b9579c64b556137b49864dd",
+      "bytes": 17612
+    },
+    {
+      "sourcePath": "src/lib/agent/mission/evidence-verifier.ts",
+      "targetPath": "src/lib/agent/mission/evidence-verifier.ts",
+      "sha256": "703e92d27c8fa3767b9cc5eeca8ed4835246440da05bb3b6a605634c231839a7",
+      "bytes": 33611
+    },
+    {
+      "sourcePath": "src/lib/agent/mission/index.ts",
+      "targetPath": "src/lib/agent/mission/index.ts",
+      "sha256": "6e43ed03a6f48a02feca5dc5a88f6c9dfa6f6863d62c79c48ba3444412251c7e",
+      "bytes": 93
+    },
+    {
+      "sourcePath": "src/lib/agent/mission/test-support.ts",
+      "targetPath": "src/lib/agent/mission/test-support.ts",
+      "sha256": "76ac08d77924b35d03dddaf2e2a31b6817584bfd480e255234cf0f4d7eb33f28",
+      "bytes": 4924
+    },
+    {
+      "sourcePath": "src/lib/agent/mission/types.ts",
+      "targetPath": "src/lib/agent/mission/types.ts",
+      "sha256": "2ffd26f72d8aa2629b42a8679d57414154e11c06a0aac12b1cfb7d93b056ee6c",
+      "bytes": 5701
+    },
+    {
+      "sourcePath": "src/lib/agent/pi/identity.ts",
+      "targetPath": "src/lib/agent/pi/identity.ts",
+      "sha256": "a44bcf211e19023a830c981ec4830dd6c6b0722bb6bf551408b500e5f86ed56e",
+      "bytes": 222
+    },
+    {
+      "sourcePath": "src/lib/agent/pi/options.ts",
+      "targetPath": "src/lib/agent/pi/options.ts",
+      "sha256": "0958bb09d7e1570281cc28994d7127eaca269b0b52452444cc9ceb450284beb4",
+      "bytes": 2460
+    },
+    {
+      "sourcePath": "src/lib/agent/pi/run-engine.test.ts",
+      "targetPath": "src/lib/agent/pi/run-engine.test.ts",
+      "sha256": "0e438232af77176e7c8084a8b85ef63d0920ae61c1c25c0e18e36d5e94adeafa",
+      "bytes": 23539
+    },
+    {
+      "sourcePath": "src/lib/agent/pi/run-engine.ts",
+      "targetPath": "src/lib/agent/pi/run-engine.ts",
+      "sha256": "b1ad894bf7d8486b84faa049edd596552b59076ae673e45d0eb570188afe7d51",
+      "bytes": 65904
+    },
+    {
+      "sourcePath": "src/lib/agent/providers/deepseek.ts",
+      "targetPath": "src/lib/agent/providers/deepseek.ts",
+      "sha256": "35eb7c5550b7c9d159a477269338f08bfab07fd88a48a55c6fc17f2ee5d40cc6",
+      "bytes": 30610
+    },
+    {
+      "sourcePath": "src/lib/agent/providers/openai-compatible.ts",
+      "targetPath": "src/lib/agent/providers/openai-compatible.ts",
+      "sha256": "279f89d0a3c3e8f4b4a803bc51aaff3cd89b1ded1b1fa5cadd9012094108ba69",
+      "bytes": 3047
+    },
+    {
+      "sourcePath": "src/lib/agent/runtime/workspace-mutation-journal.ts",
+      "targetPath": "src/lib/agent/runtime/workspace-mutation-journal.ts",
+      "sha256": "6293186dff3f8e69d10082906e5204bc08a24184af67c57840fea0b8ca548bb5",
+      "bytes": 21012
+    },
+    {
+      "sourcePath": "src/lib/agent/runtime/workspace-resource-lock.ts",
+      "targetPath": "src/lib/agent/runtime/workspace-resource-lock.ts",
+      "sha256": "0552cf8dc80f53df7876c5f884d6bcc4d89f433768eb801c2024a85cc829bb0e",
+      "bytes": 14989
+    },
+    {
+      "sourcePath": "src/lib/agent/skills/compiler.test.ts",
+      "targetPath": "src/lib/agent/skills/compiler.test.ts",
+      "sha256": "7459221504476f169b770cf17b712a92c7de66106ee7a09d8ae59c25d0b86c19",
+      "bytes": 21981
+    },
+    {
+      "sourcePath": "src/lib/agent/skills/compiler.ts",
+      "targetPath": "src/lib/agent/skills/compiler.ts",
+      "sha256": "8d07090cc48bdff2d4ac7b79ff47a60777f573f6458cca3af3baf1922d343615",
+      "bytes": 47566
+    },
+    {
+      "sourcePath": "src/lib/agent/skills/index.ts",
+      "targetPath": "src/lib/agent/skills/index.ts",
+      "sha256": "c7f09106481e6838d40143783ce1ac29ee52ed69792927ed9bcf18bfab666c87",
+      "bytes": 577
+    },
+    {
+      "sourcePath": "src/lib/agent/skills/types.ts",
+      "targetPath": "src/lib/agent/skills/types.ts",
+      "sha256": "bb182b754c89dbd1c8a177101ab6bcb78c5183a1e045739fda6493a2f2903221",
+      "bytes": 5226
+    },
+    {
+      "sourcePath": "src/lib/agent/tools/context-receipts.test.ts",
+      "targetPath": "src/lib/agent/tools/context-receipts.test.ts",
+      "sha256": "0dede37ed3d085503d6b0878b21a00ee0669e29aa8dfe724cf0fa6eb8f7b9cb5",
+      "bytes": 665
+    },
+    {
+      "sourcePath": "src/lib/agent/tools/context-receipts.ts",
+      "targetPath": "src/lib/agent/tools/context-receipts.ts",
+      "sha256": "1a346dd8599534c280bd7e2440fe8bb605d50939ff2a0455afde3b29f8e3b341",
+      "bytes": 2935
+    },
+    {
+      "sourcePath": "src/lib/agent/tools/errors.ts",
+      "targetPath": "src/lib/agent/tools/errors.ts",
+      "sha256": "300cb2227d7af7a90fa5c33dc3036ae49c4bb3de8c59231d788e74c1fa9f9580",
+      "bytes": 471
+    },
+    {
+      "sourcePath": "src/lib/agent/tools/filesystem.test.ts",
+      "targetPath": "src/lib/agent/tools/filesystem.test.ts",
+      "sha256": "2c390d389d98a79677d952a9c43d9f1fc11e58670754a9ed39f1bda8b29b23c5",
+      "bytes": 17129
+    },
+    {
+      "sourcePath": "src/lib/agent/tools/filesystem.ts",
+      "targetPath": "src/lib/agent/tools/filesystem.ts",
+      "sha256": "8c20d8b460ca01a053260b785bbba57cb904aa1954df1bc2ee69e29cd50777d6",
+      "bytes": 38869
+    },
+    {
+      "sourcePath": "src/lib/agent/tools/index.ts",
+      "targetPath": "src/lib/agent/tools/index.ts",
+      "sha256": "27240ca80c8bb76cc1dd9c4a08f4d6f5e08828bda59ef0487bd83e9098f630cd",
+      "bytes": 6380
+    },
+    {
+      "sourcePath": "src/lib/agent/tools/input.ts",
+      "targetPath": "src/lib/agent/tools/input.ts",
+      "sha256": "577f9a177f7ab22064f2aebf00e66ab234639ff8da220cde803352d06df345a6",
+      "bytes": 2098
+    },
+    {
+      "sourcePath": "src/lib/agent/tools/path-policy.ts",
+      "targetPath": "src/lib/agent/tools/path-policy.ts",
+      "sha256": "7305af28b92aa3c4a58c274a706ec938e9feb71bba1818238b64aa842f181a92",
+      "bytes": 14847
+    },
+    {
+      "sourcePath": "src/lib/agent/tools/runtime-dependencies.test.ts",
+      "targetPath": "src/lib/agent/tools/runtime-dependencies.test.ts",
+      "sha256": "cb134b6ead078aadeda0f0597ee9915665fec51b216485bf3229364a12c9f49c",
+      "bytes": 1680
+    },
+    {
+      "sourcePath": "src/lib/agent/tools/runtime.ts",
+      "targetPath": "src/lib/agent/tools/runtime.ts",
+      "sha256": "6c7b45891b657aaa5aa419d5e2646e2e3eda1982e728037564998d3b1a05d449",
+      "bytes": 4329
+    },
+    {
+      "sourcePath": "src/lib/agent/tools/semantic-edit.test.ts",
+      "targetPath": "src/lib/agent/tools/semantic-edit.test.ts",
+      "sha256": "5eebf1b389bed518a73aaec18054a486872404252c2d7d7b0394bf8ca57fdc87",
+      "bytes": 16915
+    },
+    {
+      "sourcePath": "src/lib/agent/tools/semantic-edit.ts",
+      "targetPath": "src/lib/agent/tools/semantic-edit.ts",
+      "sha256": "76370e6ac32df613c62f6220f7dac8e7a9d2d8fee866d3307f9e8477321356af",
+      "bytes": 28193
+    },
+    {
+      "sourcePath": "src/lib/agent/tools/structured-read.test.ts",
+      "targetPath": "src/lib/agent/tools/structured-read.test.ts",
+      "sha256": "0c1480bde5bf3c96757939368424a96e0d53a70d372e6d98e4891e4a4e54285c",
+      "bytes": 21824
+    },
+    {
+      "sourcePath": "src/lib/agent/tools/structured-read.ts",
+      "targetPath": "src/lib/agent/tools/structured-read.ts",
+      "sha256": "e961cf7d5901462d439ed9eba6865a7de29e671edbe5521d5cd9078d92c888b5",
+      "bytes": 38305
+    },
+    {
+      "sourcePath": "src/lib/agent/tools/submit-result.test.ts",
+      "targetPath": "src/lib/agent/tools/submit-result.test.ts",
+      "sha256": "eface44fa690e5d7665cc00335e95fbe61a8f6185c130d9c6ffc5c52fbc875a5",
+      "bytes": 2251
+    },
+    {
+      "sourcePath": "src/lib/agent/tools/submit-result.ts",
+      "targetPath": "src/lib/agent/tools/submit-result.ts",
+      "sha256": "a7cc51522d193b0dbdcf37acd2513a2c68be62176817227d4f32bdba7fcb31a0",
+      "bytes": 3739
+    },
+    {
+      "sourcePath": "src/lib/agent/tools/toolset.test.ts",
+      "targetPath": "src/lib/agent/tools/toolset.test.ts",
+      "sha256": "22c263e34c3246be58df54783cc13c7c2c31077de00cad0d1d846abe0f83cb7c",
+      "bytes": 1891
+    },
+    {
+      "sourcePath": "src/lib/agent/tools/toolset.ts",
+      "targetPath": "src/lib/agent/tools/toolset.ts",
+      "sha256": "b9fc8a150e582a9c73795f67cc37c681883266d3e8f92e8a54a49b3b1d49ae5f",
+      "bytes": 2643
+    },
+    {
+      "sourcePath": "src/lib/agent/types.ts",
+      "targetPath": "src/lib/agent/types.ts",
+      "sha256": "bf0aebefedd0216b69c37d5886611266de6946cbf51a55ea40a85d7b2e9d7c57",
+      "bytes": 17397
+    },
+    {
+      "sourcePath": "src/lib/chat/turn-metrics.ts",
+      "targetPath": "src/lib/chat/turn-metrics.ts",
+      "sha256": "41574aeab190669cf65a44b834487eec4cba69759ad2f4074801a912dfe56583",
+      "bytes": 3412
+    },
+    {
+      "sourcePath": "src/lib/config/data-agent.ts",
+      "targetPath": "src/lib/config/data-agent.ts",
+      "sha256": "6e15999eac845bccc833743c6696a8b325e55aa749cd71583f39f6bd41dbbb6a",
+      "bytes": 159
+    },
+    {
+      "sourcePath": "src/lib/config/llm.ts",
+      "targetPath": "src/lib/config/llm.ts",
+      "sha256": "43932c5779f16c5b323eee47a8ca300ea1e366e09a938f040f92f6573f80bffc",
+      "bytes": 4656
+    },
+    {
+      "sourcePath": "src/lib/constants/cli.ts",
+      "targetPath": "src/lib/constants/cli.ts",
+      "sha256": "11b08fe0596937f99a60df877e69cc85b360443e30930eae662ba3f16feb3c9e",
+      "bytes": 563
+    },
+    {
+      "sourcePath": "src/lib/constants/models.ts",
+      "targetPath": "src/lib/constants/models.ts",
+      "sha256": "607ee09e05176e3fe01d06d933742cdfcfb9dae8e108eaecf52cc3532bfe4c49",
+      "bytes": 3582
+    },
+    {
+      "sourcePath": "src/lib/data-agent/application-catalog.test.ts",
+      "targetPath": "src/lib/data-agent/application-catalog.test.ts",
+      "sha256": "dbdc87717c42b24b409dc73cd0fff239a8ec48ff5f2dae0c4bf3439e6a3a0d04",
+      "bytes": 2548
+    },
+    {
+      "sourcePath": "src/lib/data-agent/application-catalog.ts",
+      "targetPath": "src/lib/data-agent/application-catalog.ts",
+      "sha256": "dab28b63c45630938fae77669e10db48644ff445168fb4475158768542c76aea",
+      "bytes": 2362
+    },
+    {
+      "sourcePath": "src/lib/data-agent/contracts.ts",
+      "targetPath": "src/lib/data-agent/contracts.ts",
+      "sha256": "6ccf3c35f989678c438a9e5b694c89baef0e0d291167ac35d20200ba71267f33",
+      "bytes": 6804
+    },
+    {
+      "sourcePath": "src/lib/data-agent/delivery-packs/index.ts",
+      "targetPath": "src/lib/data-agent/delivery-packs/index.ts",
+      "sha256": "c0e97b5dbad30c00ca14b56b94b60e5b572b090b8312e6527be17348a916c3ee",
+      "bytes": 35
+    },
+    {
+      "sourcePath": "src/lib/data-agent/delivery-packs/next-dashboard.ts",
+      "targetPath": "src/lib/data-agent/delivery-packs/next-dashboard.ts",
+      "sha256": "1df6a879e925dbbe9a15b509a70a43161aa19341921fab523c9ba784e59242bf",
+      "bytes": 946
+    },
+    {
+      "sourcePath": "src/lib/data-agent/generation-runtime.test.ts",
+      "targetPath": "src/lib/data-agent/generation-runtime.test.ts",
+      "sha256": "b352aa5e91154cdda5ac4010ceee2588eaa9fb4332f7a5f642a17bcd9da122a1",
+      "bytes": 3096
+    },
+    {
+      "sourcePath": "src/lib/data-agent/generation-runtime.ts",
+      "targetPath": "src/lib/data-agent/generation-runtime.ts",
+      "sha256": "4a3bed667d4e5527bd173aa52f5674418e37aa9af5093fcfae3a71557547f941",
+      "bytes": 7724
+    },
+    {
+      "sourcePath": "src/lib/data-agent/image-attachments.test.ts",
+      "targetPath": "src/lib/data-agent/image-attachments.test.ts",
+      "sha256": "b48c7a7bcabf4be6ea74e602c0a954d1c038773ac4ce264f4499c4aa5553bcc8",
+      "bytes": 2148
+    },
+    {
+      "sourcePath": "src/lib/data-agent/image-attachments.ts",
+      "targetPath": "src/lib/data-agent/image-attachments.ts",
+      "sha256": "5fe2a9aa53da79ffd31ddcb2286ba83ac859bce520a9694d9efd5842cc94682d",
+      "bytes": 4629
+    },
+    {
+      "sourcePath": "src/lib/data-agent/index.ts",
+      "targetPath": "src/lib/data-agent/index.ts",
+      "sha256": "06aaf8644d8594d06d9d292463801bbf06bc4b6aff393a67f4c54c3166101c16",
+      "bytes": 319
+    },
+    {
+      "sourcePath": "src/lib/data-agent/registry.test.ts",
+      "targetPath": "src/lib/data-agent/registry.test.ts",
+      "sha256": "2d851da969cfe0f28ba155dd5acaa32de740d6de7331ceb36479f14aeb87fbce",
+      "bytes": 6990
+    },
+    {
+      "sourcePath": "src/lib/data-agent/registry.ts",
+      "targetPath": "src/lib/data-agent/registry.ts",
+      "sha256": "9daee6e94fe9980a5ba93ccad876f08d9a28adb43a5101ef4755684cf5e7a591",
+      "bytes": 12286
+    },
+    {
+      "sourcePath": "src/lib/data-agent/workspace-files.test.ts",
+      "targetPath": "src/lib/data-agent/workspace-files.test.ts",
+      "sha256": "7a4cdf8d998a4e2d86822881396d73480f5e75ae03deb351bc3754b7aa536391",
+      "bytes": 2389
+    },
+    {
+      "sourcePath": "src/lib/data-agent/workspace-files.ts",
+      "targetPath": "src/lib/data-agent/workspace-files.ts",
+      "sha256": "e7dd6e9237e568a80454448b5725117f961e3b9c6ac025ded9135fe9913306db",
+      "bytes": 4104
+    },
+    {
+      "sourcePath": "src/lib/data-agent/workspace-layout.ts",
+      "targetPath": "src/lib/data-agent/workspace-layout.ts",
+      "sha256": "e80b1074c0f09dab54317192188a87e3e7424848866317a8a3e6c93d3acb58bb",
+      "bytes": 1276
+    },
+    {
+      "sourcePath": "src/lib/data-agent/workspace-path.test.ts",
+      "targetPath": "src/lib/data-agent/workspace-path.test.ts",
+      "sha256": "536111589e429533f5d6abb7dc46aadf64392de06deea1012e3ea27445fd4fdc",
+      "bytes": 2675
+    },
+    {
+      "sourcePath": "src/lib/data-agent/workspace-path.ts",
+      "targetPath": "src/lib/data-agent/workspace-path.ts",
+      "sha256": "5b5d26c446b81a3e5f6c9e2d6b111c0201c15f88b895fcbde5f5298235ba88f5",
+      "bytes": 3469
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/agent-profile.test.ts",
+      "targetPath": "src/lib/domains/finance/agent-profile.test.ts",
+      "sha256": "fae1d7da8dc0653cd3e5a63b24f73be05c04533f336615b5ae3ab8a5b492a2eb",
+      "bytes": 1040
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/agent-profile.ts",
+      "targetPath": "src/lib/domains/finance/agent-profile.ts",
+      "sha256": "de2d743c380f1140fd7608451d19ed2b14079a75338ff085b4306103dbbeeaeb",
+      "bytes": 4127
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/agent-tools/context-receipts.test.ts",
+      "targetPath": "src/lib/domains/finance/agent-tools/context-receipts.test.ts",
+      "sha256": "fd7430f76fb7ba846f0bf53e4998f7f0057f4f00dbb95574eedc12af18a3e526",
+      "bytes": 903
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/agent-tools/context-receipts.ts",
+      "targetPath": "src/lib/domains/finance/agent-tools/context-receipts.ts",
+      "sha256": "832a021a46431de3b19a0f2538afb2f7d241c0f20cb76310d8412ce0b9178219",
+      "bytes": 3051
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/agent-tools/dashboard-contract.test.ts",
+      "targetPath": "src/lib/domains/finance/agent-tools/dashboard-contract.test.ts",
+      "sha256": "426711e087fafd8b48ed02b720f2ed87c628c718dd1d70fa034e6fd095321981",
+      "bytes": 15077
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/agent-tools/dashboard-contract.ts",
+      "targetPath": "src/lib/domains/finance/agent-tools/dashboard-contract.ts",
+      "sha256": "3fa33c16b6f867ea813fcde05cb1aba3350be37a853a6047eb0d6dea0dce6f0e",
+      "bytes": 40290
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/agent-tools/dashboard-spec.test.ts",
+      "targetPath": "src/lib/domains/finance/agent-tools/dashboard-spec.test.ts",
+      "sha256": "e10091c81e59a8ecc6e2ad99c44dee00fb652bb73fb1f2322d6aef979102ccea",
+      "bytes": 41349
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/agent-tools/dashboard-spec.ts",
+      "targetPath": "src/lib/domains/finance/agent-tools/dashboard-spec.ts",
+      "sha256": "b4490af358268bf543e9789b1cdd6b2b97bf77d044c36bdd94b3d0e337629bf4",
+      "bytes": 44588
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/agent-tools/factory.ts",
+      "targetPath": "src/lib/domains/finance/agent-tools/factory.ts",
+      "sha256": "088bfe8296d621486dd3c8a6c029e9c3d6f0d0bd93598c566ea5d05d368bcf65",
+      "bytes": 3621
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/agent-tools/image-extraction.test.ts",
+      "targetPath": "src/lib/domains/finance/agent-tools/image-extraction.test.ts",
+      "sha256": "e2f5c07ea0ac1636d40ff91a98e3aa6e7786663a8470659008f801ca176c5d33",
+      "bytes": 6443
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/agent-tools/image-extraction.ts",
+      "targetPath": "src/lib/domains/finance/agent-tools/image-extraction.ts",
+      "sha256": "66104906511385a9d67e11d233a23d165512d4a8cff17280889546a3086ba859",
+      "bytes": 18794
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/agent-tools/quant-api.test.ts",
+      "targetPath": "src/lib/domains/finance/agent-tools/quant-api.test.ts",
+      "sha256": "6d0c5c66de5e796cd8640a47d82486578604e265bd4448286e7e36082595175c",
+      "bytes": 17585
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/agent-tools/quant-api.ts",
+      "targetPath": "src/lib/domains/finance/agent-tools/quant-api.ts",
+      "sha256": "53b7e8106238797b1bb4761106b69527b91966bcecb50f3073cb34da597990d1",
+      "bytes": 16442
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/agent-tools/structured-read.ts",
+      "targetPath": "src/lib/domains/finance/agent-tools/structured-read.ts",
+      "sha256": "ef3f72a85fc28a7030d2d669375af0dde4f61a6c8ff7e01465afaa66a121442a",
+      "bytes": 3989
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/capabilities.ts",
+      "targetPath": "src/lib/domains/finance/capabilities.ts",
+      "sha256": "a99c9caab57ef6d4d80f08cdc7268150456e2feb7f3d1825b69ca1dd1012234d",
+      "bytes": 21297
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/data-agent-projection.test.ts",
+      "targetPath": "src/lib/domains/finance/data-agent-projection.test.ts",
+      "sha256": "38476edc622b36238c87abf2ef224fe22c8a1bfb318793e783e2c0cb2872a44c",
+      "bytes": 1852
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/data-agent-projection.ts",
+      "targetPath": "src/lib/domains/finance/data-agent-projection.ts",
+      "sha256": "3417bd163910521fe1f5d48ae9afa0ccc89fd9923d75e9f424ee33bb9976d517",
+      "bytes": 3772
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/data-identity.test.ts",
+      "targetPath": "src/lib/domains/finance/data-identity.test.ts",
+      "sha256": "d7597ef405b4be7add04a89e2ed0cccf0ea692e2165944af92f33c9b30a4a73e",
+      "bytes": 2823
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/data-identity.ts",
+      "targetPath": "src/lib/domains/finance/data-identity.ts",
+      "sha256": "619b15f7541c5f964fab2bea9ba1a0aff795dd8f605a003dc56c08a7f34c8459",
+      "bytes": 6254
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/image-attachment-context.test.ts",
+      "targetPath": "src/lib/domains/finance/image-attachment-context.test.ts",
+      "sha256": "f613c4e6ba75e21e117af7813a565910abd6e939f8be4d4e789d0521c5a0dbee",
+      "bytes": 1474
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/image-attachment-context.ts",
+      "targetPath": "src/lib/domains/finance/image-attachment-context.ts",
+      "sha256": "00908ae7bb0548514bdfccde0b5abe1822527eb2f768053a2f989e30694f36c7",
+      "bytes": 3008
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/index.ts",
+      "targetPath": "src/lib/domains/finance/index.ts",
+      "sha256": "c604494b19889154f538a16a2ce6cdb6430e0867d1ec6172383febae6531f0bc",
+      "bytes": 669
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/intent.test.ts",
+      "targetPath": "src/lib/domains/finance/intent.test.ts",
+      "sha256": "b7d898186acb09d3444c9368e41badddf42dc3d1a3aa718b2463c04f052471a9",
+      "bytes": 7687
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/intent.ts",
+      "targetPath": "src/lib/domains/finance/intent.ts",
+      "sha256": "a578c65df53d082ad765abd2dae83890e2d6bfc4c747698d857d4d613ecb6fe3",
+      "bytes": 10652
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/mission-definition.ts",
+      "targetPath": "src/lib/domains/finance/mission-definition.ts",
+      "sha256": "b2df835d95860917d5a9d9365f9f5c453ce1d53bfc2f6b8630255a9b41e48c96",
+      "bytes": 8510
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/query-rewrite-llm.test.ts",
+      "targetPath": "src/lib/domains/finance/query-rewrite-llm.test.ts",
+      "sha256": "e6decc1076e1e2357f59009edf36bafac5bd318ce17092c07053e564784ff82f",
+      "bytes": 7841
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/query-rewrite-llm.ts",
+      "targetPath": "src/lib/domains/finance/query-rewrite-llm.ts",
+      "sha256": "fc8ea59d7f898d8523ea5d57950e1d485db45715d5839dae41767493c7e8915c",
+      "bytes": 21209
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/query-rewrite.test.ts",
+      "targetPath": "src/lib/domains/finance/query-rewrite.test.ts",
+      "sha256": "4aeef2994d499ff82e33f98fc934a54931f908f559291df41f63a82ab66e50dd",
+      "bytes": 12394
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/query-rewrite.ts",
+      "targetPath": "src/lib/domains/finance/query-rewrite.ts",
+      "sha256": "228b7c0679c5fb76ac476a4eef7ae32fa862a870741c62d617165d7584cd0866",
+      "bytes": 30384
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/symbol-aliases.test.ts",
+      "targetPath": "src/lib/domains/finance/symbol-aliases.test.ts",
+      "sha256": "a206e1358562e37c7a4391499fae1f0262b81c9a951e9e72b58d4af4fffbbf71",
+      "bytes": 1474
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/symbol-aliases.ts",
+      "targetPath": "src/lib/domains/finance/symbol-aliases.ts",
+      "sha256": "bd825704b6821477357bf355b59eee133181936df580ab7b6c6871e5b03e1f53",
+      "bytes": 4594
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/visualization-templates.ts",
+      "targetPath": "src/lib/domains/finance/visualization-templates.ts",
+      "sha256": "82eb9d5642d0c4e0fb1a075947c38c806e4bbf0ea934af42ed43a21116d703c6",
+      "bytes": 28305
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/workspace-artifacts.ts",
+      "targetPath": "src/lib/domains/finance/workspace-artifacts.ts",
+      "sha256": "1fa609de0b0b674005f2a26fca2b3c62875ef23058e42133b0dc763aafb8cae3",
+      "bytes": 259
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/workspace.test.ts",
+      "targetPath": "src/lib/domains/finance/workspace.test.ts",
+      "sha256": "3f4809754040bca6f51ae3bbd8deb65bd608f75f4556bad3d11450de4356b5f9",
+      "bytes": 9555
+    },
+    {
+      "sourcePath": "src/lib/domains/finance/workspace.ts",
+      "targetPath": "src/lib/domains/finance/workspace.ts",
+      "sha256": "ddc8fbdbe8e2d7a9e998760773f8593454d7971ad47a1d4638b270d9041bf765",
+      "bytes": 28070
+    },
+    {
+      "sourcePath": "src/lib/motion.ts",
+      "targetPath": "src/lib/motion.ts",
+      "sha256": "bb3c83cdd45f961488a16afa5732dddcfe0b4eb3eac260161796896376948e81",
+      "bytes": 779
+    },
+    {
+      "sourcePath": "src/lib/server/image-assets.ts",
+      "targetPath": "src/lib/server/image-assets.ts",
+      "sha256": "bae9fc2b9200c36a732052e7c054e1ae31f01ab510be9ebd957b438a94c91d1c",
+      "bytes": 7628
+    },
+    {
+      "sourcePath": "src/lib/utils/index.ts",
+      "targetPath": "src/lib/utils/index.ts",
+      "sha256": "60f49390be919408ac731136b63bd4c3b39f386453fd4be209dbee9725cc6475",
+      "bytes": 599
+    },
+    {
+      "sourcePath": "src/lib/utils/scaffold-base-templates.ts",
+      "targetPath": "src/lib/utils/scaffold-base-templates.ts",
+      "sha256": "49e79c910fd4a9d310127a2277a6bd836d008e756d0d01a35cbc86a887c7aaf6",
+      "bytes": 79301
+    },
+    {
+      "sourcePath": "src/lib/utils/scaffold-dashboard-runtime-template.ts",
+      "targetPath": "src/lib/utils/scaffold-dashboard-runtime-template.ts",
+      "sha256": "3b96c97475b3aae7cf0f083ffb9861db52d0e7c1601227bb3b9004c852b35077",
+      "bytes": 1942
+    },
+    {
+      "sourcePath": "src/lib/utils/scaffold-dashboard-templates.ts",
+      "targetPath": "src/lib/utils/scaffold-dashboard-templates.ts",
+      "sha256": "f50bf1c52231023c9397b9129d00062c6bbeec2c0ed3c5773f66396e0da97b80",
+      "bytes": 78418
+    },
+    {
+      "sourcePath": "src/lib/utils/scaffold-fundamental-snapshot-template.ts",
+      "targetPath": "src/lib/utils/scaffold-fundamental-snapshot-template.ts",
+      "sha256": "3e4327485a4257bce97bd93199877a7bbada4f58c1441297fd2511cfa8362e83",
+      "bytes": 6691
+    },
+    {
+      "sourcePath": "src/lib/utils/scaffold-visual-language.ts",
+      "targetPath": "src/lib/utils/scaffold-visual-language.ts",
+      "sha256": "7c26db6d4188fbc057a7b46a95b052e47f3a2ebca4059b71efb9a199d912b651",
+      "bytes": 10976
+    },
+    {
+      "sourcePath": "src/lib/utils/tool-output.ts",
+      "targetPath": "src/lib/utils/tool-output.ts",
+      "sha256": "8ae7388fb5b7a003b236d5838dacd1cb76950d88bd9e2fa2f1204d832910405d",
+      "bytes": 1577
+    },
+    {
+      "sourcePath": "src/stubs/react-icons-fa.tsx",
+      "targetPath": "src/stubs/react-icons-fa.tsx",
+      "sha256": "f0ad7350fbd68643b2193122c723cdb2272421b466f576628db16b01abc42084",
+      "bytes": 2248
+    },
+    {
+      "sourcePath": "src/stubs/react-icons-si.tsx",
+      "targetPath": "src/stubs/react-icons-si.tsx",
+      "sha256": "d2a0e23447cde29a23c7116d080d93961a8c5b83c894d7507dcf17dc9341419c",
+      "bytes": 711
+    },
+    {
+      "sourcePath": "src/stubs/react-icons-vsc.tsx",
+      "targetPath": "src/stubs/react-icons-vsc.tsx",
+      "sha256": "480f06a2998906eb19451ab3ddaf98029c7f052badfffeaf82d226a0ca2d03df",
+      "bytes": 163
+    },
+    {
+      "sourcePath": "src/styles/scrollbar.css",
+      "targetPath": "src/styles/scrollbar.css",
+      "sha256": "b279cd71f846c91f719901e6a6eae3d0991a8f65f253afc787809790b1752025",
+      "bytes": 2052
+    },
+    {
+      "sourcePath": "src/types/backend/chat.ts",
+      "targetPath": "src/types/backend/chat.ts",
+      "sha256": "131caf8c68c57428b1a0dbe4cacff4148a4abd6647cc2e5e5392b4b592ccc2e9",
+      "bytes": 1091
+    },
+    {
+      "sourcePath": "src/types/backend/cli.ts",
+      "targetPath": "src/types/backend/cli.ts",
+      "sha256": "f57c89e0789f70b40e5b062199dc1bd607b30759ab09c78404b28b9ae98dd9af",
+      "bytes": 1206
+    },
+    {
+      "sourcePath": "src/types/backend/files.ts",
+      "targetPath": "src/types/backend/files.ts",
+      "sha256": "2c3b34dbf3df4fb48fb46c39269bd27b629367faf593eeec214e408ef0c21cd6",
+      "bytes": 149
+    },
+    {
+      "sourcePath": "src/types/backend/index.ts",
+      "targetPath": "src/types/backend/index.ts",
+      "sha256": "e5152dae2e648acec345ccc56965308ca4f41ef15bb9f000051d042c3642cf76",
+      "bytes": 103
+    },
+    {
+      "sourcePath": "src/types/backend/project.ts",
+      "targetPath": "src/types/backend/project.ts",
+      "sha256": "e81865a763cfeb77ac94fdcb18061b281406ce7790a9d61c34324fe4a576c8a0",
+      "bytes": 1694
+    },
+    {
+      "sourcePath": "src/types/chat.ts",
+      "targetPath": "src/types/chat.ts",
+      "sha256": "37f79357a5ecf3f985a8938eb046b3bf30391a6c7c8d28d7069fe35cbf56e1b7",
+      "bytes": 692
+    },
+    {
+      "sourcePath": "src/types/cli.ts",
+      "targetPath": "src/types/cli.ts",
+      "sha256": "d8a6f8a96bf20ebc01e98884bbac9c8b145f66f7ec6816d60fe73f60606a8d87",
+      "bytes": 1791
+    },
+    {
+      "sourcePath": "src/types/index.ts",
+      "targetPath": "src/types/index.ts",
+      "sha256": "38e97f9fd58bcb61d5bbf8f99c66ee5a6e1d7aa515bde253021b03c4495cd0a5",
+      "bytes": 891
+    },
+    {
+      "sourcePath": "src/types/project.ts",
+      "targetPath": "src/types/project.ts",
+      "sha256": "6490c189608da90af9e8af3f20ba77e7a2dcd6b11bdc0a49893f16d0f2dd23f4",
+      "bytes": 1149
+    },
+    {
+      "sourcePath": "src/types/realtime.ts",
+      "targetPath": "src/types/realtime.ts",
+      "sha256": "4d6926ae13971bdc125fe14facd7d478718d292ed724cf920ba642ef6c92e8ce",
+      "bytes": 1914
+    },
+    {
+      "sourcePath": "tailwind.config.ts",
+      "targetPath": "tailwind.config.ts",
+      "sha256": "f5f2daf91a448cab7eeb56caf4490c49c19ccff2aa39a3ad9760cfd9e020606c",
+      "bytes": 2037
+    },
+    {
+      "sourcePath": "src/lib/db/pi-agent-schema-readiness.ts",
+      "targetPath": "src/lib/db/pi-agent-schema-readiness.ts",
+      "sha256": "401a5a14c2630502dc4077ccd821a4bba4ba2ce7d7f806d73b4801c40f0a4816",
+      "bytes": 35275
+    },
+    {
+      "sourcePath": "src/lib/db/pi-agent-schema-readiness.test.ts",
+      "targetPath": "src/lib/db/pi-agent-schema-readiness.test.ts",
+      "sha256": "98da0c63135a2f81b5acd655eade7953dfb427fe88b47e63dd0e8d16a10c5a8a",
+      "bytes": 10406
+    },
+    {
+      "sourcePath": "src/lib/services/pi-agent-provenance.ts",
+      "targetPath": "src/lib/services/pi-agent-provenance.ts",
+      "sha256": "874448f696d96890d96d4c65a13e554a613974918c21cd006b54c0a299784dab",
+      "bytes": 6166
+    }
+  ]
+}
