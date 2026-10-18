@@ -28,6 +28,8 @@
 | [decisions.md](decisions.md) | 重要技术选择、理由、适用边界与变更历史 |
 | [baseline.md](baseline.md) | S01 实现审计及 S03 真实网关失败基线 |
 | [evaluation.md](evaluation.md) | S02 固定资料、答案核验状态和评分合同 |
+| [human-annotation.md](human-annotation.md) | 人工标注的数据范围、原文核对流程、判定标签与结果保存方式 |
+| [human-annotation-worksheet.md](human-annotation-worksheet.md) | 四家公司待审核数值、32 条引文、逐题答案与人工填写模板 |
 | [contracts.md](contracts.md) | S04 版本、引用和执行权语义 |
 
 会话历史直接追加在 `progress.md`，避免再维护一份不同步的日志。详细测试原件保存在受控证据目录，进度文件保留脱敏摘要、位置、版本和 hash。

@@ -12,6 +12,7 @@
 | 想理解 `.env`、选择模型或关闭 Memory | [配置、模型接入与可选组件指南](configuration.md) |
 | 想看后续持续完善路线 | [持续完善路线图](ROADMAP.md) |
 | 想继续财报研究 Agent 的 20 步升级 | [升级计划与跨会话入口](plans/research-agent-upgrade/README.md) |
+| 想人工复核财报研究参考答案 | [标注手册](plans/research-agent-upgrade/human-annotation.md) / [开发集标注表](plans/research-agent-upgrade/human-annotation-worksheet.md) |
 | 想建立全局学习路线 | [教学 00：项目学习地图](learning/00-project-study-map.md) |
 | 想系统学习 Agent，重点掌握评测设计与改进实验 | [教学 08：Agent 与评测学习手册](learning/08-agent-and-evaluation-handbook.md) |
 | 想快速跑起来 | [教学 01：本地启动与健康检查](learning/01-quick-start.md) |
