@@ -102,6 +102,16 @@ HTML 的 locator 是 `source-range:开始:结束`，指向保留 UTF-8 原文中
 
 本地开发验收有三份真实/派生财报样本（18 项行、年列与金额核对）和一份明确标记的两页合成扫描压力样本；人工抽查与机器结果分别记录。`verify-ocr.ts` 核对前者，运行中的服务可用 `verify-parser-service.ts` 验证取消、超时、跨页和缓存。使用 `prepare-ocr-review.ts <服务证据目录>` 生成原图与实际单元格对照，等待真人记录，不由脚本代签。
 
+### 财务口径与精确计算（S09）
+
+`financial-normalization.ts` 识别营业收入、营业总收入、归母净利润与经营现金流净额，保留披露字符串及单位标签；元/千元/万元/亿元只规范化一次，括号表示负数，0 与缺失分开。百分数、每股单位、未知币种及破损千分位不当作金额。FinancialFact 的可选 normalization/sourceQuality/disclosure/accountingBasis/derivedFrom 字段向后兼容；有归一化结果时 schema 会重算核对。
+
+金额用十进制字符串和 BigInt，不经浮点数相减；原始小数最多 12 位，百分比保留 6 位，按绝对值四舍五入、中点远离零。`compareFinancialFacts` 返回 comparable/missing/conflict/incomparable 及引用，核对公司、指标、合并/母公司、日历范围、累计/单季和会计/重述依据。零基数保留差额、百分比为空；负基数按冻结规则用绝对值做分母并显式注明。重述口径没有共同 accountingBasis 时拒绝比较，不替模型补假设。
+
+`deriveSingleQuarter` 只用同年、同口径、相邻的完整累计值：Q1 本身是单季，H1−Q1、前三季−H1、全年−前三季才得到后续季度。前期缺失不能补零，来源待复核、口径不一致或期间不相邻都会拒绝。引用和 derivedFrom 保留两个输入。
+
+复验：`node --import tsx scripts/research/verify-financials.ts`。四家公司 24 项金额与 12 项变化复算通过，原始报告及源码/fixture hash 留在 `data/research-agent-upgrade/evidence/S09/`。这是已给定参考输入的确定性计算验收，不是模型自动抽取事实、查明会计政策或解释现金流原因的质量成绩。S08 的人工/容器待验收仍单独保留。
+
 ### 2026-09-18 本地验收
 
 安迪苏新版任务 `8196b923-5437-4176-99ae-fa93a7439d0e`：26 步，674 秒，正式提交后状态 completed。旧任务保留。取得财务摘要、2025 年年报全文、2026 年半年报全文；没有依赖重复网络搜索找财报。共 4 次证据校验拒绝（3 次原文引用不匹配、1 次缺少报告期），都只修复对应问题，没有整篇报告结构重写。

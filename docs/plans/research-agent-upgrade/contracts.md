@@ -23,7 +23,9 @@ S16 才开放修改需求和安全重规划：使用 expectedRevision 和幂等�
 
 所有用户可控字段经严格 schema 校验并进入稳定 JSON 的 SHA-256：更改 asOf、问题、期间、口径、版本或预算都构成不同请求。actor/tenant/project 不接受来自请求正文；由服务端身份派生。HTTP 幂等键不能把不同请求合并。
 
-事实保留原始十进制字符串、元/千元/万元/亿元、人民币、显示精度、报告期、合并/母公司与重述标记。known 的 0、missing 和 conflict 是三种状态；已知/冲突事实必须有引用。营业收入与营业总收入是不同 metric。S09 才实现规范化计算和可比性推导，本合同不把每股现金流替代现金流总额。
+事实保留原始十进制字符串、元/千元/万元/亿元、人民币、显示精度、报告期、合并/母公司与重述标记。known 的 0、missing 和 conflict 是三种状态；已知/冲突事实必须有引用。营业收入与营业总收入是不同 metric。S09 已实现 decimal-v1 规范化、比较与累计转单季，规则见 [公司研究](../../company-research.md)。每股现金流不能替代现金流总额。
+
+FinancialFact 新增可选 normalization（原始文本、单位标签、精确元值）、sourceQuality、disclosure、accountingBasis 和 derivedFrom，旧事实仍按原合同读取。needs_review 来源不能写成 known；自动表格/扫描块也由报告存储再次检查。schema 核对精度和规范化值，解析不是原文/语义审查的替代。金额 BigInt 十进制计算，百分比 6 位、半值远离零；零基数不产生虚假百分比，负基数使用绝对值分母并标记。
 
 ## 原文、时间和引用
 

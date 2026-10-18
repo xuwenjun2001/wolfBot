@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { cnyUnitPowers, decimal, decimalText, multiplyPowerOfTen } from './exact-decimal';
 import { companyIdentitySchema, researchIdSchema, researchPeriodSchema, revisionSchema, sha256Schema, timestampSchema } from './task-contracts';
 
 const boxSchema = z.object({ x0: z.number().min(0).max(1), y0: z.number().min(0).max(1), x1: z.number().min(0).max(1), y1: z.number().min(0).max(1) }).strict()
@@ -47,7 +48,18 @@ export const financialFactSchema = z.object({
   value: z.discriminatedUnion('status', [amountSchema, z.object({ status: z.literal('missing'), reason: z.string().min(1).max(500) }).strict(),
     z.object({ status: z.literal('conflict'), alternatives: z.array(amountSchema).min(2).max(5), reason: z.string().min(1).max(500) }).strict()]),
   citations: z.array(researchCitationSchema).max(10),
-}).strict().refine(f => f.value.status === 'missing' || f.citations.length > 0, 'Known/conflicting facts need citations');
+  sourceQuality: z.enum(['native', 'needs_review']).optional(),
+  disclosure: disclosureSchema.optional(), accountingBasis: z.string().min(1).max(100).optional(),
+  derivedFrom: z.array(researchIdSchema).min(1).max(4).optional(),
+  normalization: z.object({ version: z.literal('decimal-v1'), rawText: z.string().max(1000), unitLabel: z.string().max(100), normalizedYuan: z.string().regex(/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/).max(120).optional() }).strict().optional(),
+}).strict().refine(f => f.value.status === 'missing' || f.citations.length > 0, 'Known/conflicting facts need citations')
+  .refine(f => f.sourceQuality !== 'needs_review' || f.value.status !== 'known', 'Unreviewed source cannot be a known fact')
+  .refine(f => {
+    if (!f.normalization?.normalizedYuan) return true;
+    // Refinements also see strings rejected by regex/precision checks. Invalid input stays a Zod error.
+    try { return f.value.status === 'known' && f.normalization.normalizedYuan === decimalText(multiplyPowerOfTen(decimal(f.value.raw), cnyUnitPowers[f.value.unit])); }
+    catch { return false; }
+  }, 'Normalized value mismatch');
 export type FinancialFact = z.infer<typeof financialFactSchema>;
 
 export function documentAvailableAt(document: Pick<ResearchDocument, 'disclosure'>, asOf: string): boolean {

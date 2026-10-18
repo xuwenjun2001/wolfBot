@@ -8,14 +8,14 @@
 | --- | --- |
 | 最后更新 | 2026-10-19（北京时间） |
 | 计划版本 | v1 |
-| 总体状态 | S01—S07 完成；S08 代码及机器验收通过，人工抽查与容器复验待齐；S09—S10 已实现，正在独立收尾归档。既有人工作业仍为 9 完整/3 partial、完整参考公司 1 家，真实模型质量未验收 |
-| 已完成开发步骤 | 7/20 |
+| 总体状态 | S01—S07、S09 完成；S08 代码及机器验收通过，人工抽查与容器复验待齐；S10 已实现，正在独立收尾归档。S09 是确定性模块自身验收，不解除 S08 质量门。既有人工作业仍为 9 完整/3 partial、完整参考公司 1 家，真实模型质量未验收 |
+| 已完成开发步骤 | 8/20 |
 | 当前进行中步骤 | S08；本会话用户授权范围 S05—S10 |
 | 下一步骤 | 完成 S08 人工抽查/容器验证交接；本轮同步 S09—S10 后结束授权范围，S11 未开始 |
 | 下一具体动作 | 人工检查 S08 human-review-01/review.md 并记录结果；Docker 引擎恢复后补容器构建/健康/资源验证。S09—S10 的计算与检索已在开发数据和独立 PostgreSQL 验证，正在更新专题及提交 |
 | 当前会话登记 | 2026-10-19-s05-s10：起点 7ae788b，工作区干净，分支 codex/research-foundation-s01-s05；S05 复核、S06/S07 实现并同步，现收尾 S08—S10。修改范围为来源/解析/财务/检索应用模块、相关 API/迁移/测试、独立 services/document-parser、Docker 配方及交接文档；不读保留集，不部署生产 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
-| 当前参考分支 / HEAD | `codex/research-foundation-s01-s05`；会话起点 `7ae788b`；S06 `6f6d48d`、S07 `45d70bc` 已推送；后续同步身份按各步骤记录与 `git log` 核对 |
+| 当前参考分支 / HEAD | `codex/research-foundation-s01-s05`；会话起点 `7ae788b`；S06 `6f6d48d`、S07 `45d70bc`、S08 `d3b7311` 已推送；后续同步身份按各步骤记录与 `git log` 核对 |
 | 目标仓库 | `https://github.com/xuwenjun2001/wolfBot`，默认分支 `main` |
 | 本轮涉及文件 | `src/lib/company-research/` 的 acquisition/parse/OCR/financial/evidence 与测试；tasks 文档解析/检索 API；S10 Prisma 索引迁移及隔离 PG runner；`services/document-parser/` 与 compose；配置、公司研究、基础设施、数据/交接专题。真实样本、模型和报告留在忽略的 data 目录 |
 | 已有改动提醒 | 本轮起点干净，无来源不明改动；S08—S10 按步骤暂存，不能把尚未提交的后续文件误当作已推送；最终以 git status/远端 SHA 为准。冻结资料、旧人工确认和保留集未改 |
@@ -40,7 +40,7 @@
 | S06 | 财报发现、导入与时间证据 | S05 | done | E-S06-01/02；公网原件/hash、八份日期修正；追加修订原件不能回溯旧披露日的隔离/重试实跑 |
 | S07 | 文本 PDF / HTML 定位解析 | S06 | done | E-S07-01；八份原件/32 引用定位，v1/v2 兼容、HTML/截断/跨页与 PG 发布校验 |
 | S08 | OCR 与表格结构解析 | S07 | in_progress | E-S08-01；CPU 服务与取消/超时/缓存实跑，真实金额行列 18/18、合成 12/12；真人抽查 pending、Docker 引擎故障；保留“合井口径”误字与 needs_review |
-| S09 | 财务口径与变化计算 | S07、S08 | in_progress | decimal-v1 与边界单测、24 金额+12 变化复算通过；等待独立文档/提交收尾，OCR 未复核数据拒绝成为 known |
+| S09 | 财务口径与变化计算 | S07、S08 | done | E-S09-01；decimal-v1、16 项边界测试、24 金额+12 变化复算通过；限模块验收，S08 待复核 OCR 拒绝成为 known |
 | S10 | 证据检索与按需上下文 | S07、S08、S09 | in_progress | 已实现版本化索引迁移、前置作用域/asOf 过滤、词法排序及有界读取；18 PG 与 k=5 的 23/24 页命中通过，正在独立归档；S11 未接线 |
 | S11 | 研究计划与 Agent 循环 | S04、S05、S09、S10 | pending | — |
 | S12 | 结论与证据分层核验 | S09、S11 | pending | — |
@@ -65,6 +65,14 @@
 - 原 S03 网关基线全部在鉴权时失败；用户指定新模型后另存校准，4 次请求均 200，但提前收尾且无财报来源，不是质量提升证据。后续人工确认按 E-ANNOT-02 单独归档，不能反向把旧模型运行变为通过。
 
 ## 验收证据
+
+### E-S09-01：金额规范化、比较与累计转单季
+
+- 日期 / 会话：2026-10-19 / `2026-10-19-s05-s10`。S08 提交 `d3b7311` 后独立归档；范围为 exact-decimal、financial-normalization、financial-comparison、financial.test、document-contracts 可选字段、verify-financials 与本步文档。S10 工作树改动保留，不混入本提交。
+- `npm run test:unit -- src/lib/company-research/financial.test.ts` 退出 0，16 项通过；涵盖元/千元/万元/亿元、括号负数、未知/零、非法分组/百分数/每股、精度、超大金额、单位只换算一次、零/负基数、范围/半年/重述冲突、缺失和 Q1—Q4 推导。指标限定不得被括号清洗抹去；非法小数输入返回 schema 错误而非抛出未捕获计算异常。日志 `data/research-agent-upgrade/evidence/S09/financial-tests.log`。
+- `node --import tsx scripts/research/verify-financials.ts` 退出 0，四家公司 24/24 金额、12/12 变化复算。最终 `S09/2026-10-18T18-47-49-619Z/report.json` SHA-256 `fcd7dd42836a644e2efc3fa18ae2f89276db0cafb5d0d67a2671c3eb8196a663`，包含源码 hash 与固定 development fixture hash。费用/LLM 调用为无调用，本机 CPU 成本未计量；不读取保留集。
+- 收尾 `npm run type-check` 与定向 ESLint 退出 0（日志 `S10/type-closeout.log`、`S10/lint-closeout.log`，覆盖共同工作树）；docs 70 文件/431 链接通过，`git diff --check` 通过。本步不声称完整构建、CI 或业务 E2E 已运行。
+- 这是 reference_input_arithmetic_only、modelEvaluation=false，不能算模型抽取、因果解释或完整报告成绩。原披露时间字段继续可选兼容，原文存在性由存储层检查，语义支持在 S12 验收；S08 未人工复核数据保持拒绝发布，容器待验收不在本步被消除。原件保留至 S20/受控归档。
 
 ### E-S08-01：CPU OCR、表格、停止与质量边界
 
@@ -256,6 +264,12 @@ E-Sxx-01 / 日期 / 会话标识：
 - 用户授权连续实现 S05—S10；S05 复验、S06 和 S07 已独立提交/推送。现提交 S08 CPU 服务、TS 适配、质量门及 S06 修订披露隔离补丁；S09/S10 文件留在工作树，继续分别归档同步。
 - 验证见 E-S08-01/E-S06-02；机器 OCR/停止/数据库检查通过，人工样本抽查 pending。Docker 构建引擎故障和合成表头误字已登记，S08 不标 done。模块检查只有既有 chat/data-prefetch/market-data API 超行数失败；未调整预算和既有 Quality 门。
 - 独立临时原生 PG 已停；仅关闭自己创建的构建客户端，没有重启用户服务。parser 回环进程在最终交接前清理/登记；资料/模型/测试证据在 data 中保留。下一动作是完成 S09/S10 专题与提交，再补人工/容器验收。
+
+### 2026-10-19-s05-s10 / S09 收尾
+
+- S08 已提交推送 `d3b7311`，远端 SHA 核对一致。S09 独立交付 decimal-v1、金额/指标规范化、可比性与累计转单季、兼容事实合同和复算脚本；D20 说明边界。S10 文件继续保留，不混入本提交。
+- E-S09-01：16 项边界测试、24 金额/12 变化复算、types、定向 lint、docs 与差异检查通过；原输入/源码 hash 已记录。本步为确定性计算模块验收，未调用真实模型，也未解除 S08 人工/容器待验收。
+- 下一动作：完成 S10 API/索引/数据生命周期专题、检索证据和独立同步；范围止于 S10。既有用户进程不变，临时 parser 在最终交接前停止，独立 PG 已停。
 
 ### 2026-10-18-wolfbot-migration
 

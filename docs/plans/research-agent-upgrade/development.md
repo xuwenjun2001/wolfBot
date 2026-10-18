@@ -21,7 +21,7 @@
 | `src/lib/company-research/` | 研究合同、规划、来源、检索、事实、证据、报告、版本与运行编排 | 金融语义留在应用/领域层；跨模块只走明确接口 |
 | `src/lib/agent/` | 通用 PI 循环与治理机制 | 不增加财报列名、证券规则、固定报告主题等业务知识 |
 | `services/market-data/` | 已有行情/财务服务与适合复用的确定性计算 | Python 不引用 Next.js 源码；复用而非复制同一指标算法 |
-| parser 适配边界（拟新增） | 文本/OCR/表格解析、稳定块和定位 | 具体进程/服务位置由 S08 记录；平台通过版本化合同访问 |
+| `services/document-parser/` / parser port | 文本/OCR/表格解析、稳定块和定位 | 独立 Python 3.12 CPU 服务，平台通过版本化合同访问；S08 人工/容器验收状态另记 |
 | `src/lib/eval/` 与研究 runner | 通用统计、核验及研究专用样本执行 | 不改已有看板数据含义；新链路单独登记版本和任务分布 |
 | `.pi/` | 被发布的研究 Skill 与参考材料 | 沿用 registry/lock、完整性和发布检查；候选在实验目录隔离 |
 
@@ -115,6 +115,8 @@ S19 的优化器只看到开发样本和失败，不能修改评分器或读取�
 ## 文档与交付
 
 研究基础层实跑命令现已登记：`node --import tsx scripts/research/verify-fixtures.ts`、`node --import tsx scripts/research/run-baseline.ts`、`npm run test:research:postgres`。用法分别见 evaluation.md、baseline.md 和公司研究专题；普通单测默认跳过 DB 集成，不能把跳过写成数据库验收通过。
+
+OCR 原生环境、模型准备与实际服务验证见 [parser README](../../../services/document-parser/README.md)。确定性财务复算用 `node --import tsx scripts/research/verify-financials.ts`，输出明确为参考输入算术核对，不能替代自动事实抽取或研究模型验收。
 
 改变 API、配置、数据、页面或运行行为时更新对应专题；本目录只保存计划/实施证据，不复制整套现有使用手册。开发文档使用仓库相对路径便于迁移，面向用户回复使用可点击绝对文件路径。
 
