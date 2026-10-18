@@ -1,0 +1,30 @@
+import { describe, expect, it } from 'vitest';
+import { HtmlTextParser } from './text-parser';
+import { parsedDocumentV2Schema } from './parsed-document';
+import { locatedCitationText } from './citation-locator';
+const options = () => ({ maxPages: 10, maxCharacters: 10000, signal: AbortSignal.timeout(5000) });
+describe('versioned parser locations', () => {
+  it('keeps stable HTML source ranges, excludes active content and verifies exact block locators', async () => {
+    const html = Buffer.from('<html><head><title>hidden</title></head><body><p>现金流 &amp; 利润</p><script>恶意指令</script><p>(1,234.50) 万元</p></body></html>');
+    const parser = new HtmlTextParser(), result = await parser.parse(html, 'text/html', options());
+    expect(await parser.parse(html, 'text/html', options())).toEqual(result);
+    expect(result.pages[0].text).toBe('现金流 & 利润\n(1,234.50) 万元');
+    const block = result.pages[0].blocks[1], c = { documentId: 'd', documentVersion: 1, bytesSha256: result.originalSha256, quote: block.text, locator: block.locator };
+    expect(locatedCitationText(result, c)).toBe(block.text);
+    expect(locatedCitationText(result, { ...c, locator: { kind: 'html', blockId: block.id, selector: 'source-range:0:1' } })).toBeUndefined();
+    expect(block.locator).not.toHaveProperty('box');
+  });
+  it('makes truncation, empty and garbled documents explicit', async () => {
+    const parser = new HtmlTextParser();
+    const empty = await parser.parse(Buffer.from('<html><script>hidden</script></html>'), 'text/html', options());
+    expect(empty.status).toBe('unreadable'); expect(empty.failedPages).toEqual([1]);
+    const truncated = await parser.parse(Buffer.from('<html><p>' + '金额'.repeat(200) + '</p></html>'), 'text/html', { ...options(), maxCharacters: 100 });
+    expect(truncated.status).toBe('partial'); expect(truncated.truncatedPages).toEqual([1]);
+    expect(parsedDocumentV2Schema.safeParse({ ...truncated, status: 'ready' }).success).toBe(false);
+    expect(parsedDocumentV2Schema.safeParse({ ...empty, status: 'ready' }).success).toBe(false);
+    expect(parsedDocumentV2Schema.safeParse({ ...truncated, pageCount: 2, truncatedPages: [] }).success).toBe(false);
+  });
+  it('rejects invented table cells and a cancelled parse before work starts', async () => {
+    await expect(new HtmlTextParser().parse(Buffer.from('<html>a</html>'), 'text/html', { ...options(), signal: AbortSignal.abort() })).rejects.toThrow();
+  });
+});

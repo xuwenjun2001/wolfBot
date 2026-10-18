@@ -3,6 +3,8 @@ import { canonicalResearchJson } from './task-contracts';
 import { researchDocumentSchema } from './document-contracts';
 import { researchReportRevisionSchema, reportBindingErrors } from './revision-contracts';
 import { parsedPageReceiptSchema } from './document-store';
+import { locatedCitationText } from './citation-locator';
+import type { ParsedDocument } from './parsed-document';
 import { assertResearchAttempt, type ResearchAttemptToken } from './attempt-store';
 import { defaultResearchContext, lockResearchTask, taskSpec, emitResearchEvent, ResearchPersistenceError } from './repository-core';
 
@@ -21,14 +23,19 @@ export async function commitResearchReport(actor: string, token: ResearchAttempt
     if (task.report_revision !== expectedRevision || report.revision !== expectedRevision + 1 || report.taskId !== task.id || report.requestRevision !== token.requestRevision || report.planRevision !== token.planRevision) throw new ResearchPersistenceError('REVISION_CONFLICT');
     const spec = await taskSpec(tx, task);
     const rows = await tx.$queryRaw<{metadata: unknown}[]>`SELECT metadata FROM company_research_documents WHERE task_id=${task.id}`;
-    const documents = rows.map(r => researchDocumentSchema.parse(r.metadata)), text = new Map<string, string>();
+    const documents = rows.map(r => researchDocumentSchema.parse(r.metadata)), text = new Map<string, string>(), rich = new Map<string, ParsedDocument>();
     const citations = [...report.facts.flatMap(f => f.citations), ...report.claims.flatMap(c => c.citations)];
     for (const doc of documents) if (citations.some(c => c.documentId === doc.id && c.documentVersion === doc.version)) {
-      if (!doc.parsed || citations.some(c => c.documentId === doc.id && c.documentVersion === doc.version && c.locator.kind === 'html')) throw new ResearchPersistenceError('INVALID_RESEARCH', 'Verified page receipt required; HTML citation verifier is S07');
+      if (!doc.parsed) throw new ResearchPersistenceError('INVALID_RESEARCH', 'Verified parsed receipt required');
       const receipt = parsedPageReceiptSchema.parse(JSON.parse((await ctx.artifacts.read(actor, doc.parsed)).toString('utf8')));
+      if (receipt.schemaVersion === 2) rich.set(`${doc.id}:${doc.version}`, receipt);
       for (const page of receipt.pages) if (!doc.parser?.failedPages.includes(page.filePage)) text.set(`${doc.id}:${doc.version}:${page.filePage}`, page.text);
     }
-    const errors = reportBindingErrors(report, spec, documents, (id, version, page) => text.get(`${id}:${version}:${page}`));
+    const errors = reportBindingErrors(report, spec, documents, (id, version, page) => text.get(`${id}:${version}:${page}`), citation => {
+      const receipt = rich.get(`${citation.documentId}:${citation.documentVersion}`);
+      // Legacy receipts can prove a page quote only; they cannot prove invented block/table IDs.
+      return receipt ? locatedCitationText(receipt, citation) : citation.locator.kind === 'page' ? text.get(`${citation.documentId}:${citation.documentVersion}:${citation.locator.filePage}`) : undefined;
+    });
     if (errors.length) throw new ResearchPersistenceError('INVALID_RESEARCH', errors.join('; '));
     // Artifact I/O can outlive a nearly expired lease. Fence again at publication.
     await assertResearchAttempt(tx, task, token);

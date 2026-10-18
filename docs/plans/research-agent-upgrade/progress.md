@@ -9,9 +9,9 @@
 | 最后更新 | 2026-10-19（北京时间） |
 | 计划版本 | v1 |
 | 总体状态 | S01—S06 完成，S05 本轮复验通过；S07—S10 正在顺序实现。既有人工作业维持 9 完整/3 partial、完整参考公司 1 家，真实模型质量仍待验收 |
-| 已完成开发步骤 | 6/20 |
-| 当前进行中步骤 | S07；本会话用户授权范围 S05—S10 |
-| 下一步骤 | S07：文本 PDF / HTML 定位解析；随后 S08—S10 |
+| 已完成开发步骤 | 7/20 |
+| 当前进行中步骤 | S08；本会话用户授权范围 S05—S10 |
+| 下一步骤 | S08：独立 Docling/RapidOCR 服务与样本验收；随后 S09—S10 |
 | 下一具体动作 | 完成 S07 稳定页/块合同和文本 PDF/HTML 定位复验，再接 S08 独立 OCR；后续评分仍需显式接入 acceptance.json，三题 q2 缺证保留 |
 | 当前会话登记 | 2026-10-19-s05-s10：起点 7ae788b，工作区干净，分支 codex/research-foundation-s01-s05；正在复核 S05 并开发 S06。拟修改 company-research 的来源/解析/事实/检索、对应 API/测试、独立 services/document-parser、Docker 配置及专题文档；不读保留集，不部署生产 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
@@ -38,8 +38,8 @@
 | S04 | 版本化领域与事件合同 | S01、S02 | done | E-S04-01；contracts.md；51 测试通过/2 DB 跳过；types 通过 |
 | S05 | 持久化、隔离与迁移 | S04 | done | E-S05-01；七张版本表、actor repository/原件存储/API；13 项 PG 测试和旧库升级/旧代码兼容通过 |
 | S06 | 财报发现、导入与时间证据 | S05 | done | E-S06-01；公网原件/hash、八份披露日期修正、59 单测、14 PG 实跑 |
-| S07 | 文本 PDF / HTML 定位解析 | S06 | in_progress | 2026-10-19-s05-s10；版本化块/定位与解析 port |
-| S08 | OCR 与表格结构解析 | S07 | pending | — |
+| S07 | 文本 PDF / HTML 定位解析 | S06 | done | E-S07-01；八份原件/32 引用定位，v1/v2 兼容、HTML/截断/跨页与 PG 发布校验 |
+| S08 | OCR 与表格结构解析 | S07 | in_progress | 2026-10-19-s05-s10；Python 3.12 环境已安装，正在预取模型/接服务 |
 | S09 | 财务口径与变化计算 | S07、S08 | pending | — |
 | S10 | 证据检索与按需上下文 | S07、S08、S09 | pending | — |
 | S11 | 研究计划与 Agent 循环 | S04、S05、S09、S10 | pending | — |
@@ -65,6 +65,13 @@
 - 原 S03 网关基线全部在鉴权时失败；用户指定新模型后另存校准，4 次请求均 200，但提前收尾且无财报来源，不是质量提升证据。后续人工确认按 E-ANNOT-02 单独归档，不能反向把旧模型运行变为通过。
 
 ## 验收证据
+
+### E-S07-01：可替换解析器与定位回执
+
+- 2026-10-19 / 同会话，S06 已提交推送 `6f6d48d` 并核对远端 SHA。新增 parsed-document、text-parser、parse-service、citation-locator 和 parse API；旧 v1 页回执继续可读，新 v2 严格绑定原件/版本/页/块/结构表/质量。源文档不可变，解析通过新版本保存，缓存含解析器配置。
+- `node --import tsx scripts/research/verify-parsing.ts` 实际八份财报 32/32 冻结引文在正确文件页复现，重复解析块 ID 稳定、截断页显式、HTML 有可复核原文范围；茅台 2023 p35→p36 污水厂跨页段落两处分别定位，不合造新页/坐标。最终印刷标签规则调整后复跑仍通过，原件在 `evidence/S07/2026-10-18T17-44-58-299Z/`，日志 parsing-final.log。
+- `npm run test:unit -- src/lib/company-research src/app/api/company-research` 68 通过/15 DB 默认跳过，`npm run test:research:postgres` 独立 15 通过（新增 HTML 存储/缓存/权限/伪造 locator 发布拒绝）；PG 原件 `evidence/S05/rehearsal-b7a82b86-677d-4fff-a2f0-dacf3cb212b2/manifest.json`。`npm run type-check` 退出 0，日志 `evidence/S07/`。
+- 边界：原生文本没有表格几何、OCR 或视觉质量证明；HTML 仅静态 UTF-8 源文范围，未执行 JS/推测 DOM。未运行模型研究/保留集/生产部署，既有模块尺寸门失败继续保留。
 
 ### E-S06-01：原件、日期与 S05 复核
 

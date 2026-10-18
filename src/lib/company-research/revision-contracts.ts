@@ -23,7 +23,7 @@ export const researchReportRevisionSchema = z.object({
 export type ResearchReportRevision = z.infer<typeof researchReportRevisionSchema>;
 
 /** Referential/time integrity only. This does not prove semantic support. */
-export function reportBindingErrors(report: ResearchReportRevision, spec: ResearchTaskSpec, documents: ResearchDocument[], pageText?: (documentId: string, version: number, filePage: number) => string | undefined): string[] {
+export function reportBindingErrors(report: ResearchReportRevision, spec: ResearchTaskSpec, documents: ResearchDocument[], pageText?: (documentId: string, version: number, filePage: number) => string | undefined, locatedText?: (citation: VersionedCitation) => string | undefined): string[] {
   const errors: string[] = [];
   if (report.requestRevision !== spec.requestRevision || report.companySymbol !== spec.company.symbol || new Date(report.asOf).getTime() !== new Date(spec.asOf).getTime() || report.periodIds.some((id, i) => id !== spec.periods[i].id)) errors.push('REPORT_REQUEST_MISMATCH');
   if (spec.comparison.status === 'incomparable' && report.status === 'completed') errors.push('INCOMPARABLE_REPORT_COMPLETED');
@@ -42,6 +42,10 @@ export function reportBindingErrors(report: ResearchReportRevision, spec: Resear
         if (!text || !normal(text).includes(normal(c.quote))) errors.push('CITATION_QUOTE_MISMATCH');
       }
     } else if (d.mediaType !== 'text/html') errors.push('CITATION_LOCATOR_TYPE_MISMATCH');
+    if (locatedText) {
+      const text = locatedText(c), normal = (v: string) => v.normalize('NFKC').replace(/\s+/gu, '');
+      if (!text || !normal(text).includes(normal(c.quote))) errors.push('CITATION_LOCATOR_MISMATCH');
+    }
   };
   for (const f of report.facts) {
     const p = spec.periods.find(p => p.id === f.period.id);

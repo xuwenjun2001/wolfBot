@@ -82,6 +82,16 @@ Windows 开发服务可能锁住已加载的 Prisma DLL。演练脚本在独立�
 
 复验：`node --import tsx scripts/research/verify-acquisition.ts` 检查开发集八份原始公告日期、实时公告发现及一份公开原件下载/hash，结果在 `data/research-agent-upgrade/evidence/S06/`。需要公网；不访问保留集或模型。
 
+### 页、块与原文定位（S07）
+
+对最新文档版本调用 `POST /api/company-research/tasks/{id}/documents/{documentId}/{version}/parse`，JSON 可指定 maxPages（默认 500，上限 1000）和 maxCharacters（默认 200 万，上限 500 万）。结果作为同一文档的新不可变版本保存；原件不改。解析器版本与配置匹配且原件相同时复用已校验缓存；变更解析器或限制会创建新版本。权限在读取原件、解析和发布前各自校验。
+
+v1 页文本回执继续可读；v2 回执绑定原件 hash、解析器版本、总页数和稳定块，记录失败页/截断页及质量。PDF 的 filePage 始终是一基文件页；printedPage 只保留识别到的实际印刷标签，不用它替换文件页。原生 pdf-parse 没有几何坐标或结构化财务表格；不补造框。跨页段落保留两个位置，阅读时可以分别查原文。
+
+HTML 的 locator 是 `source-range:开始:结束`，指向保留 UTF-8 原文中的字符范围，由 blockId 解析回执还原；它不是浏览器 DOM 的 CSS 选择器。不执行脚本，也不把脚本/样式当证据。此适配器仅处理静态 UTF-8 HTML；动态正文、其他编码和布局表格需后续适配。报告入库会重新核对页、块或单元格的实际原文，不能凭页上存在同一句话就认可伪造的块 ID。
+
+复验：`node --import tsx scripts/research/verify-parsing.ts` 在八份固定公开年报上逐页解析，核对 32 条引用，检查重复 ID、截断、跨页段落和 HTML。原始输出位于 `data/research-agent-upgrade/evidence/S07/`；这是定位/合同验收，不是研究结论语义或 OCR 准确率。
+
 ### 2026-09-18 本地验收
 
 安迪苏新版任务 `8196b923-5437-4176-99ae-fa93a7439d0e`：26 步，674 秒，正式提交后状态 completed。旧任务保留。取得财务摘要、2025 年年报全文、2026 年半年报全文；没有依赖重复网络搜索找财报。共 4 次证据校验拒绝（3 次原文引用不匹配、1 次缺少报告期），都只修复对应问题，没有整篇报告结构重写。

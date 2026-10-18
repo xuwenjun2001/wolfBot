@@ -1,12 +1,12 @@
 import { z } from 'zod';
+import { parsedReceiptSchema } from './parsed-document';
 import { artifactDigest } from './artifact-store';
 import { researchDocumentSchema, type ResearchDocument } from './document-contracts';
 import { canonicalResearchJson } from './task-contracts';
 import { defaultResearchContext, lockResearchTask, taskSpec, emitResearchEvent, assertActor, ResearchPersistenceError } from './repository-core';
 
-// A text receipt used to validate citations at persistence. Rich parsing is S07.
-export const parsedPageReceiptSchema = z.object({ schemaVersion: z.literal(1), pages: z.array(z.object({ filePage: z.number().int().min(1), text: z.string().max(500000) }).strict()).min(1).max(10000) }).strict()
-  .refine(v => new Set(v.pages.map(p => p.filePage)).size === v.pages.length, 'Duplicate parsed page');
+// v1 stays readable. v2 binds page/block/table output to original bytes and parser configuration.
+export const parsedPageReceiptSchema = parsedReceiptSchema;
 export async function registerResearchDocument(actor: string, input: unknown, original: Buffer, parsed?: Buffer, ctx = defaultResearchContext) {
   const document = researchDocumentSchema.parse(input);
   if (artifactDigest(original) !== document.original.sha256 || original.length !== document.original.byteLength || (document.mediaType === 'application/pdf' && original.subarray(0, 5).toString() !== '%PDF-')) throw new ResearchPersistenceError('INVALID_RESEARCH', 'Original content mismatch');
@@ -14,6 +14,7 @@ export async function registerResearchDocument(actor: string, input: unknown, or
   if (parsed) {
     const receipt = parsedPageReceiptSchema.parse(JSON.parse(parsed.toString('utf8')));
     if (!document.parser || !document.pageCount || receipt.pages.some(p => p.filePage > document.pageCount!)) throw new ResearchPersistenceError('INVALID_RESEARCH', 'Parsed page metadata missing/invalid');
+    if (receipt.schemaVersion === 2 && (receipt.originalSha256 !== document.bytesSha256 || receipt.pageCount !== document.pageCount || receipt.mediaType !== document.mediaType || receipt.status !== document.state || receipt.parser.name !== document.parser.name || receipt.parser.version !== document.parser.version || canonicalResearchJson(receipt.failedPages) !== canonicalResearchJson(document.parser.failedPages))) throw new ResearchPersistenceError('INVALID_RESEARCH', 'Parsed receipt binding mismatch');
   }
   return ctx.db.$transaction(async tx => {
     const task = await lockResearchTask(tx, actor, document.taskId), spec = await taskSpec(tx, task);

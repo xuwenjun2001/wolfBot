@@ -13,6 +13,7 @@ import { documentFixture, reportFixture, specFixture } from './version-test-fixt
 import type { ResearchTaskSpec } from './task-contracts';
 import { importTaskFiling, listResearchDocuments } from './acquisition-service';
 import * as network from './network';
+import { parseResearchDocument } from './parse-service';
 
 const enabled = process.env.COMPANY_RESEARCH_TEST_POSTGRES === '1';
 const suiteId = randomUUID(), actor = `research-version-test-${suiteId}`, other = `research-version-other-${suiteId}`;
@@ -66,6 +67,21 @@ describe.skipIf(!enabled)('versioned research PostgreSQL and controlled artifact
       expect(await listResearchDocuments(other, task.id, ctx)).toEqual([]);
       expect((await readResearchDocumentArtifact(actor, task.id, first.document.id, 1, 'original', ctx)).bytes).toEqual(original);
     } finally { download.mockRestore(); }
+  });
+  it('persists rich HTML, retries its parser version and rejects invented source locations at publication', async () => {
+    const task = await taskWithPlan(), html = Buffer.from('<html><body><h1>贵州茅台2024年度报告</h1><p>经营现金流原文测试</p></body></html>');
+    await registerResearchDocument(actor, { ...documentFixture(task.id), mediaType: 'text/html', original: ref(html), bytesSha256: artifactDigest(html) }, html, undefined, ctx);
+    const result = await parseResearchDocument(actor, task.id, 'annual-2024', 1, {}, AbortSignal.timeout(5000), ctx);
+    expect(result.document.version).toBe(2); expect(result.document.state).toBe('ready');
+    expect((await parseResearchDocument(actor, task.id, 'annual-2024', 2, {}, AbortSignal.timeout(5000), ctx)).reused).toBe(true);
+    await expect(parseResearchDocument(other, task.id, 'annual-2024', 2, {}, AbortSignal.timeout(5000), ctx)).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    const receipt = JSON.parse((await readResearchDocumentArtifact(actor, task.id, 'annual-2024', 2, 'parsed', ctx)).bytes.toString());
+    const report = reportFor(task.id), block = receipt.pages[0].blocks[1];
+    for (const c of [...report.facts.flatMap(f => f.citations), ...report.claims.flatMap(f => f.citations)]) Object.assign(c, { documentVersion: 2, bytesSha256: artifactDigest(html), locator: block.locator });
+    const attempt = await startResearchAttempt(actor, task.id, 1, 'html-verifier', ctx);
+    const bad = structuredClone(report); Object.assign(bad.claims[0].citations[0].locator, { selector: 'invented' });
+    await expect(commitResearchReport(actor, attempt, 0, bad, ctx)).rejects.toThrow('CITATION_LOCATOR_MISMATCH');
+    expect((await commitResearchReport(actor, attempt, 0, report, ctx)).status).toBe('partial');
   });
   it('creates once under concurrent retries and hashes all user fields within actor scope', async () => {
     const key = randomUUID(), spec = specFixture();
