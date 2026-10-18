@@ -1602,9 +1602,23 @@ model CompanyResearchDocument {
   metadata Json
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   task CompanyResearchTask @relation(fields: [taskId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  evidenceIndexes CompanyResearchEvidenceIndex[]
   @@id([taskId, id, version])
   @@index([taskId, bytesSha256], map: "company_research_document_hash")
   @@map("company_research_documents")
+}
+model CompanyResearchEvidenceIndex {
+  taskId String @map("task_id")
+  documentId String @map("document_id")
+  documentVersion Int @map("document_version")
+  indexVersion String @map("index_version")
+  parsedSha256 String @map("parsed_sha256")
+  artifactKey String @map("artifact_key")
+  byteLength Int @map("byte_length")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  document CompanyResearchDocument @relation(fields: [taskId, documentId, documentVersion], references: [taskId, id, version], onDelete: Cascade, onUpdate: NoAction)
+  @@id([taskId, documentId, documentVersion, indexVersion])
+  @@map("company_research_evidence_indexes")
 }
 model CompanyResearchAttempt {
   id String @id

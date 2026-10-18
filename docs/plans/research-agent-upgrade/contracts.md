@@ -35,6 +35,8 @@ FinancialFact 新增可选 normalization（原始文本、单位标签、精确�
 
 `reportBindingErrors` 核对任务/身份/期间、文档版本/hash/页、披露截至时间和 fact/claim 引用。传入页正文时还校验原文片段存在性；无原文校验时只表示引用关系通过，不能声称 quote 或语义验证完成。结论保留 fact/inference/opinion 和 supported/evidence_gap/conflict/incomparable。字符串在原文里不等于结论被语义支持。
 
+S10 检索合同把 actor/task 固定在应用上下文，不接受工具修改 asOf。索引绑定不可变文档版本与 parsed hash，先裁元数据，再按可选字段筛选/排序；返回 chunk/block、locator、原文片段与质量，read 分段续读。字段匹配、检索命中和 needs_review 资料都不等于事实核验。实际 API、上限和索引生命周期见公司研究专题。
+
 partial 明确缺口，不冒充 completed。completed 不能有未解缺口，必须覆盖三个问题和两期三项财务事实；口径不可比较的任务不能标 completed。报告引用错误版本、未来/未知日期、错公司、错期间、越页、未知 fact ID 都拒绝持久提交。
 
 ## 状态与事件

@@ -118,6 +118,8 @@ S19 的优化器只看到开发样本和失败，不能修改评分器或读取�
 
 OCR 原生环境、模型准备与实际服务验证见 [parser README](../../../services/document-parser/README.md)。确定性财务复算用 `node --import tsx scripts/research/verify-financials.ts`，输出明确为参考输入算术核对，不能替代自动事实抽取或研究模型验收。
 
+检索开发集用 `node --import tsx scripts/research/verify-retrieval.ts <S07解析证据目录>`，`--profile=baseline-v1` 可重放首个词法基线。k、定位分母、语料 hash 和算法版本随报告保存；开发集调参不当作独立保留验收。`test:research:postgres` 默认 Docker，可显式提供 `--native-postgres=<可信工具目录>` 创建专用临时集群，细节与检索 API 见公司研究专题。
+
 改变 API、配置、数据、页面或运行行为时更新对应专题；本目录只保存计划/实施证据，不复制整套现有使用手册。开发文档使用仓库相对路径便于迁移，面向用户回复使用可点击绝对文件路径。
 
 演示与简历只采用实际实现和可复核结果。保留失败原因、样本量、配置和局限。生产部署或数据同步需遵守对应 release/data 规范；S20 的开发验收不自动触发生产操作。

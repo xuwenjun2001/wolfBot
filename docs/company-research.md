@@ -69,6 +69,8 @@ S01—S05 的契约和存储准备见 [实施进度](plans/research-agent-upgrad
 
 验证入口：`npm run test:research:postgres`。需要 Docker 和本机已有的 `postgres:16` 镜像；脚本创建专用临时容器，仅绑定 localhost 的随机端口，以 migrate deploy 演练旧库 → 追加迁移 → 重复 deploy，再核对旧代码读写兼容、独立 Prisma 客户端和并发/隔离测试，最后删除自己创建的容器。输出留在 `data/research-agent-upgrade/evidence/S05/`。它不使用 `.env` 中的应用数据库连接，不执行 db push，也不改生产数据。
 
+Docker 不可用时，可显式传入已有可信 PostgreSQL 16 工具目录：`npm run test:research:postgres -- --native-postgres=<绝对路径/bin>`。该目录需有 initdb、pg_ctl、postgres；runner 会在本次证据目录新建专用集群、只监听随机 localhost 端口，最终停止自己创建的集群，保留日志与数据供核查。不会复用该目录附近的旧数据库。Docker 仍是默认方式；缺工具时直接失败，不自动连接应用库。
+
 Windows 开发服务可能锁住已加载的 Prisma DLL。演练脚本在独立目录生成客户端并做 ORM smoke，避免替换运行中的文件；正常应用客户端在维护开发服务时再按 `npm run prisma:generate` 更新。当前新 repository 使用参数化 SQL，没有依赖新增 ORM delegate 才能运行的隐式前提。
 
 
@@ -111,6 +113,20 @@ HTML 的 locator 是 `source-range:开始:结束`，指向保留 UTF-8 原文中
 `deriveSingleQuarter` 只用同年、同口径、相邻的完整累计值：Q1 本身是单季，H1−Q1、前三季−H1、全年−前三季才得到后续季度。前期缺失不能补零，来源待复核、口径不一致或期间不相邻都会拒绝。引用和 derivedFrom 保留两个输入。
 
 复验：`node --import tsx scripts/research/verify-financials.ts`。四家公司 24 项金额与 12 项变化复算通过，原始报告及源码/fixture hash 留在 `data/research-agent-upgrade/evidence/S09/`。这是已给定参考输入的确定性计算验收，不是模型自动抽取事实、查明会计政策或解释现金流原因的质量成绩。S08 的人工/容器待验收仍单独保留。
+
+### 任务证据检索与分段读取（S10）
+
+`POST /api/company-research/tasks/{id}/evidence` 接收 `{operation:"search",input:{query:"经营现金流变化",topK:5}}`，或 `{operation:"read",input:{documentId,documentVersion,locator,offset:0,maxCharacters:2000}}`。需要同源请求及 research.report.read 权限，响应为 private/no-store；可信 actor 与任务固定在服务端，不能由工具输入指定。`researchEvidenceReader(actor,taskId)` 提供相同的 search/read 接口，S11 再注册到 Agent 循环；旧 Worker 当前不会自动使用它。
+
+搜索先裁掉其他 actor、公司、非任务完整期间、未来或披露未知的资料，再选每个来源的最新合格时间版本。新版本 unreadable 不会被旧解析成功覆盖。可选 periodIds（最多 2）、documentIds（最多 100）缩小语料；fields 可选 revenue/parent_profit/cash_flow/risk（至少 1、最多 4），在评分前筛选块字段/风险章节。字段来自原文及相邻行的词法识别，是检索提示，不能当作已核实 FinancialFact。原件/解析/index 缓存读取均先校验 actor 和持久化元数据，命中缓存不跳过权限。
+
+zh-context-bm25-v3 使用中文二元词、指标别名、相邻原文行、财务摘要/数值行及风险章节加权；先覆盖两期，再按分数填充，每来源文件页最多一条。表格按行建索引，列头参与排序；命中仍返回真实块/表格定位、原件与解析 hash、质量、分数和片段。相邻文本逐块附带 locator，不把拼接文本伪装为原文引文。needs_review 可以被查到，但不能因此成为 known。
+
+query 为 1—300 字符；topK 为 1—20，默认 5；maxOutputCharacters 为 1500—20000，默认 10000，以序列化字符计量，limited 表示输出受限。read 每次 100—5000 字符，通过 nextOffset 继续；只读取当前任务可用的对应版本及实际页/块/单元格。单任务最多读取 5000 个文档版本元数据、50 MB 已筛选解析语料和 10 万索引块，超限明确拒绝。它能重查超过 8 份来源之前的证据，不把全文塞入每轮模型上下文。
+
+索引按 task/document/version/indexVersion 不可变保存，绑定 parsedSha256，正文与原件一起进入 actor 私有内容寻址存储。更改解析器或索引版本会追加新对象；取消不删除，未引用对象不自动回收。数据库迁移为 `20261019020000_research_evidence_indexes`；备份应同时保留数据库及对应文件目录，生命周期见 [数据保留规则](data-lifecycle.md)。
+
+复验：`node --import tsx scripts/research/verify-retrieval.ts <S07解析证据目录>`；原 v1 可用 `--profile=baseline-v1` 重放。冻结四家公司/八份年报/12 个问题、24 个目标来源页、k=5，基线 10/24、v2 13/24、v3 23/24，完整覆盖问题从 2/12 到 11/12。v3 仍漏美的 2024 风险续页 p65（命中章节起始 p64），这些是在同一开发集上的调参结果；不代表保留集、语义支持率或真实 Agent 完成率。无 embedding、reranker 和模型调用，未扩大 40 次/20 分钟研究预算。原始报告与版本/hash 见进度 E-S10-01。
 
 ### 2026-09-18 本地验收
 

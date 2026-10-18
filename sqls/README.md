@@ -25,6 +25,8 @@
 
 财报变化研究基础层由 `prisma/migrations/20261018140000_research_version_foundation/` 追加七张 `company_research_*` 版本表，保留旧研究四表；通过 `prisma migrate deploy` 执行，不在本目录重复建表。字段和原件存储说明见 [数据字典](../docs/data-dictionary.md) 与 [公司研究](../docs/company-research.md)。独立迁移演练用 `npm run test:research:postgres`，不指向应用或生产数据库。
 
+S10 的 `prisma/migrations/20261019020000_research_evidence_indexes/` 追加不可变证据索引表，外键绑定文档版本及解析 hash；同样经 migrate deploy，不在 bootstrap 重复执行。演练覆盖旧库升级、重复 deploy、旧代码兼容和索引权限/不可变性；显式原生 PostgreSQL 备用模式见公司研究专题。本轮只在专用临时库验证，没有对应用/生产库部署该迁移。
+
 | 组件 | 表 |
 | --- | --- |
 | 项目与对话 | `projects`、`messages`、`sessions`、`tool_usages`、`user_requests` |

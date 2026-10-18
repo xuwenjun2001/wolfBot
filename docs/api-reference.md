@@ -8,6 +8,8 @@
 
 公司研究的旧 `/api/company-research/runs` 保持原有单公司合同。财报变化 v1 基础层新增 `POST /api/company-research/tasks`（创建私有 draft）、`GET /tasks/{id}`、`POST /tasks/{id}/cancel`、`GET /tasks/{id}/reports/{revision}` 和 `GET /tasks/{id}/documents/{documentId}/{version}`（可通过 content=original/parsed 下载）。这些路径均在 `/api/company-research` 下，按 `research.report.run/read` 与可信 actor 过滤；S05 只建立版本持久化，不调度新研究。参数、版本和错误边界见 [公司研究](company-research.md) 与 [合同](plans/research-agent-upgrade/contracts.md)。
 
+资料入口另有 `GET/POST /tasks/{id}/documents`（发现/导入）、`POST /tasks/{id}/documents/{documentId}/{version}/parse`（追加解析版本），以及 `POST /tasks/{id}/evidence`。evidence 接收 operation=search/read 和各自严格 input：先检查权限、公司/完整期间/asOf，再做词法检索或按 locator 分段读原文；query、fields、topK 和输出均有界，不能传入 actor/asOf 改变作用域。返回私有 no-store，工具接入 Agent 循环留在 S11。实际参数与资源限制见公司研究 S06—S10。
+
 | 服务 | 默认地址 | 代码位置 | 责任 |
 | --- | --- | --- | --- |
 | Next.js 主应用 API | `http://localhost:3000/api/*` | `src/app/api/` | 项目、聊天、设置、评测、skills、运维和页面聚合数据 |

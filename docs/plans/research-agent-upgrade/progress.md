@@ -8,21 +8,21 @@
 | --- | --- |
 | 最后更新 | 2026-10-19（北京时间） |
 | 计划版本 | v1 |
-| 总体状态 | S01—S07、S09 完成；S08 代码及机器验收通过，人工抽查与容器复验待齐；S10 已实现，正在独立收尾归档。S09 是确定性模块自身验收，不解除 S08 质量门。既有人工作业仍为 9 完整/3 partial、完整参考公司 1 家，真实模型质量未验收 |
-| 已完成开发步骤 | 8/20 |
+| 总体状态 | S01—S07、S09—S10 完成；S08 代码及机器验收通过，人工抽查与容器复验待齐。S09/S10 是确定性计算与检索模块自身验收，不解除 S08 质量门。既有人工作业仍为 9 完整/3 partial、完整参考公司 1 家，真实模型质量未验收 |
+| 已完成开发步骤 | 9/20 |
 | 当前进行中步骤 | S08；本会话用户授权范围 S05—S10 |
-| 下一步骤 | 完成 S08 人工抽查/容器验证交接；本轮同步 S09—S10 后结束授权范围，S11 未开始 |
-| 下一具体动作 | 人工检查 S08 human-review-01/review.md 并记录结果；Docker 引擎恢复后补容器构建/健康/资源验证。S09—S10 的计算与检索已在开发数据和独立 PostgreSQL 验证，正在更新专题及提交 |
-| 当前会话登记 | 2026-10-19-s05-s10：起点 7ae788b，工作区干净，分支 codex/research-foundation-s01-s05；S05 复核、S06/S07 实现并同步，现收尾 S08—S10。修改范围为来源/解析/财务/检索应用模块、相关 API/迁移/测试、独立 services/document-parser、Docker 配方及交接文档；不读保留集，不部署生产 |
+| 下一步骤 | 完成 S08 人工抽查/容器验证；本轮授权范围止于 S10，S11 未开始 |
+| 下一具体动作 | 人工检查 S08 human-review-01/review.md 并记录结果；Docker 引擎恢复后按 parser README 补容器构建/健康/资源验证。S09/S10 已验收并按步同步；继续 S11 需新的范围指令，并保留 S08 未复核数据质量门 |
+| 当前会话登记 | 2026-10-19-s05-s10：起点 7ae788b，工作区干净，分支 codex/research-foundation-s01-s05；S05 复核、S06—S10 代码/测试/专题按步归档，S08 外部验收 pending。范围为来源/解析/财务/检索应用模块、相关 API/迁移/测试、独立 services/document-parser、Docker 配方及交接；未读保留集、未部署生产 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
-| 当前参考分支 / HEAD | `codex/research-foundation-s01-s05`；会话起点 `7ae788b`；S06 `6f6d48d`、S07 `45d70bc`、S08 `d3b7311` 已推送；后续同步身份按各步骤记录与 `git log` 核对 |
+| 当前参考分支 / HEAD | `codex/research-foundation-s01-s05`；S06 `6f6d48d`、S07 `45d70bc`、S08 `d3b7311`、S09 `e7707a9` 已推送；S10 为本次收尾提交，精确身份按本文件所在提交、`git log` 与远端 SHA 核对 |
 | 目标仓库 | `https://github.com/xuwenjun2001/wolfBot`，默认分支 `main` |
 | 本轮涉及文件 | `src/lib/company-research/` 的 acquisition/parse/OCR/financial/evidence 与测试；tasks 文档解析/检索 API；S10 Prisma 索引迁移及隔离 PG runner；`services/document-parser/` 与 compose；配置、公司研究、基础设施、数据/交接专题。真实样本、模型和报告留在忽略的 data 目录 |
-| 已有改动提醒 | 本轮起点干净，无来源不明改动；S08—S10 按步骤暂存，不能把尚未提交的后续文件误当作已推送；最终以 git status/远端 SHA 为准。冻结资料、旧人工确认和保留集未改 |
-| 运行环境 / 进程 | Windows/Python 3.12.14，Docling 2.140.0、RapidOCR 3.10.0、ONNX 1.31.0、Torch 2.14.1+cpu。启动过独立回环 parser；Docker 解包后接口 500/containerd SIGBUS，未重启共享引擎/服务。数据库改用新建独立原生 PG 16.14 集群，验收后已停止；未连接应用库执行迁移 |
+| 已有改动提醒 | 本轮起点干净，无来源不明改动；源码按步骤暂存/提交，原始证据在忽略目录保留；最终以 git status/远端 SHA 为准。冻结资料、旧人工确认和保留集未改 |
+| 运行环境 / 进程 | Windows/Python 3.12.14，Docling 2.140.0、RapidOCR 3.10.0、ONNX 1.31.0、Torch 2.14.1+cpu。独立回环 parser 及其模型子进程已停止，7821 不再监听（S08/native-service-stop.json）；Docker 解包后曾 500/containerd SIGBUS，未重启共享引擎/服务。新建独立原生 PG 16.14 集群全部验收后停止；未连接应用库执行迁移 |
 | 模型与数据费用 | S06 有公开公告查询/原件下载，后续 OCR、计算和词法检索无 LLM/搜索调用；本地 CPU 费用未计量。历史模型 401 与四次校准的 unknown 费用记录保留，不并入本轮质量成绩 |
 | 阻塞 | 新 OCR 真人抽查待回复；Docker 容器启动/资源待环境恢复（失败时 C 盘约 2.3 GB）。合成第二页“合并口径”识别为“合井口径”，保留 needs_review。既有三题 q2 缺因果证据、人工版本接入 runner 和真实模型验收仍未解决 |
-| 最近验证 | 89 项 TS/API 单测通过，普通运行跳过 18 项 DB；独立 PG 旧库升级/旧代码兼容/18 项 DB 实跑通过，类型检查通过；parser pytest 3/ruff/lock 通过，真实 OCR 18/18、合成金额行列 12/12。S10 词法定位 23/24（k=5）；docs 70 文件/429 链接通过；模块门仍因三个未改旧大文件失败，未放宽门禁 |
+| 最近验证 | 94 项 TS/API 单测通过，普通运行跳过 18 项 DB；最终独立 PG 旧库升级/旧代码兼容/18 项 DB 实跑通过，types/定向 lint 通过；parser pytest 3/ruff/lock 通过，真实 OCR 18/18、合成金额行列 12/12。S10 词法定位 23/24（k=5）；docs 结果见 E-S10-01；模块门仍仅因三个未改旧大文件失败，未放宽门禁 |
 | 受控资料恢复 | 开发资料在 `data/research-agent-upgrade/`；本机 `RESEARCH_HOLDOUT_ROOT=D:/QuantPilot-private-evals/research-v1`，换机须经受控归档恢复并核对登记 hash；这里不记录保留题/答案 |
 | 范围提醒 | 本轮授权 S05—S10；不展开 S11 执行器、保留集、生产部署或既有 Quality 修复。人工确认和旧 partial 结论保持 |
 
@@ -41,7 +41,7 @@
 | S07 | 文本 PDF / HTML 定位解析 | S06 | done | E-S07-01；八份原件/32 引用定位，v1/v2 兼容、HTML/截断/跨页与 PG 发布校验 |
 | S08 | OCR 与表格结构解析 | S07 | in_progress | E-S08-01；CPU 服务与取消/超时/缓存实跑，真实金额行列 18/18、合成 12/12；真人抽查 pending、Docker 引擎故障；保留“合井口径”误字与 needs_review |
 | S09 | 财务口径与变化计算 | S07、S08 | done | E-S09-01；decimal-v1、16 项边界测试、24 金额+12 变化复算通过；限模块验收，S08 待复核 OCR 拒绝成为 known |
-| S10 | 证据检索与按需上下文 | S07、S08、S09 | in_progress | 已实现版本化索引迁移、前置作用域/asOf 过滤、词法排序及有界读取；18 PG 与 k=5 的 23/24 页命中通过，正在独立归档；S11 未接线 |
+| S10 | 证据检索与按需上下文 | S07、S08、S09 | done | E-S10-01；版本化索引、前置作用域/asOf/字段过滤、词法排序及有界读取；18 PG 与 k=5 的 23/24 页命中；S11 未接线、S08 质量门保持 |
 | S11 | 研究计划与 Agent 循环 | S04、S05、S09、S10 | pending | — |
 | S12 | 结论与证据分层核验 | S09、S11 | pending | — |
 | S13 | 报告与变化表完整交付 | S11、S12 | pending | — |
@@ -65,6 +65,15 @@
 - 原 S03 网关基线全部在鉴权时失败；用户指定新模型后另存校准，4 次请求均 200，但提前收尾且无财报来源，不是质量提升证据。后续人工确认按 E-ANNOT-02 单独归档，不能反向把旧模型运行变为通过。
 
 ## 验收证据
+
+### E-S10-01：任务证据索引、权限与检索对照
+
+- 日期 / 会话：2026-10-19 / `2026-10-19-s05-s10`。S09 已提交推送 `e7707a952c50687e36888e380b685e99f4ec1f57`，核对远端一致。S10 范围：lexical-index、evidence-index-store、evidence-retrieval、检索单测/PG 集成、evidence route/权限测试、Prisma 追加迁移、PG runner 原生备用参数、检索 runner/v1 基线与 API/数据/生命周期专题。最终验证源码 hash 记录于 PG manifest 与检索报告，不把单独 HEAD 当作工作树身份。
+- `npm run test:unit -- src/lib/company-research src/app/api/company-research` 退出 0，94 项通过、18 项 DB 默认跳过；日志 `S10/unit-closeout.log`。覆盖超过 8 份来源的早期资料、分块重叠、中文/拆行指标与两期覆盖、字段先筛选、参数边界，以及 evidence API 的同源/权限/actor-asOf 注入拒绝、私有缓存与无权 404。
+- `npm run test:research:postgres -- --native-postgres=<本机可信 PG16 bin>` 最终退出 0，真实 PG 18 项通过；旧 30 条迁移建库/旧代码写入 → S05+S10 共 32 条迁移 → 重复 deploy → 独立 Prisma 客户端 → 旧 reader/Worker 兼容 → DB 测试 → migration status 全通过。索引缓存命中与未命中都先校验 actor/完整元数据，12 来源、未来/未知日期、伪造元数据、不可变触发器、精确续读及较新 unreadable 抑制旧解析均通过。原件 `S05/rehearsal-8719d8e8-1ed4-4e41-9a8e-e188b2a50d8b/manifest.json` SHA-256 `088800916b014a144942c5b7a4ccc2ce5fd21951c0873f7055e412de1ba23335`；nativeClusterStopped=true，应用库未改。先前 fixture/hash 失败与 Docker 失败保留，不覆盖。
+- 检索实验固定四家公司/八份原件/12 个问题/24 个来源文件页、k=5：v1 `S10/2026-10-18T18-11-48-582Z/report.json` 10/24、完整 2/12；v2 `18-25-28-450Z` 13/24、5/12；v3 `18-27-30-957Z` 23/24、11/12；v1 `18-35-17-506Z` 重放 10/24（以上目录日期前缀相同）。增加 hash 清单后复验结果不变；最终命令 `node --import tsx scripts/research/verify-retrieval.ts data/research-agent-upgrade/evidence/S07/2026-10-18T17-44-58-299Z` 退出 0，报告 `S10/2026-10-18T18-55-26-021Z/report.json` SHA-256 `4854d6ea40322b21e032a840ea342867054e2d4354ae15527a402bd4fc73507f`，23/24、11/12、18898 ms。包含原件/解析/fixture/源码 hash，v1 源码保留可重放。
+- 局限：所有算法调整只在同一开发集，未读保留集；剩余美的 2024 风险 p65 未入 top5，p64 起始页已命中。来源页 Recall 不能证明正确定位到每条具体结论或解释因果；无模型、embedding、reranker 调用，CPU 成本未计量。S11 尚未注册到 PI，S08 人工/容器 pending 仍不允许未复核 OCR 成为 known；未运行真实研究 E2E、完整构建/发布/CI。
+- 收尾 types、定向 ESLint 退出 0（S10/type-closeout-02.log、lint-closeout.log、lint-closeout-02.log）；docs 70 文件/433 链接、差异检查通过。模块检查退出 1，仅 chat 4161/4100、data-prefetch 2211/2040、market-data API 1541/1540 三项既有超限（module-closeout.log）。未放宽门禁，既有 Quality 修复继续暂缓。当前源码与最终 PG manifest 的 sourceHashes 逐项一致。临时 parser 与自建 PG 都已停止，原始证据/模型/缓存保留。
 
 ### E-S09-01：金额规范化、比较与累计转单季
 
@@ -270,6 +279,13 @@ E-Sxx-01 / 日期 / 会话标识：
 - S08 已提交推送 `d3b7311`，远端 SHA 核对一致。S09 独立交付 decimal-v1、金额/指标规范化、可比性与累计转单季、兼容事实合同和复算脚本；D20 说明边界。S10 文件继续保留，不混入本提交。
 - E-S09-01：16 项边界测试、24 金额/12 变化复算、types、定向 lint、docs 与差异检查通过；原输入/源码 hash 已记录。本步为确定性计算模块验收，未调用真实模型，也未解除 S08 人工/容器待验收。
 - 下一动作：完成 S10 API/索引/数据生命周期专题、检索证据和独立同步；范围止于 S10。既有用户进程不变，临时 parser 在最终交接前停止，独立 PG 已停。
+
+### 2026-10-19-s05-s10 / S10 与最终交接
+
+- S09 `e7707a9` 已提交推送并核对远端一致。S10 交付任务私有索引、作用域/asOf/字段过滤、中文词法排序、有界 search/read、API 权限边界、追加迁移、保留的 v1 基线和原生临时 PG 备用 runner；D21 与 API/数据/生命周期文档已同步。
+- E-S10-01：94 项 TS/API、18 项真实 PG、旧库升级/旧代码兼容、types、定向 lint、docs 与差异检查通过；最终 k=5 命中 23/24 页、完整 11/12 问题。保留基线/调参/剩余风险续页漏项，未读取保留集、未调用模型或部署生产；旧模块三项超限仍失败。
+- 本轮授权 S05—S10 的源码与专题按步提交，S08 明确仍为 in_progress，9/20 完成。待用户核对新 OCR 样本（不是重签旧 S02）、Docker 恢复后补镜像/容器/资源验收；没有启动 S11。业务 OCR needs_review 不因样本核对自动解除。
+- 收尾核对并停止自己的原生 parser 根进程及模型子进程，7821 已无监听；最终独立 PG 停止且无本研究临时 postgres 进程。只停止自己创建的构建客户端/测试服务，没有重启用户 Docker、Web、market-data 或 Worker。原图、人工对照材料、失败记录、模型和缓存全部保留在受控忽略目录；人工材料未被覆盖。
 
 ### 2026-10-18-wolfbot-migration
 

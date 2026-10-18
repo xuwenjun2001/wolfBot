@@ -330,11 +330,14 @@ running -> failed
 | `company_research_requests` | task + revision 主键，完整需求 JSON 和 hash，不可变 |
 | `company_research_plans` | task + revision 主键；引用需求版本；expectedRevision 冲突检测、task 内请求键与完整修改摘要 |
 | `company_research_documents` | task + document id + version 主键；原始 bytes SHA-256、原件/解析产物 digest key、披露证据、报告期、parser/定位状态；大原件不进 JSON |
+| `company_research_evidence_indexes` | S10 追加迁移；task + document id + document version + index version 主键，外键绑定不可变文档版本；parsed_sha256、artifact_key、byte_length 约束解析来源和索引对象，created_at 仅为建索引时间，不作披露依据 |
 | `company_research_attempts` | 独立 execution id，引用 request/plan；task 内 generation 唯一、running 部分唯一索引；worker、租约、终态与时间 |
 | `company_research_report_versions` | task + revision 主键；同时约束 plan/request 与 attempt/generation 关系；事实、引用、缺口的不可变 JSON 快照 |
 | `company_research_version_events` | task + sequence 主键；版本化公开 envelope，可用于有序重放，不保存隐藏推理 |
 
 需求、计划、文档、报告和事件表有禁止 UPDATE 的数据库触发器。取消只失效执行权并保留原件/报告。资料正文在 `data/company-research/artifacts/` 按 actor 摘要分区，每次授权读取后再验 hash；未引用对象不自动清理。token 未知用 NULL，不能当作零成本。详情与边界见 [公司研究](company-research.md)、[合同](plans/research-agent-upgrade/contracts.md)。
+
+索引也禁止 UPDATE，版本为 zh-context-bm25-v3；对象保存块词频、长度、财务字段、章节特征及来源/解析 hash。改解析或索引算法需新版本，不原地覆盖。缓存命中仍核对任务归属和完整文档元数据；公司、期间、asOf 过滤在原文/索引读取前完成。外键级联删除只处理元数据，文件没有自动 GC；研究资料备份与保留见 [数据生命周期](data-lifecycle.md)。
 
 ## 维护规则
 
