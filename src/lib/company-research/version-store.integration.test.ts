@@ -11,6 +11,8 @@ import { startResearchAttempt, heartbeatResearchAttempt, reserveResearchToolCall
 import { commitResearchReport } from './report-store';
 import { documentFixture, reportFixture, specFixture } from './version-test-fixtures';
 import type { ResearchTaskSpec } from './task-contracts';
+import { importTaskFiling, listResearchDocuments } from './acquisition-service';
+import * as network from './network';
 
 const enabled = process.env.COMPANY_RESEARCH_TEST_POSTGRES === '1';
 const suiteId = randomUUID(), actor = `research-version-test-${suiteId}`, other = `research-version-other-${suiteId}`;
@@ -45,6 +47,25 @@ describe.skipIf(!enabled)('versioned research PostgreSQL and controlled artifact
   afterAll(async () => {
     await prisma.$executeRaw`DELETE FROM company_research_tasks WHERE actor_id=${actor} OR actor_id=${other}`;
     await prisma.$disconnect();
+  });
+  it('imports within actor scope, deduplicates retry bytes and retains changed originals', async () => {
+    const task = (await createResearchTask(actor, specFixture(), randomUUID(), ctx))!;
+    const input = { provider: 'manual', url: 'https://example.com/report.pdf', title: '2024年年度报告', periodId: 'fy2024' };
+    const download = vi.spyOn(network, 'downloadResearchOriginal').mockResolvedValue({ bytes: original, mediaType: 'application/pdf', url: input.url });
+    try {
+      await expect(importTaskFiling(other, task.id, input, AbortSignal.timeout(1000), ctx)).rejects.toMatchObject({ code: 'NOT_FOUND' });
+      expect(download).not.toHaveBeenCalled();
+      const first = await importTaskFiling(actor, task.id, input, AbortSignal.timeout(1000), ctx);
+      const retry = await importTaskFiling(actor, task.id, input, AbortSignal.timeout(1000), ctx);
+      expect(retry.reused).toBe(true); expect(retry.document).toEqual(first.document);
+      expect(first.eligibility).toBe('date_unverified');
+      download.mockResolvedValue({ bytes: Buffer.concat([original, Buffer.from('revision')]), mediaType: 'application/pdf', url: input.url });
+      const changed = await importTaskFiling(actor, task.id, input, AbortSignal.timeout(1000), ctx);
+      expect(changed.document.version).toBe(2); expect(changed.document.original.key).not.toBe(first.document.original.key);
+      expect(await listResearchDocuments(actor, task.id, ctx)).toHaveLength(2);
+      expect(await listResearchDocuments(other, task.id, ctx)).toEqual([]);
+      expect((await readResearchDocumentArtifact(actor, task.id, first.document.id, 1, 'original', ctx)).bytes).toEqual(original);
+    } finally { download.mockRestore(); }
   });
   it('creates once under concurrent retries and hashes all user fields within actor scope', async () => {
     const key = randomUUID(), spec = specFixture();

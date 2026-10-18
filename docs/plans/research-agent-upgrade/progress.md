@@ -8,12 +8,12 @@
 | --- | --- |
 | 最后更新 | 2026-10-19（北京时间） |
 | 计划版本 | v1 |
-| 总体状态 | S01—S05 基础实现及相关验证完成。用户已确认亲自核对开发集原文，机器复验通过；12 题中 9 题完整、3 题 partial，完整人工参考公司 1 家。真实模型研究质量仍待验收 |
-| 已完成开发步骤 | 5/20 |
-| 当前进行中步骤 | 无 |
-| 下一步骤 | S06：财报发现、导入与时间证据（本轮范围至 S05，尚未开展） |
-| 下一具体动作 | 人工确认及机器复验已归档，不再重复要求同一次确认；后续评分显式接入 acceptance.json 的人工版本，三题 q2 缺证保留。继续开发时先核对 S05 迁移与原件，再按 S06 接入资料及澄清披露日期差异 |
-| 当前会话登记 | 2026-10-19-annotation-acceptance：用户人工确认、机器复验、版本化 acceptance.json 与脱敏文档交接均完成，E-ANNOT-02；S06 未开始 |
+| 总体状态 | S01—S06 完成，S05 本轮复验通过；S07—S10 正在顺序实现。既有人工作业维持 9 完整/3 partial、完整参考公司 1 家，真实模型质量仍待验收 |
+| 已完成开发步骤 | 6/20 |
+| 当前进行中步骤 | S07；本会话用户授权范围 S05—S10 |
+| 下一步骤 | S07：文本 PDF / HTML 定位解析；随后 S08—S10 |
+| 下一具体动作 | 完成 S07 稳定页/块合同和文本 PDF/HTML 定位复验，再接 S08 独立 OCR；后续评分仍需显式接入 acceptance.json，三题 q2 缺证保留 |
+| 当前会话登记 | 2026-10-19-s05-s10：起点 7ae788b，工作区干净，分支 codex/research-foundation-s01-s05；正在复核 S05 并开发 S06。拟修改 company-research 的来源/解析/事实/检索、对应 API/测试、独立 services/document-parser、Docker 配置及专题文档；不读保留集，不部署生产 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
 | 当前参考分支 / HEAD | `codex/research-foundation-s01-s05`；本次确认起点 `346840e`，并保留此前未提交的 AI 标注交接；最终提交身份见 `git log -1`；S01—S05 源码起点 `d17ac89` |
 | 目标仓库 | `https://github.com/xuwenjun2001/wolfBot`，默认分支 `main` |
@@ -24,7 +24,7 @@
 | 阻塞 | 标注的执行工具故障与真人确认待办已解除。五粮液/美的/万华 q2 原因解释仍缺证，保持 partial；人工版本尚未接入 runner，真实模型质量/保留集确认待验收。披露日与公告时间戳相差一天需 S06 澄清；Worker/DLL 历史局限见原记录 |
 | 最近验证 | 原脚本、独立严格核验与最终原件/清单绑定检查均退出 0：4 冻结 JSON、8 原件/页缓存、36 数值、32 原引用、9 补充引用通过。恢复清单副本字节不同但 JSON 内容一致并留痕；check:docs 通过（70 文件/425 本地链接），差异检查通过；纯文档未重跑业务测试 |
 | 受控资料恢复 | 开发资料在 `data/research-agent-upgrade/`；本机 `RESEARCH_HOLDOUT_ROOT=D:/QuantPilot-private-evals/research-v1`，换机须经受控归档恢复并核对登记 hash；这里不记录保留题/答案 |
-| 范围提醒 | 完成 S01—S05；本轮登记用户人工确认与本地技术核验，未代填身份或未知复核时间，未将 partial 改为通过；未增加开发步骤数、未读保留集、未展开 S06 或部署；已有 Quality 问题按原要求暂缓 |
+| 范围提醒 | 本轮授权 S05—S10；不展开 S11 执行器、保留集、生产部署或既有 Quality 修复。人工确认和旧 partial 结论保持 |
 
 ## 步骤状态
 
@@ -37,8 +37,8 @@
 | S03 | 实测基线与失败记录 | S01、S02 | done | E-S03-01 原 401 基线保留；E-S03-02 新配置 4 次请求均 200，单案例工具调用可用、结果 partial；不作同题质量对照 |
 | S04 | 版本化领域与事件合同 | S01、S02 | done | E-S04-01；contracts.md；51 测试通过/2 DB 跳过；types 通过 |
 | S05 | 持久化、隔离与迁移 | S04 | done | E-S05-01；七张版本表、actor repository/原件存储/API；13 项 PG 测试和旧库升级/旧代码兼容通过 |
-| S06 | 财报发现、导入与时间证据 | S05 | pending | — |
-| S07 | 文本 PDF / HTML 定位解析 | S06 | pending | — |
+| S06 | 财报发现、导入与时间证据 | S05 | done | E-S06-01；公网原件/hash、八份披露日期修正、59 单测、14 PG 实跑 |
+| S07 | 文本 PDF / HTML 定位解析 | S06 | in_progress | 2026-10-19-s05-s10；版本化块/定位与解析 port |
 | S08 | OCR 与表格结构解析 | S07 | pending | — |
 | S09 | 财务口径与变化计算 | S07、S08 | pending | — |
 | S10 | 证据检索与按需上下文 | S07、S08、S09 | pending | — |
@@ -65,6 +65,15 @@
 - 原 S03 网关基线全部在鉴权时失败；用户指定新模型后另存校准，4 次请求均 200，但提前收尾且无财报来源，不是质量提升证据。后续人工确认按 E-ANNOT-02 单独归档，不能反向把旧模型运行变为通过。
 
 ## 验收证据
+
+### E-S06-01：原件、日期与 S05 复核
+
+- 2026-10-19 / `2026-10-19-s05-s10`，起点 `7ae788b`，干净工作区；保留分支。S05 重跑专用旧库升级/兼容演练，13 PG 测试通过，原件 `evidence/S05/rehearsal-8582d8cf-fdae-49ba-b117-e4b08913ee73/manifest.json`；未碰应用数据库和用户服务。
+- 实现 filing-acquisition/acquisition-service、来源清单/导入 API、公网固定 DNS 下载与 provenance 合同；原件/日期依据保留 actor 私有内容寻址，修订追加，重试复用。手动链接不能自称日期已核实。单测涵盖内网重定向、流式大小、非法类型、日期冲突、未来/未知时间；PG 新增导入权限、幂等、原件修订/旧版保留验证。
+- `npm run test:unit -- src/lib/company-research` 59 通过/14 DB 默认跳过；`npm run test:research:postgres` 另行真实 14 通过，含旧 schema 升级/旧代码回读，原件 `evidence/S05/rehearsal-7f8bac5a-a139-4d38-ae1a-8af771116f5a/manifest.json`；`npm run type-check` 退出 0。日志留 `data/research-agent-upgrade/evidence/S06/`，归本研究批次保留至 S20/受控归档，不自动清理。
+- 公网命令 `node --import tsx scripts/research/verify-acquisition.ts` 退出 0：巨潮实时找到两份目标年报；重下载 3,563,819 bytes，hash `2125ff97a452ea79b0d784e2432f7d224b6aecc330b644b593477d69e22f4ed1` 与冻结原件一致。八份公告日期按上海时区均比冻结 UTC 截取日期晚一天。成功原件 `evidence/S06/2026-10-18T17-30-39-491Z/report.json`；初次无标题筛选没找到候选的失败记录也保留，随后加入报告标题筛选。冻结 fixtures/人工记录未改。
+- `check:module-boundaries` 退出 1：已有 chat/page 4161>4100、data-prefetch 2211>2040、market-data/api 1541>1540 的尺寸债务，本轮未修改这些文件，也不放宽门禁。其余依赖边界未报告新增违规；完整 CI 和先前 Quality 问题未在此修复。
+- S07/S08 的解析/OCR 尚不能由本步证明；真实模型质量未验收，无模型/搜索费用（本次公网成功走巨潮）、未读取保留集、未部署。
 
 ### E-ANNOT-02：人工确认与机器复验
 

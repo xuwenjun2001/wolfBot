@@ -72,6 +72,16 @@ S01—S05 的契约和存储准备见 [实施进度](plans/research-agent-upgrad
 Windows 开发服务可能锁住已加载的 Prisma DLL。演练脚本在独立目录生成客户端并做 ORM smoke，避免替换运行中的文件；正常应用客户端在维护开发服务时再按 `npm run prisma:generate` 更新。当前新 repository 使用参数化 SQL，没有依赖新增 ORM delegate 才能运行的隐式前提。
 
 
+### 原件发现和导入（S06）
+
+`GET /api/company-research/tasks/{id}/documents` 返回该任务的版本清单；加 `?discover=1&page=1` 查询原始公告候选，保留分页。优先巨潮，失败时复用 market-data 公告和现有 DeepSeek Search；搜索链接不代表已下载原件。`POST` 接收 `{provider:"cninfo",candidateId:"cninfo-公告编号",page:1}`，服务端重新查询官方记录；或 `{provider:"manual",url,title,periodId}` 导入待核查链接。手动输入不能声明自己已核实日期或身份。下载失败会返回错误，不登记为已取得正文。
+
+下载固定已验证 DNS 地址，每次重定向重新核对公网地址，限制 50 MB，并校验 PDF/HTML 内容和类型。原件与公告依据内容寻址、actor 隔离；同一链接同 bytes/依据重试复用，修订保留新版本。文档的 acquired 状态仅代表已取得 bytes，不能代表解析或财报身份核验完成。
+
+巨潮 announcementTime 是上海日历标签，按 Asia/Shanghai 转日期，并在当天结束后才允许用于严格 asOf。抓取时间、URL 路径、搜索日期不能替代披露依据；独立日期冲突和无依据都返回 date_unverified，未来资料返回 after_cutoff。冻结开发集旧日期不原地改写，S06 的八份日期修正记录单独留存。
+
+复验：`node --import tsx scripts/research/verify-acquisition.ts` 检查开发集八份原始公告日期、实时公告发现及一份公开原件下载/hash，结果在 `data/research-agent-upgrade/evidence/S06/`。需要公网；不访问保留集或模型。
+
 ### 2026-09-18 本地验收
 
 安迪苏新版任务 `8196b923-5437-4176-99ae-fa93a7439d0e`：26 步，674 秒，正式提交后状态 completed。旧任务保留。取得财务摘要、2025 年年报全文、2026 年半年报全文；没有依赖重复网络搜索找财报。共 4 次证据校验拒绝（3 次原文引用不匹配、1 次缺少报告期），都只修复对应问题，没有整篇报告结构重写。

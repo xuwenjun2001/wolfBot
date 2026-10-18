@@ -25,6 +25,9 @@ export const researchDocumentSchema = z.object({
   disclosure: disclosureSchema, original: artifactReferenceSchema,
   state: z.enum(['acquired', 'parse_pending', 'ready', 'partial', 'unreadable']), pageCount: z.number().int().min(1).max(10000).optional(),
   parsed: artifactReferenceSchema.optional(), parser: z.object({ name: z.string().min(1).max(100), version: z.string().min(1).max(100), failedPages: z.array(z.number().int().min(1)).max(10000), warnings: z.array(z.string().max(500)).max(100) }).strict().optional(),
+  provenance: z.object({ provider: z.enum(['cninfo', 'market', 'deepseek', 'manual']), finalUrl: z.url(),
+    evidence: artifactReferenceSchema.optional(), dateClaims: z.array(z.object({ source: z.string().max(100), on: z.iso.date() }).strict()).max(10),
+    warnings: z.array(z.string().max(500)).max(20) }).strict().optional(),
 }).strict().refine(v => v.bytesSha256 === v.original.sha256, 'Original bytes/hash mismatch')
   .refine(v => v.state !== 'ready' || !!(v.parsed && v.parser), 'Ready documents need parsed artifact and parser metadata');
 export type ResearchDocument = z.infer<typeof researchDocumentSchema>;
@@ -47,7 +50,7 @@ export const financialFactSchema = z.object({
 }).strict().refine(f => f.value.status === 'missing' || f.citations.length > 0, 'Known/conflicting facts need citations');
 export type FinancialFact = z.infer<typeof financialFactSchema>;
 
-export function documentAvailableAt(document: ResearchDocument, asOf: string): boolean {
+export function documentAvailableAt(document: Pick<ResearchDocument, 'disclosure'>, asOf: string): boolean {
   const d = document.disclosure;
   if (d.status === 'unknown') return false;
   const available = d.precision === 'instant' ? d.at : `${d.on}T23:59:59.999+08:00`;

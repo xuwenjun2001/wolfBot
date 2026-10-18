@@ -31,8 +31,9 @@ export async function boundedJson(response: Response, maxBytes = 3_000_000): Pro
   return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
 /** Pin the validated DNS answer for the actual socket; revalidate each redirect. */
-export async function downloadPdf(value: string, signal: AbortSignal, redirects = 0): Promise<Buffer> {
-  if (redirects > 3) throw new Error('PDF 重定向过多');
+export async function downloadResearchOriginal(value: string, signal: AbortSignal, maxBytes = 15_000_000, redirects = 0): Promise<{ bytes: Buffer; url: string; mediaType: 'application/pdf' | 'text/html' }> {
+  signal.throwIfAborted();
+  if (redirects > 3) throw new Error('资料重定向过多');
   const { url, address } = await validatePublicUrl(value);
   return new Promise((resolve, reject) => {
     const transport = url.protocol === 'https:' ? https : http;
@@ -41,14 +42,25 @@ export async function downloadPdf(value: string, signal: AbortSignal, redirects 
       if (res.statusCode && [301,302,303,307,308].includes(res.statusCode)) {
         res.resume();
         if (!res.headers.location) { reject(new Error('PDF 缺少重定向地址')); return; }
-        downloadPdf(new URL(res.headers.location, url).href, signal, redirects + 1).then(resolve, reject); return;
+        downloadResearchOriginal(new URL(res.headers.location, url).href, signal, maxBytes, redirects + 1).then(resolve, reject); return;
       }
       if (res.statusCode !== 200) { res.resume(); reject(new Error(`PDF HTTP ${res.statusCode}`)); return; }
+      if (Number(res.headers['content-length']) > maxBytes) { res.destroy(); reject(new Error('资料超过读取上限')); return; }
       const chunks: Buffer[] = []; let bytes = 0;
-      res.on('data', (chunk: Buffer) => { bytes += chunk.length; if (bytes > 15_000_000) req.destroy(new Error('PDF 超过 15 MB')); else chunks.push(chunk); });
+      res.on('data', (chunk: Buffer) => { bytes += chunk.length; if (bytes > maxBytes) req.destroy(new Error('资料超过读取上限')); else chunks.push(chunk); });
       res.on('error', reject);
-      res.on('end', () => { const result = Buffer.concat(chunks); if (!result.subarray(0, 5).equals(Buffer.from('%PDF-'))) reject(new Error('资料不是 PDF')); else resolve(result); });
+      res.on('end', () => {
+        const result = Buffer.concat(chunks), type = String(res.headers['content-type'] || '').split(';')[0].toLowerCase();
+        if (result.subarray(0, 5).equals(Buffer.from('%PDF-')) && ['application/pdf', 'application/octet-stream', ''].includes(type)) resolve({ bytes: result, url: url.href, mediaType: 'application/pdf' });
+        else if (type === 'text/html' && /<(?:!doctype\s+html|html|body)\b/i.test(result.subarray(0, 4096).toString('utf8')) && !result.includes(0)) resolve({ bytes: result, url: url.href, mediaType: 'text/html' });
+        else reject(new Error('资料类型不支持或内容与类型不符'));
+      });
     });
     req.on('error', reject);
   });
+}
+export async function downloadPdf(value: string, signal: AbortSignal, redirects = 0): Promise<Buffer> {
+  const result = await downloadResearchOriginal(value, signal, 15_000_000, redirects);
+  if (result.mediaType !== 'application/pdf') throw new Error('资料不是 PDF');
+  return result.bytes;
 }

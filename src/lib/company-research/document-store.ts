@@ -17,6 +17,10 @@ export async function registerResearchDocument(actor: string, input: unknown, or
   }
   return ctx.db.$transaction(async tx => {
     const task = await lockResearchTask(tx, actor, document.taskId), spec = await taskSpec(tx, task);
+    if (document.provenance?.evidence) {
+      await ctx.artifacts.read(actor, document.provenance.evidence);
+      if (document.disclosure.status === 'verified' && document.disclosure.evidenceSha256 !== document.provenance.evidence.sha256) throw new ResearchPersistenceError('INVALID_RESEARCH', 'Disclosure evidence hash mismatch');
+    }
     const period = spec.periods.find(p => p.id === document.period.id);
     if (document.company.symbol !== spec.company.symbol || !period || canonicalResearchJson(period) !== canonicalResearchJson(document.period)) throw new ResearchPersistenceError('INVALID_RESEARCH', 'Document task/company/period mismatch');
     const [prior] = await tx.$queryRaw<{metadata: unknown}[]>`SELECT metadata FROM company_research_documents WHERE task_id=${task.id} AND id=${document.id} AND version=${document.version}`;
