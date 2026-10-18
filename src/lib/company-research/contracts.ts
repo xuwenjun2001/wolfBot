@@ -1,5 +1,10 @@
 import { z } from 'zod';
 
+// Versioned financial-change contracts coexist with the existing report shape.
+export * from './task-contracts';
+export * from './document-contracts';
+export * from './revision-contracts';
+
 export const sectionKeys = ['business', 'supplyChain', 'financials'] as const;
 export type SectionKey = typeof sectionKeys[number];
 export const sectionLabels: Record<SectionKey, string> = { business: '主营业务', supplyChain: '上下游产业链', financials: '近期财报' };

@@ -9,10 +9,10 @@
 | 最后更新 | 2026-10-18（北京时间） |
 | 计划版本 | v1 |
 | 总体状态 | 用户已授权完成 S01—S05；正在核实基线，按步骤实施并保存验证证据 |
-| 已完成开发步骤 | 3/20 |
-| 当前进行中步骤 | S04 |
-| 下一步骤 | S04：版本化领域合同 |
-| 下一具体动作 | 增加请求、文档、事实、计划、报告和事件 schema；保留旧合同并验证引用/版本/期间冲突 |
+| 已完成开发步骤 | 4/20 |
+| 当前进行中步骤 | S05 |
+| 下一步骤 | S05：持久化与隔离迁移 |
+| 下一具体动作 | 追加研究版本关系迁移、actor repository、受控原件存储，实跑旧库升级/并发/越权/执行 fencing |
 | 当前会话登记 | 2026-10-18-foundation-s01-s05：核实、数据评测、现状测量、合同、持久化 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
 | 当前参考分支 / HEAD | `codex/research-foundation-s01-s05`；源码起点 `d17ac89`，各步骤改动随本文件提交，最终身份见 `git log -1` |
@@ -34,8 +34,8 @@
 | S01 | 现状核实与首版场景 | 无 | done | E-S01-01；baseline.md |
 | S02 | 固定资料、人工答案与评测合同 | S01 | done | E-S02-01；evaluation.md；参考答案 source-checked，独立人工签字 pending，不是 human golden |
 | S03 | 实测基线与失败记录 | S01、S02 | done | E-S03-01；5 次网关请求均 401，无模型答案；unsupported 与鉴权失败分开记录 |
-| S04 | 版本化领域与事件合同 | S01、S02 | in_progress | 新合同/兼容读取及行为测试实现中 |
-| S05 | 持久化、隔离与迁移 | S04 | pending | — |
+| S04 | 版本化领域与事件合同 | S01、S02 | done | E-S04-01；contracts.md；51 测试通过/2 DB 跳过；types 通过 |
+| S05 | 持久化、隔离与迁移 | S04 | in_progress | append-only migration/repository/API/原件存储与真实 DB 验证 |
 | S06 | 财报发现、导入与时间证据 | S05 | pending | — |
 | S07 | 文本 PDF / HTML 定位解析 | S06 | pending | — |
 | S08 | OCR 与表格结构解析 | S07 | pending | — |
@@ -105,6 +105,13 @@ E-Sxx-01 / 日期 / 会话标识：
 ```
 
 ## 会话历史
+
+### 2026-10-18-foundation-s01-s05 / S04
+
+- 新增 task/document/revision 三个合同模块和 compatibility 读取，现有 contracts 导出新合同；新增实际行为测试和共享测试工厂。详见 contracts.md。
+- E-S04-01：`npm run test:unit -- src/lib/company-research` 退出 0，51 通过、2 旧 DB 测试跳过；`npm run type-check` 退出 0；`check:docs` 通过（68 文件、388 链接）。原件日志 `data/research-agent-upgrade/evidence/S04/`。首次暴露的 Zod 联合判别及测试工厂类型问题已修复后复验。
+- 已实现结构/关系/时间与引用存在性检查；没有将其宣称为语义证明或完整双期研究交付。模型鉴权问题仍在，不影响离线合同测试。
+- 下一步 S05；新表与存储不接入旧 Worker 调度，避免旧代码按错误任务语义执行新请求。S16/S17 再开放完整修订和更新。
 
 ### 2026-10-18-foundation-s01-s05 / S03
 
