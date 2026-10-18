@@ -8,21 +8,22 @@
 | --- | --- |
 | 最后更新 | 2026-10-18（北京时间） |
 | 计划版本 | v1 |
-| 总体状态 | 用户已授权完成 S01—S05；正在核实基线，按步骤实施并保存验证证据 |
-| 已完成开发步骤 | 4/20 |
-| 当前进行中步骤 | S05 |
-| 下一步骤 | S05：持久化与隔离迁移 |
-| 下一具体动作 | 追加研究版本关系迁移、actor repository、受控原件存储，实跑旧库升级/并发/越权/执行 fencing |
+| 总体状态 | S01—S05 基础实现及相关验证完成；真实模型成功验收和独立人工金标未完成，分别保留失败/待核对状态 |
+| 已完成开发步骤 | 5/20 |
+| 当前进行中步骤 | 无 |
+| 下一步骤 | S06：财报发现、导入与时间证据（本轮范围至 S05，尚未开展） |
+| 下一具体动作 | 下次继续时先核对本分支、S05 追加迁移与原件目录；按 S06 扩展 discovery/connectors/network，复用新文档版本存储，不把测试采集器当生产导入器 |
 | 当前会话登记 | 2026-10-18-foundation-s01-s05：核实、数据评测、现状测量、合同、持久化 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
 | 当前参考分支 / HEAD | `codex/research-foundation-s01-s05`；源码起点 `d17ac89`，各步骤改动随本文件提交，最终身份见 `git log -1` |
 | 目标仓库 | `https://github.com/xuwenjun2001/wolfBot`，默认分支 `main` |
-| 本轮涉及文件 | 本计划目录；研究专用 fixtures/runner；`src/lib/company-research/`、研究 API、Prisma 新追加迁移及对应测试/数据文档。S01 先只写审计和进度 |
-| 已有改动提醒 | 本轮开始时工作区干净；只更新根规则与本交接文件，后续会话仍需先核对实际 Git 状态 |
-| 运行环境 / 进程 | 本轮未启动应用、研究 worker 或模型任务；未改变现有进程 |
-| 模型与数据费用 | 本轮无模型/API 评测调用；开发基线待 S03 实测 |
-| 阻塞 | 当前规划无阻塞；S01 后核实开发服务、资料和凭据可用性，未核实不等于故障 |
-| 最近验证 | 本轮 `check:docs` 通过（65 个 Markdown、387 条本地链接），差异格式检查通过；迁移验证见 E-MIGRATION-01，Quality 失败与暂缓决定见本轮会话记录 |
+| 本轮涉及文件 | 本计划与专题文档；`fixtures/company-research/`；`scripts/research/` 与隔离 DB runner；研究合同/版本 store/原件存储、`api/company-research/tasks/`；Prisma schema/新追加迁移；TS 排除证据目录、package 验证命令、评测 JSON LF 规则 |
+| 已有改动提醒 | 开始时干净；本轮相关改动按 S01—S05 分步提交到工作分支；下次仍以 `git status` 和远端 SHA 核实，不盲信旧记录 |
+| 运行环境 / 进程 | 未启动或终止业务应用/Worker；本轮校准与迁移专用 PostgreSQL 容器均已删除，证据原件保留；应用/生产库未执行新迁移 |
+| 模型与数据费用 | 1 校准 + 4 开发，共 5 次真实网关请求均 401；无 usage，费用 unknown；公开年报采集无付费 API；未运行真实搜索 E2E |
+| 阻塞 | 成功模型验收受网关凭据 401 阻塞；独立人工金标待核对。S06 准备不依赖模型成功。Windows 共享 Prisma DLL 正在被开发服务使用，原位置 generate 失败；独立目录客户端生成和 ORM smoke 通过 |
+| 最近验证 | 57 项单元/API 测试通过；13 项真实 PG 集成通过；旧 schema 升级、重复 deploy、新旧代码回退读取通过；types/lint/docs（68 文件、401 链接）通过。模块检查仅剩 S01 三个既有超限；Quality Node/Python 审计暂缓，未宣称全量 CI/构建通过 |
+| 受控资料恢复 | 开发资料在 `data/research-agent-upgrade/`；本机 `RESEARCH_HOLDOUT_ROOT=D:/QuantPilot-private-evals/research-v1`，换机须经受控归档恢复并核对登记 hash；这里不记录保留题/答案 |
 | 范围提醒 | 完成 S01—S05；不展开 S06 之后产品能力或生产部署；已有 Quality 问题按用户要求暂缓 |
 
 ## 步骤状态
@@ -35,7 +36,7 @@
 | S02 | 固定资料、人工答案与评测合同 | S01 | done | E-S02-01；evaluation.md；参考答案 source-checked，独立人工签字 pending，不是 human golden |
 | S03 | 实测基线与失败记录 | S01、S02 | done | E-S03-01；5 次网关请求均 401，无模型答案；unsupported 与鉴权失败分开记录 |
 | S04 | 版本化领域与事件合同 | S01、S02 | done | E-S04-01；contracts.md；51 测试通过/2 DB 跳过；types 通过 |
-| S05 | 持久化、隔离与迁移 | S04 | in_progress | append-only migration/repository/API/原件存储与真实 DB 验证 |
+| S05 | 持久化、隔离与迁移 | S04 | done | E-S05-01；七张版本表、actor repository/原件存储/API；13 项 PG 测试和旧库升级/旧代码兼容通过 |
 | S06 | 财报发现、导入与时间证据 | S05 | pending | — |
 | S07 | 文本 PDF / HTML 定位解析 | S06 | pending | — |
 | S08 | OCR 与表格结构解析 | S07 | pending | — |
@@ -60,7 +61,8 @@
 - 当前研究合同主题为主营业务、上下游和近期财报；双期变化研究仍是拟新增能力。
 - 已有来源 hash、引用存在性校验、研究状态、Worker fencing、SSE 与取消；不能因此声称升级步骤已完成。
 - 扫描件 OCR、检索任意已读来源、结构化计划编辑和报告版本差异需按计划实现。
-- 未重跑研究 E2E、未启动服务、未测当前成功率。历史看板/研究报告只作为背景。
+- S01—S05 新增可复验的基线、评测、版本合同和持久化基础层；新请求先保存 draft，S11 才接入双期执行。旧 Worker 不领取新表。
+- 本轮真实网关基线全部在鉴权前失败，未取得模型研究答案；开发参考答案与独立人工金标分开登记，不能报告质量提升。历史看板/研究报告仅作背景。
 
 ## 验收证据
 
@@ -105,6 +107,17 @@ E-Sxx-01 / 日期 / 会话标识：
 ```
 
 ## 会话历史
+
+### 2026-10-18-foundation-s01-s05 / S05 与最终交接
+
+- 完成追加迁移 `20261018140000_research_version_foundation`，七张版本表、关系/部分唯一约束与五类不可变 UPDATE 触发器；旧四表和历史迁移未修改。实现可信 actor 下的任务幂等、计划/报告竞争写、文档版本、受控原件/页 receipt、attempt lease/fencing/预算继承及私有读取/取消 API。需求编辑、执行器、生产导入/OCR/UI 留给对应后续步骤。
+- E-S05-01：`npm run test:research:postgres` 退出 0，13 项真实 PostgreSQL 测试通过；自动创建/删除专用容器，旧 30 条迁移 → 旧代码写报告与排队任务 → 追加第 31 条 → 重复 deploy → 独立 Prisma 生成/ORM smoke → 新旧代码读旧报告及旧 Worker claim/checkpoint → 集成测试 → migrate status，全部退出 0。旧代码取自 `d17ac89` 的真实文件，没有伪造旧 reader。
+- 最终迁移原件 `data/research-agent-upgrade/evidence/S05/rehearsal-1eaa9b48-40c0-4d4c-9fae-92a2cc164304/manifest.json`，SHA-256 `13d98a56f745fafd85ec9b4219f7d4627bcf0bece7f4b7e2a8e960c84c1f08f8`；包含 HEAD、48 个相关文件 hash、逐阶段日志摘要和容器清理结果，可用同一命令重新演练。
+- `npm run test:unit -- src/lib/company-research src/app/api/company-research` 退出 0，57 通过、13 DB 默认跳过；后者由上述专用命令全部实跑。`npm run type-check`、定向 ESLint、Python 采集脚本语法、Prisma validate、资料 hash/引用验证、docs 与差异检查通过。日志在 `data/research-agent-upgrade/evidence/S05/`；评测输入与 rubric hash 未改变。
+- 检查过程发现并修复：报告验证原件 I/O 期间可能失去租约，发布前再次 fencing；API 测试移入 API 层消除本轮引入的反向依赖；ready 文档必须有解析产物与 parser 元数据。模块检查仅剩三项已有超限，未放宽规则。首次使用 `.cjs` 触发已有 ESLint 插件适用范围问题，改为仓库常规 `.js` 后定向检查通过。
+- 环境局限：默认 `prisma generate` 因运行中 DLL 锁 EPERM 失败，没有终止用户服务；同 schema 在独立目录完整生成并实测通过。未做生产部署、未对业务库迁移、未运行完整 release/build/CI；Node 锁/Python 审计按原授权暂缓。
+- 归档边界：原件、模型失败、迁移日志归本升级任务所有，保留至 S20/稳定归档；测试原件是合成持久化 fixture，不冒充真实财报解析证据。S03 起始测试容器和演练容器均清理，应用进程未动。
+- 下一步 S06：先读入口、核对实际 Git/证据与开发库迁移前提，按新 document schema 统一发现/导入/披露时间；用户本轮仅授权 S01—S05，不自行执行 S06。后续修复模型凭据另存基线；人工核对后才能将参考答案晋为 golden。
 
 ### 2026-10-18-foundation-s01-s05 / S04
 

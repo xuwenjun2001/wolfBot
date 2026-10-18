@@ -23,6 +23,8 @@
 
 主业务表由 Prisma 维护，不在这里手写：
 
+财报变化研究基础层由 `prisma/migrations/20261018140000_research_version_foundation/` 追加七张 `company_research_*` 版本表，保留旧研究四表；通过 `prisma migrate deploy` 执行，不在本目录重复建表。字段和原件存储说明见 [数据字典](../docs/data-dictionary.md) 与 [公司研究](../docs/company-research.md)。独立迁移演练用 `npm run test:research:postgres`，不指向应用或生产数据库。
+
 | 组件 | 表 |
 | --- | --- |
 | 项目与对话 | `projects`、`messages`、`sessions`、`tool_usages`、`user_requests` |

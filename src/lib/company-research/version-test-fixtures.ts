@@ -16,7 +16,7 @@ export function documentFixture(taskId: string = randomUUID(), spec = specFixtur
   return researchDocumentSchema.parse({ schemaVersion: 1, id: 'annual-2024', taskId, version: 1, company: spec.company,
     period: spec.periods[1], title: '公开年报测试', url: 'https://static.cninfo.com.cn/test.pdf', bytesSha256: fixtureHash,
     fetchedAt: '2026-10-18T00:00:00Z', mediaType: 'application/pdf', disclosure: { status: 'verified', precision: 'date', on: '2025-04-03', timezone: 'Asia/Shanghai', evidenceUrl: 'https://www.cninfo.com.cn/', evidenceSha256: fixtureHash },
-    original: { store: 'local', key: fixtureHash, sha256: fixtureHash, byteLength: 10 }, state: 'ready', pageCount: 143 });
+    original: { store: 'local', key: fixtureHash, sha256: fixtureHash, byteLength: 10 }, state: 'acquired', pageCount: 143 });
 }
 export function reportFixture(taskId: string = randomUUID(), spec = specFixture()) {
   const citation = { documentId: 'annual-2024', documentVersion: 1, bytesSha256: fixtureHash, locator: { kind: 'page' as const, filePage: 5 }, quote: '经营现金流原文测试' };

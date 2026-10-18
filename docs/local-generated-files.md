@@ -11,6 +11,8 @@
 | `.next/`、`out/` | Next.js 开发和构建产物 | 可随时删除，重新运行 `npm run dev` 或 `npm run build` 会再生成 |
 | `node_modules/` | npm 依赖安装结果 | 不提交，依赖以 `package-lock.json` 为准 |
 | `data/projects/` | 用户生成的工作空间源码和产物 | 不提交；需要迁移索引时运行 `npm run db:sync-workspaces` |
+| `data/company-research/artifacts/` | actor 隔离的研究原件和解析 receipt | 与研究数据库一起保留/备份；不可当缓存批量清理 |
+| `data/research-agent-upgrade/` | 固定公开财报、评测原件、隔离迁移证据/客户端 | 不提交、不进入应用 TS 编译；保留至 S20/归档。保留题在仓库外受控路径 |
 | `data/strategy-scans/` | 本地策略扫描历史文件 | 新数据应优先迁入 PostgreSQL，历史文件可按需归档 |
 | `tmp/` | 评测报告、队列、修复单、视觉截图和临时文件 | 可按需清理；重要报告应导出或入库后再删 |
 | `test-results/`、`playwright-report/`、`coverage/` | Playwright、测试和覆盖率产物 | 可随时删除，重新运行测试会再生成 |

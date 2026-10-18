@@ -35,6 +35,7 @@
 | 想备份、清理 E2E/过期数据或判断哪些数据必须保留 | [数据生命周期与安全清理](data-lifecycle.md) |
 | 想做生产发布、备份恢复或回滚 | [生产发布 Runbook](release-runbook.md) |
 | 想做每日投研报告和推送 | [投研情报中心与日报自动化指南](research-automation-guide.md) |
+| 想使用公司研究或接续财报变化基础层 | [公司研究](company-research.md) |
 | 想参与开发 | [教学 06：开发者协作手册](learning/06-developer-playbook.md) |
 | 想学习怎么写 Skills | [教学 07：Skills 编写与迭代教程](learning/07-skills-authoring.md) |
 | 想深入策略平台 | [策略平台使用与设计指南](strategy-platform-guide.md) |

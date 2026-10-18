@@ -25,7 +25,8 @@ export const researchDocumentSchema = z.object({
   disclosure: disclosureSchema, original: artifactReferenceSchema,
   state: z.enum(['acquired', 'parse_pending', 'ready', 'partial', 'unreadable']), pageCount: z.number().int().min(1).max(10000).optional(),
   parsed: artifactReferenceSchema.optional(), parser: z.object({ name: z.string().min(1).max(100), version: z.string().min(1).max(100), failedPages: z.array(z.number().int().min(1)).max(10000), warnings: z.array(z.string().max(500)).max(100) }).strict().optional(),
-}).strict().refine(v => v.bytesSha256 === v.original.sha256, 'Original bytes/hash mismatch');
+}).strict().refine(v => v.bytesSha256 === v.original.sha256, 'Original bytes/hash mismatch')
+  .refine(v => v.state !== 'ready' || !!(v.parsed && v.parser), 'Ready documents need parsed artifact and parser metadata');
 export type ResearchDocument = z.infer<typeof researchDocumentSchema>;
 export const researchCitationSchema = z.object({
   documentId: researchIdSchema, documentVersion: revisionSchema, bytesSha256: sha256Schema,

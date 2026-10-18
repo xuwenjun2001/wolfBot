@@ -7,7 +7,7 @@ metering, governed Memory/Knowledge usage, durable generation dispatch, Data
 Agent composition locking, global Worker capacity and Worker process registry.
 None of these migrations contains a destructive reset.
 
-The directory contains 28 ordered migrations at this revision. The filesystem
+The directory contains 31 ordered migrations at this revision. The filesystem
 is the authoritative list; do not copy a shortened list into deployment
 automation:
 
@@ -36,6 +36,19 @@ constraint or partial unique index. The package command `npm run prisma:push`
 is retained as a compatibility alias for the versioned deploy/bootstrap chain.
 
 ## New, empty database
+
+Financial-change research adds `20261018140000_research_version_foundation`.
+It creates seven separate version tables, immutable snapshot UPDATE guards and
+an active-attempt unique index; legacy research tables are untouched. Code
+rollback can keep the additive schema: old runs remain readable and old workers
+cannot consume new draft tasks. This is code compatibility, not authorization
+to roll back production or drop any new tables/data.
+
+Run `npm run test:research:postgres` for a disposable Docker rehearsal of old
+schema, old-code fixtures, forward/repeated deploy, client generation and
+repository tests. It never adopts or mutates the application database. Generated
+clients and old-source probes stay in ignored evidence storage, excluded from
+application TypeScript compilation.
 
 Set `DATABASE_URL` to the target PostgreSQL database, then run:
 

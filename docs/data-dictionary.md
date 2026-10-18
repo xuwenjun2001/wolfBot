@@ -320,6 +320,22 @@ running -> failed
 
 详见 [战法平台实现与运行](tactics-platform.md)。
 
+## 财报变化研究版本存储
+
+财报变化研究 v1 使用追加迁移 `20261018140000_research_version_foundation`，不覆盖旧 `company_research_runs/sources/reports/events`。权限是 actor 私有，没有隐式 project 共享。
+
+| 新表 | 关键口径 |
+| --- | --- |
+| `company_research_tasks` | 逻辑请求、可信 actor、actor 内幂等键、完整 payload hash；需求/计划/报告指针；generation 与 sequence 分离；累计工具数、可空 token 计数、首次 started_at/deadline |
+| `company_research_requests` | task + revision 主键，完整需求 JSON 和 hash，不可变 |
+| `company_research_plans` | task + revision 主键；引用需求版本；expectedRevision 冲突检测、task 内请求键与完整修改摘要 |
+| `company_research_documents` | task + document id + version 主键；原始 bytes SHA-256、原件/解析产物 digest key、披露证据、报告期、parser/定位状态；大原件不进 JSON |
+| `company_research_attempts` | 独立 execution id，引用 request/plan；task 内 generation 唯一、running 部分唯一索引；worker、租约、终态与时间 |
+| `company_research_report_versions` | task + revision 主键；同时约束 plan/request 与 attempt/generation 关系；事实、引用、缺口的不可变 JSON 快照 |
+| `company_research_version_events` | task + sequence 主键；版本化公开 envelope，可用于有序重放，不保存隐藏推理 |
+
+需求、计划、文档、报告和事件表有禁止 UPDATE 的数据库触发器。取消只失效执行权并保留原件/报告。资料正文在 `data/company-research/artifacts/` 按 actor 摘要分区，每次授权读取后再验 hash；未引用对象不自动清理。token 未知用 NULL，不能当作零成本。详情与边界见 [公司研究](company-research.md)、[合同](plans/research-agent-upgrade/contracts.md)。
+
 ## 维护规则
 
 - 新增 SQL 表或字段后，同步更新本文件和 `sqls/README.md`。

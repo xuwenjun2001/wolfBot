@@ -26,6 +26,9 @@
 | [development.md](development.md) | 架构、数据、Agent、界面、测试和协作规范 |
 | [progress.md](progress.md) | 当前状态、验收证据、正在修改的文件及最近交接；唯一进度来源 |
 | [decisions.md](decisions.md) | 重要技术选择、理由、适用边界与变更历史 |
+| [baseline.md](baseline.md) | S01 实现审计及 S03 真实网关失败基线 |
+| [evaluation.md](evaluation.md) | S02 固定资料、答案核验状态和评分合同 |
+| [contracts.md](contracts.md) | S04 版本、引用和执行权语义 |
 
 会话历史直接追加在 `progress.md`，避免再维护一份不同步的日志。详细测试原件保存在受控证据目录，进度文件保留脱敏摘要、位置、版本和 hash。
 
@@ -41,7 +44,7 @@
 
 ## 现状与拟新增能力
 
-2026-10-18 静态核对：已有公司识别、财务/公告接口、DeepSeek Search/Fetch、PDF 文本提取、证据台账、Worker 租约、SSE 和取消。当前正文上下文主要选最近 8 份来源，扫描件无 OCR；引用存在性校验不能单独证明结论语义正确。详见 S01 的待执行基线审计。
+2026-10-18 静态核对：已有公司识别、财务/公告接口、DeepSeek Search/Fetch、PDF 文本提取、证据台账、Worker 租约、SSE 和取消。当前正文上下文主要选最近 8 份来源，扫描件无 OCR；引用存在性校验不能单独证明结论语义正确。详见 S01 现状审计与 S03 实测记录。
 
 代码入口：`src/lib/company-research/`、`src/app/company-research/`、`src/app/api/company-research/`、`scripts/workers/company-research-worker.ts`。现有研究与主看板生成链路不同；不能把看板 benchmark 结果直接当作新研究链路的成绩。
 

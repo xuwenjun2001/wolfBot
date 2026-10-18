@@ -1531,3 +1531,120 @@ model CompanyResearchEvent {
   @@id([runId, sequence])
   @@map("company_research_events")
 }
+
+// Financial-change v1 snapshots. Legacy CompanyResearchRun stays independent.
+model CompanyResearchTask {
+  id String @id
+  actorId String @map("actor_id")
+  requestKey String @map("request_key")
+  payloadHash String @map("payload_hash")
+  status String @default("draft")
+  requestRevision Int @default(1) @map("request_revision")
+  planRevision Int @default(0) @map("plan_revision")
+  reportRevision Int @default(0) @map("report_revision")
+  generation Int @default(0)
+  sequence Int @default(0)
+  activeAttemptId String? @map("active_attempt_id")
+  cancelRequested Boolean @default(false) @map("cancel_requested")
+  toolCalls Int @default(0) @map("tool_calls")
+  inputTokens Int? @map("input_tokens")
+  outputTokens Int? @map("output_tokens")
+  unknownModelRequests Int @default(0) @map("unknown_model_requests")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  startedAt DateTime? @map("started_at") @db.Timestamptz
+  deadline DateTime? @db.Timestamptz
+  requests CompanyResearchRequest[]
+  plans CompanyResearchPlan[]
+  documents CompanyResearchDocument[]
+  attempts CompanyResearchAttempt[]
+  reports CompanyResearchReportVersion[]
+  versionEvents CompanyResearchVersionEvent[]
+  @@unique([actorId, requestKey])
+  @@index([actorId, createdAt], map: "company_research_task_owner")
+  @@map("company_research_tasks")
+}
+model CompanyResearchRequest {
+  taskId String @map("task_id")
+  revision Int
+  payloadHash String @map("payload_hash")
+  spec Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  task CompanyResearchTask @relation(fields: [taskId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  plans CompanyResearchPlan[]
+  @@id([taskId, revision])
+  @@map("company_research_requests")
+}
+model CompanyResearchPlan {
+  taskId String @map("task_id")
+  revision Int
+  requestRevision Int @map("request_revision")
+  requestKey String @map("request_key")
+  payloadHash String @map("payload_hash")
+  plan Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  task CompanyResearchTask @relation(fields: [taskId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  request CompanyResearchRequest @relation(fields: [taskId, requestRevision], references: [taskId, revision], onDelete: Cascade, onUpdate: NoAction)
+  attempts CompanyResearchAttempt[]
+  reports CompanyResearchReportVersion[]
+  @@id([taskId, revision])
+  @@unique([taskId, requestKey])
+  @@unique([taskId, revision, requestRevision])
+  @@map("company_research_plans")
+}
+model CompanyResearchDocument {
+  taskId String @map("task_id")
+  id String
+  version Int
+  bytesSha256 String @map("bytes_sha256")
+  originalKey String @map("original_key")
+  parsedKey String? @map("parsed_key")
+  state String
+  metadata Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  task CompanyResearchTask @relation(fields: [taskId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  @@id([taskId, id, version])
+  @@index([taskId, bytesSha256], map: "company_research_document_hash")
+  @@map("company_research_documents")
+}
+model CompanyResearchAttempt {
+  id String @id
+  taskId String @map("task_id")
+  requestRevision Int @map("request_revision")
+  planRevision Int @map("plan_revision")
+  generation Int
+  worker String
+  status String
+  leaseUntil DateTime @map("lease_until") @db.Timestamptz
+  startedAt DateTime @default(now()) @map("started_at") @db.Timestamptz
+  finishedAt DateTime? @map("finished_at") @db.Timestamptz
+  task CompanyResearchTask @relation(fields: [taskId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  plan CompanyResearchPlan @relation(fields: [taskId, planRevision, requestRevision], references: [taskId, revision, requestRevision], onDelete: Cascade, onUpdate: NoAction)
+  reports CompanyResearchReportVersion[]
+  @@unique([taskId, generation])
+  @@unique([taskId, id, generation])
+  @@map("company_research_attempts")
+}
+model CompanyResearchReportVersion {
+  taskId String @map("task_id")
+  revision Int
+  requestRevision Int @map("request_revision")
+  planRevision Int @map("plan_revision")
+  attemptId String @map("attempt_id")
+  generation Int
+  report Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  task CompanyResearchTask @relation(fields: [taskId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  plan CompanyResearchPlan @relation(fields: [taskId, planRevision, requestRevision], references: [taskId, revision, requestRevision], onDelete: Cascade, onUpdate: NoAction)
+  attempt CompanyResearchAttempt @relation(fields: [taskId, attemptId, generation], references: [taskId, id, generation], onDelete: Cascade, onUpdate: NoAction)
+  @@id([taskId, revision])
+  @@map("company_research_report_versions")
+}
+model CompanyResearchVersionEvent {
+  taskId String @map("task_id")
+  sequence Int
+  payload Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  task CompanyResearchTask @relation(fields: [taskId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  @@id([taskId, sequence])
+  @@map("company_research_version_events")
+}

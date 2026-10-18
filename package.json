@@ -29,6 +29,7 @@
     "test": "npm run test:unit && npm run test:backend",
     "test:unit": "vitest run",
     "test:pi-agent:postgres": "node scripts/checks/run-pi-agent-postgres-integration.js",
+    "test:research:postgres": "node scripts/checks/run-research-postgres-integration.js",
     "test:backend": "uv run --project services/market-data pytest -q services/market-data/tests",
     "type-check": "node scripts/checks/type-check.js",
     "prisma:generate": "prisma generate",

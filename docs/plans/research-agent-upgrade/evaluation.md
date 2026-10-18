@@ -36,7 +36,8 @@ S03 预登记预算：模型 `gpt-5.6-luna`、reasoning `max`，开发每公司�
 
 ```powershell
 python scripts/research/collect-fixtures.py --restore-manifest fixtures/company-research/documents.json
-node --import tsx scripts/research/extract-fixtures.ts fixtures/company-research/documents.json
+Copy-Item fixtures/company-research/documents.json data/research-agent-upgrade/dataset-v1/development/manifest.json
+node --import tsx scripts/research/extract-fixtures.ts data/research-agent-upgrade/dataset-v1/development/manifest.json
 node --import tsx scripts/research/verify-fixtures.ts
 ```
 

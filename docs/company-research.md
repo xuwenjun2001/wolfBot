@@ -4,7 +4,7 @@
 
 ## 本地启动
 
-1. 执行 `npx prisma migrate deploy`，新增四张 `company_research_*` 表。
+1. 执行 `npx prisma migrate deploy` 应用已有迁移。旧研究链路使用四张 `company_research_*` 表，财报变化基础层另加七张版本表。
 2. 在不提交的 `.env.local` 配置研究模型的 `COMPANY_RESEARCH_API_KEY` 与 DeepSeek 官方密钥 `COMPANY_RESEARCH_SEARCH_API_KEY`。搜索密钥未单独设置时复用 `DEEPSEEK_API_KEY`。
 3. 默认网关为 `https://sub2api.380001.xyz/v1`，模型为 `gpt-5.6-luna`，推理强度为 `max`。可通过 `COMPANY_RESEARCH_BASE_URL`、`COMPANY_RESEARCH_MODEL` 指定服务端配置；不自动降级模型。
 4. `npm run dev` / `npm run dev:background` 自动管理研究 worker。也可单独运行 `npm run worker:research`；单任务运行用 `npm run worker:research:once`。
@@ -52,6 +52,22 @@ worker 采用 PostgreSQL 原子领取、60 秒 lease、10 秒 heartbeat 和 gene
 剩余 120 秒或 3 次工具调用时进入不可逆的 finalizing 阶段，禁止新增外部调查。请求受任务硬截止限制。截止或取消时直接从已核查证据生成报告；系统自动保存不增加工具步号，也不会假装正式提交。API/SSE 增加 phase、deadline、stopReason、coverage、systemEvents；页面显示阶段与系统收尾说明。
 
 状态版本、问题证据、查询历史、读取指纹和阶段都保存在现有 JSON 检查点，不增加数据库表。旧终态报告不改动；旧活跃任务保留有效草稿与引用，并重新核查新版问题，计数和开始时间不重置。
+
+## 财报变化研究基础层 v1
+
+S01—S05 的契约和存储准备见 [实施进度](plans/research-agent-upgrade/progress.md)、[合同](plans/research-agent-upgrade/contracts.md)、[固定评测](plans/research-agent-upgrade/evaluation.md)。这部分使用追加迁移 `20261018140000_research_version_foundation`，与上述旧研究任务并存。
+
+`POST /api/company-research/tasks` 接收严格的 financial_change v1 请求和 `Idempotency-Key`，重新核实证券身份，保存 actor 私有的 **draft**。请求含公司、两期、asOf、三类问题、合并/母公司口径、币种、比较状态和预算。不会交给旧 Worker 执行；完整计划生成和研究执行在 S11 接入。
+
+可用读取边界：`GET /api/company-research/tasks/{id}`；`GET /api/company-research/tasks/{id}/reports/{revision}`；`GET /api/company-research/tasks/{id}/documents/{documentId}/{version}`。文档加 `?content=original` 或 `?content=parsed` 下载对应受控内容，始终检查任务归属，使用 private/no-store 和 attachment；已知 digest 不能绕过授权。`POST /api/company-research/tasks/{id}/cancel` 取消草稿/执行权并保留资料。计划、文档注册、attempt 与报告写入先由受信 repository 使用；S05 不开放客户端任意写报告或修改计划。
+
+新 repository 将需求/计划/文档/报告/事件保存为不可变版本，旧代码读取旧表不受新表影响。计划乐观版本冲突、报告竞争写和过期 attempt 都会失败；逻辑工具预算和 deadline 不随 attempt 重建。报告提交核对页文本 receipt 与来源/时期/时间关系；语义、计算、解析和完整产品验收仍分别属于后续步骤。
+
+原件和页文本 receipt 位于 `data/company-research/artifacts/{actor摘要}/{内容摘要}`。数据库只存元数据、digest 引用与状态。相同 actor 可复用相同 bytes，跨 actor 存储隔离；每次读取重新核对长度/hash，拒绝目录链接和路径输入。数据库事务失败后可能留下未引用对象，需要独立保留/清理操作；不自动扫描删除。备份或迁移时应保留数据库和对应目录，单独恢复数据库不能保证原件可用。取消不删除资料；没有默认 TTL，后续删除必须按数据生命周期规范明确执行，不能只删除某个共享内容文件。
+
+验证入口：`npm run test:research:postgres`。需要 Docker 和本机已有的 `postgres:16` 镜像；脚本创建专用临时容器，仅绑定 localhost 的随机端口，以 migrate deploy 演练旧库 → 追加迁移 → 重复 deploy，再核对旧代码读写兼容、独立 Prisma 客户端和并发/隔离测试，最后删除自己创建的容器。输出留在 `data/research-agent-upgrade/evidence/S05/`。它不使用 `.env` 中的应用数据库连接，不执行 db push，也不改生产数据。
+
+Windows 开发服务可能锁住已加载的 Prisma DLL。演练脚本在独立目录生成客户端并做 ORM smoke，避免替换运行中的文件；正常应用客户端在维护开发服务时再按 `npm run prisma:generate` 更新。当前新 repository 使用参数化 SQL，没有依赖新增 ORM delegate 才能运行的隐式前提。
 
 
 ### 2026-09-18 本地验收

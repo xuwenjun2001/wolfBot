@@ -114,6 +114,8 @@ S19 的优化器只看到开发样本和失败，不能修改评分器或读取�
 
 ## 文档与交付
 
+研究基础层实跑命令现已登记：`node --import tsx scripts/research/verify-fixtures.ts`、`node --import tsx scripts/research/run-baseline.ts`、`npm run test:research:postgres`。用法分别见 evaluation.md、baseline.md 和公司研究专题；普通单测默认跳过 DB 集成，不能把跳过写成数据库验收通过。
+
 改变 API、配置、数据、页面或运行行为时更新对应专题；本目录只保存计划/实施证据，不复制整套现有使用手册。开发文档使用仓库相对路径便于迁移，面向用户回复使用可点击绝对文件路径。
 
 演示与简历只采用实际实现和可复核结果。保留失败原因、样本量、配置和局限。生产部署或数据同步需遵守对应 release/data 规范；S20 的开发验收不自动触发生产操作。
