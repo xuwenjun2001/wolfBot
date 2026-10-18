@@ -141,7 +141,7 @@
     "dotenv": "^17.4.2",
     "framer-motion": "^12.40.0",
     "ipaddr.js": "^2.5.0",
-    "js-yaml": "^4.1.1",
+    "js-yaml": "^5.4.3",
     "lucide-react": "^1.16.0",
     "next": "^16.2.12",
     "pdf-parse": "^2.4.5",
