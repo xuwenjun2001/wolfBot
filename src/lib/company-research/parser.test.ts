@@ -2,8 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { HtmlTextParser } from './text-parser';
 import { parsedDocumentV2Schema } from './parsed-document';
 import { locatedCitationText } from './citation-locator';
+import { reusableParserResult } from './parse-service';
+import { nativeNeedsOcr } from './ocr-parser';
 const options = () => ({ maxPages: 10, maxCharacters: 10000, signal: AbortSignal.timeout(5000) });
 describe('versioned parser locations', () => {
+  it('retries failed OCR and interrupted runs while retaining stable reviewed-page caches', () => {
+    for (const flag of ['cancelled_partial', 'timeout_partial', 'worker_stopped_partial', 'ocr_failed_native_fallback', 'ocr_service_unavailable_native_fallback']) expect(reusableParserResult([flag], [])).toBe(false);
+    expect(reusableParserResult([], [4])).toBe(false);
+    expect(reusableParserResult(['native_text_has_no_table_grid', 'truncated_pages:4,5'], [])).toBe(true);
+  });
   it('keeps stable HTML source ranges, excludes active content and verifies exact block locators', async () => {
     const html = Buffer.from('<html><head><title>hidden</title></head><body><p>现金流 &amp; 利润</p><script>恶意指令</script><p>(1,234.50) 万元</p></body></html>');
     const parser = new HtmlTextParser(), result = await parser.parse(html, 'text/html', options());
@@ -23,6 +30,8 @@ describe('versioned parser locations', () => {
     expect(parsedDocumentV2Schema.safeParse({ ...truncated, status: 'ready' }).success).toBe(false);
     expect(parsedDocumentV2Schema.safeParse({ ...empty, status: 'ready' }).success).toBe(false);
     expect(parsedDocumentV2Schema.safeParse({ ...truncated, pageCount: 2, truncatedPages: [] }).success).toBe(false);
+    expect(nativeNeedsOcr(truncated)).toBe(false); // A configured character limit is not an OCR defect.
+    expect(nativeNeedsOcr(empty)).toBe(true);
   });
   it('rejects invented table cells and a cancelled parse before work starts', async () => {
     await expect(new HtmlTextParser().parse(Buffer.from('<html>a</html>'), 'text/html', { ...options(), signal: AbortSignal.abort() })).rejects.toThrow();

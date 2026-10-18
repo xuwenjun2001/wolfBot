@@ -13,6 +13,7 @@ import { documentFixture, reportFixture, specFixture } from './version-test-fixt
 import type { ResearchTaskSpec } from './task-contracts';
 import { importTaskFiling, listResearchDocuments } from './acquisition-service';
 import * as network from './network';
+import * as filingAcquisition from './filing-acquisition';
 import { parseResearchDocument } from './parse-service';
 
 const enabled = process.env.COMPANY_RESEARCH_TEST_POSTGRES === '1';
@@ -82,6 +83,38 @@ describe.skipIf(!enabled)('versioned research PostgreSQL and controlled artifact
     const bad = structuredClone(report); Object.assign(bad.claims[0].citations[0].locator, { selector: 'invented' });
     await expect(commitResearchReport(actor, attempt, 0, bad, ctx)).rejects.toThrow('CITATION_LOCATOR_MISMATCH');
     expect((await commitResearchReport(actor, attempt, 0, report, ctx)).status).toBe('partial');
+  });
+  it('does not backdate replacement bytes using an unchanged official announcement date', async () => {
+    const task = (await createResearchTask(actor, specFixture(), randomUUID(), ctx))!;
+    const evidence = Buffer.from('synthetic official-date fixture');
+    const candidate: filingAcquisition.FilingCandidate = { id: 'cninfo-123456', periodId: 'fy2024', title: '2024年年度报告', provider: 'cninfo',
+      url: 'https://example.com/report.pdf', evidence, evidenceUrl: 'https://example.com/announcement',
+      disclosure: { status: 'verified', precision: 'date', on: '2025-04-03', timezone: 'Asia/Shanghai', evidenceUrl: 'https://example.com/announcement', evidenceSha256: artifactDigest(evidence) }, dateClaims: [], warnings: [] };
+    const discovery = vi.spyOn(filingAcquisition, 'discoverResearchFilings').mockResolvedValue({ candidates: [candidate], failures: [], hasMore: false, page: 1 });
+    const download = vi.spyOn(network, 'downloadResearchOriginal').mockResolvedValue({ bytes: original, mediaType: 'application/pdf', url: candidate.url });
+    const request = { provider: 'cninfo', candidateId: candidate.id };
+    try {
+      const first = await importTaskFiling(actor, task.id, request, AbortSignal.timeout(1000), ctx);
+      expect(first.eligibility).toBe('available');
+      download.mockResolvedValue({ bytes: Buffer.concat([original, Buffer.from('replacement')]), mediaType: 'application/pdf', url: candidate.url });
+      const revised = await importTaskFiling(actor, task.id, request, AbortSignal.timeout(1000), ctx);
+      expect(revised.document.disclosure.status).toBe('unknown'); expect(revised.eligibility).toBe('date_unverified');
+      expect(revised.document.provenance!.warnings).toContain('replacement_disclosure_unverified');
+      const retry = await importTaskFiling(actor, task.id, request, AbortSignal.timeout(1000), ctx);
+      expect(retry.reused).toBe(true); expect(retry.document.version).toBe(revised.document.version);
+      expect((await getResearchDocument(actor, task.id, candidate.id, 1, ctx))!.disclosure.status).toBe('verified');
+    } finally { discovery.mockRestore(); download.mockRestore(); }
+  });
+  it('does not publish a known fact sourced from unreviewed OCR blocks', async () => {
+    const task = await taskWithPlan(), base = documentFixture(task.id), id = 'b_ocr';
+    const receipt = { schemaVersion: 2, originalSha256: artifactDigest(original), mediaType: 'application/pdf', parser: { name: 'ocr-test', version: '1' }, pageCount: 1,
+      status: 'partial', failedPages: [], truncatedPages: [], warnings: [], pages: [{ filePage: 1, text: '经营现金流原文测试', blocks: [{ id, order: 0, kind: 'text', text: '经营现金流原文测试', quality: 'needs_review', flags: ['ocr_requires_review'], locator: { kind: 'block', filePage: 1, blockId: id } }] }] };
+    const bytes = Buffer.from(JSON.stringify(receipt));
+    await registerResearchDocument(actor, { ...base, state: 'partial', pageCount: 1, parser: { ...receipt.parser, failedPages: [], warnings: [] }, original: ref(original), bytesSha256: artifactDigest(original), parsed: ref(bytes) }, original, bytes, ctx);
+    const report = reportFor(task.id);
+    for (const c of [...report.facts.flatMap(f => f.citations), ...report.claims.flatMap(f => f.citations)]) Object.assign(c, { locator: receipt.pages[0].blocks[0].locator });
+    const attempt = await startResearchAttempt(actor, task.id, 1, 'ocr-verifier', ctx);
+    await expect(commitResearchReport(actor, attempt, 0, report, ctx)).rejects.toThrow('FACT_SOURCE_NEEDS_REVIEW');
   });
   it('creates once under concurrent retries and hashes all user fields within actor scope', async () => {
     const key = randomUUID(), spec = specFixture();

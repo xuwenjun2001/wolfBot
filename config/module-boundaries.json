@@ -294,6 +294,15 @@
       ]
     },
     {
+      "id": "document-parser",
+      "name": "本地文档解析适配",
+      "summary": "独立 Python 3.12 的 Docling/RapidOCR CPU 解析器，通过版本化 HTTP 回执与研究模块协作。",
+      "owner": "research",
+      "paths": ["services/document-parser/**"],
+      "dependsOn": [],
+      "publicSurface": ["services/document-parser/app.py"]
+    },
+    {
       "id": "market-data-backend",
       "name": "Python 市场数据后端",
       "summary": "FastAPI、行情 provider、TimescaleDB 事实库、Redis 缓存、ClickHouse 分析层和回测。",

@@ -6,16 +6,21 @@ import { listResearchDocuments } from './acquisition-service';
 import { artifactDigest } from './artifact-store';
 import { parsedDocumentV2Schema, type ParsedDocument } from './parsed-document';
 import { NativePdfParser, HtmlTextParser, type ResearchParserPort } from './text-parser';
+import { configuredPdfParser } from './ocr-parser';
 
-export const parseRequestSchema = z.object({ maxPages: z.number().int().min(1).max(1000).default(500), maxCharacters: z.number().int().min(100).max(5_000_000).default(2_000_000) }).strict();
+export const parseRequestSchema = z.object({ engine: z.enum(['native', 'auto', 'docling', 'ocr']).default('auto'), maxPages: z.number().int().min(1).max(1000).default(500), maxCharacters: z.number().int().min(100).max(5_000_000).default(2_000_000) }).strict();
+/** Transient interruption/fallback is evidence, but must not suppress a later retry. */
+export function reusableParserResult(warnings: string[], failedPages: number[]) {
+  return failedPages.length === 0 && !warnings.some(w => /^(?:cancelled_partial|timeout_partial|worker_stopped_partial|ocr_.*native_fallback)/.test(w));
+}
 export async function parseResearchDocument(actor: string, taskId: string, id: string, version: number, input: unknown, signal: AbortSignal, ctx = defaultResearchContext, adapter?: ResearchParserPort) {
   const options = parseRequestSchema.parse(input), task = await getResearchTask(actor, taskId, ctx);
   if (!task) throw new ResearchPersistenceError('NOT_FOUND');
   const { document, bytes } = await readResearchDocumentArtifact(actor, taskId, id, version, 'original', ctx);
-  const parser = adapter || (document.mediaType === 'application/pdf' ? new NativePdfParser() : new HtmlTextParser());
+  const parser = adapter || (document.mediaType === 'text/html' ? new HtmlTextParser() : options.engine === 'native' ? new NativePdfParser() : await configuredPdfParser(options.engine));
   const configuration = `${parser.version}:${options.maxPages}:${options.maxCharacters}`;
   const latest = (await listResearchDocuments(actor, taskId, ctx)).filter(d => d.id === id).at(-1)!;
-  if (latest.bytesSha256 === document.bytesSha256 && latest.parser?.name === parser.name && latest.parser.version === configuration && latest.parsed && !latest.parser.warnings.includes('cancelled_partial')) {
+  if (latest.bytesSha256 === document.bytesSha256 && latest.parser?.name === parser.name && latest.parser.version === configuration && latest.parsed && reusableParserResult(latest.parser.warnings, latest.parser.failedPages)) {
     await ctx.artifacts.read(actor, latest.parsed); return { document: latest, reused: true };
   }
   if (latest.version !== version) throw new ResearchPersistenceError('REVISION_CONFLICT', '请针对最新资料版本解析');

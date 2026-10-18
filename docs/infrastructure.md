@@ -2,6 +2,8 @@
 
 wolfbot 本地开发默认使用 PostgreSQL + TimescaleDB + Redis，并提供 Loki + Grafana + Alloy 作为本地可观测性组件。PostgreSQL 承载工作空间、项目、评测、配置、generation job/outbox、运行事实和数据库权威租约；TimescaleDB 承载股票 K 线、因子、策略信号和组合净值等时序数据；Redis 只承载可丢失的短期缓存，后续可扩展为 dispatcher 唤醒与进度投影，但不作为锁、任务事实或完成态权威；Loki 承载集中日志查询。可选的 Evolvable User Memory 独立部署在 `38089`，通过版本化 HTTP 契约为聊天提供用户级偏好召回，不与 wolfbot 共用数据库。环境文件优先级、ModelPort/官方直连与关闭 Memory 的完整方式见[配置指南](configuration.md)。
 
+财报扫描件与表格另有可选的 `services/document-parser`：Python 3.12 + Docling/RapidOCR，原生进程或 `docker-compose.parser.yml`，仅绑定回环地址 `7821`。Web 通过 `DOCUMENT_PARSER_URL/TOKEN` 访问；`DOCUMENT_PARSER_TIMEOUT_SECONDS` 默认 180 秒，不改变研究总预算。模型先下载到 `data/document-parser/models`，运行时离线；缓存另存 `data/document-parser/cache`。配置、实际验证边界和启动命令见 [OCR 服务](../services/document-parser/README.md)。
+
 ## 本地启动
 
 推荐按组件顺序启动。数据库和 Redis 是基础设施；Loki/Grafana/Alloy 是可选观测组件；market-data 是独立 Python API；主前端最后启动。

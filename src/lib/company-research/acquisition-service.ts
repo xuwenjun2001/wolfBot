@@ -36,8 +36,16 @@ export async function importTaskFiling(actor: string, taskId: string, input: unk
     candidate = { id: `manual-${artifactDigest(request.url).slice(0, 24)}`, ...request, evidence, evidenceUrl: request.url,
       disclosure: { status: 'unknown', reason: '手动链接没有已核实披露依据' }, dateClaims: [], warnings: ['disclosure_unverified', 'issuer_identity_requires_content_check'] };
   }
-  const existing = (await listResearchDocuments(actor, taskId, ctx)).filter(d => d.id === candidate.id).at(-1);
+  const history = (await listResearchDocuments(actor, taskId, ctx)).filter(d => d.id === candidate.id);
+  const existing = history.at(-1);
   const acquired = await acquireFiling(taskId, task.spec, candidate, (existing?.version || 0) + 1, signal);
+  if (history.some(d => d.bytesSha256 !== acquired.document.bytesSha256)) {
+    // An old announcement date does not prove when replacement PDF bytes became public.
+    // Keep quarantine across retries; fetching a replacement cannot backdate it.
+    acquired.document.disclosure = { status: 'unknown', reason: '同一来源原件已修订，修订内容的公开时点未核实' };
+    acquired.document.provenance!.warnings = [...candidate.warnings, 'replacement_disclosure_unverified'];
+    acquired.eligibility = 'date_unverified';
+  }
   // Byte-identical retries keep the original fetchedAt and parsed version. Changed provenance also gets an immutable revision.
   if (existing && existing.bytesSha256 === acquired.document.bytesSha256 && canonicalResearchJson(existing.disclosure) === canonicalResearchJson(acquired.document.disclosure) && canonicalResearchJson(existing.provenance) === canonicalResearchJson(acquired.document.provenance)) {
     await ctx.artifacts.read(actor, existing.original);

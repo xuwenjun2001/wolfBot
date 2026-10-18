@@ -1,5 +1,11 @@
 # 故障排查
 
+## OCR 服务无法启动或解析回退
+
+先带服务端 token 检查 `http://127.0.0.1:7821/health`。401 通常是 Web 与 parser 的 token 不一致；模型目录为空要先运行 bootstrap，不能靠启动接口自动下载。查看 v2 回执 warnings：`ocr_service_unavailable_native_fallback` 表示服务不可用，`ocr_failed_native_fallback` 表示调用失败；有文字回退不代表扫描件解析成功。这些回执允许后续重试，低质量表格仍需核对。
+
+Windows 的 DLL 锁错误先停止自己启动的 parser 再 `uv sync`，不终止其他 Python 服务。Docker 构建或解包停滞时先检查磁盘剩余空间、`docker version` 和引擎日志；返回 500/SIGBUS 时保留失败记录，用独立原生 CPU 环境继续验证。共享 Docker 的重启、存储迁移与全局清理不属于普通解析重试。命令和资源限制见 [OCR 服务](../services/document-parser/README.md)。
+
 ## 本地服务运行中断（2026-09-14排查）
 
 最近一轮日志显示PostgreSQL连接被管理命令终止，随后行情API和战法worker连接超时；容器记录上次停止时间为2026-09-11 00:47:34（北京时间），9月14日12:05恢复。该证据只能确认数据库停止，不能确认操作发起者；没有找到足以认定OOM的证据。恢复数据库不会自动复活此前单独启动、已经退出的Next/API进程。

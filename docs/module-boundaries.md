@@ -20,6 +20,7 @@ wolfbot 目前不适合拆成多语言微服务，也不需要引入 Java/Dubbo 
 | `eval-core` | 评测集、用例、运行、报告和 CI 质量门 | `src/lib/eval/**`、评测页面、评测脚本 |
 | `ops-core` | Docker、服务健康、日志和运维面板 | `src/lib/ops/**`、运行治理中心、观测配置 |
 | `market-data-backend` | FastAPI、行情、回测、TimescaleDB、Redis、ClickHouse | `services/market-data/**` |
+| `document-parser` | 本地 PDF/OCR/表格适配，独立 Python 3.12/CPU 容器，输出版本化回执 | `services/document-parser/**`；不引用 TS 或 market-data 源码 |
 
 ## 依赖原则
 

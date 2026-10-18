@@ -21,7 +21,7 @@ export const parsedDocumentV2Schema = z.object({
   parser: z.object({ name: z.string().min(1).max(100), version: z.string().min(1).max(100) }).strict(),
   pageCount: z.number().int().min(1).max(10000), status: z.enum(['ready', 'partial', 'unreadable']),
   failedPages: z.array(z.number().int().min(1)).max(10000), truncatedPages: z.array(z.number().int().min(1)).max(10000), warnings: z.array(z.string().max(500)).max(100),
-  pages: z.array(z.object({ filePage: z.number().int().min(1), text: z.string().max(500000), blocks: z.array(parsedBlockSchema).max(10000) }).strict()).min(1).max(10000),
+  pages: z.array(z.object({ filePage: z.number().int().min(1), text: z.string().max(500000), nativeText: z.string().max(500000).optional(), blocks: z.array(parsedBlockSchema).max(10000) }).strict()).min(1).max(10000),
 }).strict().superRefine((r, ctx) => {
   const ids = r.pages.flatMap(p => p.blocks.map(b => b.id));
   if (new Set(ids).size !== ids.length || new Set(r.pages.map(p => p.filePage)).size !== r.pages.length) ctx.addIssue({ code: 'custom', message: 'Duplicate page/block ID' });

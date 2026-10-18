@@ -31,6 +31,12 @@ export async function commitResearchReport(actor: string, token: ResearchAttempt
       if (receipt.schemaVersion === 2) rich.set(`${doc.id}:${doc.version}`, receipt);
       for (const page of receipt.pages) if (!doc.parser?.failedPages.includes(page.filePage)) text.set(`${doc.id}:${doc.version}:${page.filePage}`, page.text);
     }
+    for (const fact of report.facts.filter(f => f.value.status === 'known')) for (const c of fact.citations) {
+      const receipt = rich.get(`${c.documentId}:${c.documentVersion}`), loc = c.locator;
+      if (!receipt) continue;
+      const blocks = receipt.pages.flatMap(p => p.blocks).filter(b => loc.kind === 'html' || loc.kind === 'block' ? b.id === loc.blockId : loc.kind === 'table' ? b.table?.id === loc.tableId : b.locator.kind !== 'html' && b.locator.filePage === loc.filePage);
+      if (blocks.some(b => b.quality !== 'native')) throw new ResearchPersistenceError('INVALID_RESEARCH', 'FACT_SOURCE_NEEDS_REVIEW');
+    }
     const errors = reportBindingErrors(report, spec, documents, (id, version, page) => text.get(`${id}:${version}:${page}`), citation => {
       const receipt = rich.get(`${citation.documentId}:${citation.documentVersion}`);
       // Legacy receipts can prove a page quote only; they cannot prove invented block/table IDs.
