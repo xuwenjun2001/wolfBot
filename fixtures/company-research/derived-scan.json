@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "sourceDocumentId": "600519-2024-annual",
+  "sourceBytesSha256": "5299f4940e2ce4e91084b73dc457d558b9d335fa76fbfee6227e4254eb7f4a30",
+  "filePage": 5,
+  "recipe": "pdftoppm -scale-to 1500 PNG; reportlab image-only A4 PDF",
+  "path": "data/research-agent-upgrade/dataset-v1/derived/maotai-2024-p5-scan.pdf",
+  "bytesSha256": "2837fa338de71223de8285ceee2183bfc3cc7307c005471ee38ca0f0488afbc6",
+  "textLayer": false,
+  "syntheticDegradation": true
+}

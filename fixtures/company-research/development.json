@@ -1,0 +1,730 @@
+{
+  "schemaVersion": 1,
+  "datasetVersion": "research-dev-v1",
+  "cases": [
+    {
+      "id": "dev-600519",
+      "company": {
+        "symbol": "600519.SH",
+        "name": "贵州茅台"
+      },
+      "documentIds": [
+        "600519-2023-annual",
+        "600519-2024-annual"
+      ],
+      "asOf": "2025-06-30T15:59:59.999Z",
+      "questions": [
+        {
+          "id": "q1",
+          "text": "比较两期营业收入与归母净利润及增幅，说明口径。"
+        },
+        {
+          "id": "q2",
+          "text": "比较两期经营活动现金流量净额及增幅，与利润方向是否一致？解释须有证据。"
+        },
+        {
+          "id": "q3",
+          "text": "比较主要风险的延续与表述变化，引用两期原文；不要把未发现写成风险消失。"
+        }
+      ],
+      "reference": {
+        "status": "source_checked_agent_reference",
+        "humanReview": "pending",
+        "facts": [
+          {
+            "metric": "revenue",
+            "period": {
+              "start": "2023-01-01",
+              "end": "2023-12-31",
+              "kind": "annual"
+            },
+            "rawValue": "147693604994.14",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "basis": "cumulative",
+            "normalizedYuan": "147693604994.14",
+            "citation": {
+              "documentId": "600519-2023-annual",
+              "bytesSha256": "2125ff97a452ea79b0d784e2432f7d224b6aecc330b644b593477d69e22f4ed1",
+              "filePage": 5,
+              "quote": "主要会计数据和财务指标\n(一) 主要会计数据\n单位：元 币种：人民币\n主要会计数据 2023年 2022年 本期比上年\n同期增减(%)\n2021年\n调整后 调整前 调整后 调整前\n营业收入 147,693,604,994.14 124,099,843,771.99 124,099,843,771.99 19.01 106,190,154,843.76 106,190,154,843.76\n归属于上市公\n司股东的净利\n润\n7"
+            }
+          },
+          {
+            "metric": "parent_net_profit",
+            "period": {
+              "start": "2023-01-01",
+              "end": "2023-12-31",
+              "kind": "annual"
+            },
+            "rawValue": "74734071550.75",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "basis": "cumulative",
+            "normalizedYuan": "74734071550.75",
+            "citation": {
+              "documentId": "600519-2023-annual",
+              "bytesSha256": "2125ff97a452ea79b0d784e2432f7d224b6aecc330b644b593477d69e22f4ed1",
+              "filePage": 5,
+              "quote": ",099,843,771.99 124,099,843,771.99 19.01 106,190,154,843.76 106,190,154,843.76\n归属于上市公\n司股东的净利\n润\n74,734,071,550.75 62,717,467,870.12 62,716,443,738.27 19.16 52,435,506,622.16 52,460,144,378.16\n归属于上市公\n司股东的扣除\n非经常性损益\n"
+            }
+          },
+          {
+            "metric": "operating_cash_flow",
+            "period": {
+              "start": "2023-01-01",
+              "end": "2023-12-31",
+              "kind": "annual"
+            },
+            "rawValue": "66593247721.09",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "basis": "cumulative",
+            "normalizedYuan": "66593247721.09",
+            "citation": {
+              "documentId": "600519-2023-annual",
+              "bytesSha256": "2125ff97a452ea79b0d784e2432f7d224b6aecc330b644b593477d69e22f4ed1",
+              "filePage": 5,
+              "quote": " 62,792,896,829.57 62,791,872,697.72 19.05 52,556,464,900.24 52,581,102,656.24\n经营活动产生\n的现金流量净\n额\n66,593,247,721.09 36,698,595,830.03 36,698,595,830.03 81.46 64,028,676,147.37 64,028,676,147.37\n2023年末\n2022年末 本期末比上\n年"
+            }
+          },
+          {
+            "metric": "revenue",
+            "period": {
+              "start": "2024-01-01",
+              "end": "2024-12-31",
+              "kind": "annual"
+            },
+            "rawValue": "170899152276.34",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "basis": "cumulative",
+            "normalizedYuan": "170899152276.34",
+            "citation": {
+              "documentId": "600519-2024-annual",
+              "bytesSha256": "5299f4940e2ce4e91084b73dc457d558b9d335fa76fbfee6227e4254eb7f4a30",
+              "filePage": 5,
+              "quote": " 梁正勇 曾志\n七、 近三年主要会计数据和财务指标\n(一) 主要会计数据\n单位：元 币种：人民币\n主要会计数据 2024年 2023年\n本期比\n上年同\n期增减\n(%)\n2022年\n营业收入 170,899,152,276.34 147,693,604,994.14 15.71 124,099,843,771.99\n归属于上市公司股东的净\n利润 86,228,146,421.62 74,734,071,550.75 15.3"
+            }
+          },
+          {
+            "metric": "parent_net_profit",
+            "period": {
+              "start": "2024-01-01",
+              "end": "2024-12-31",
+              "kind": "annual"
+            },
+            "rawValue": "86228146421.62",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "basis": "cumulative",
+            "normalizedYuan": "86228146421.62",
+            "citation": {
+              "documentId": "600519-2024-annual",
+              "bytesSha256": "5299f4940e2ce4e91084b73dc457d558b9d335fa76fbfee6227e4254eb7f4a30",
+              "filePage": 5,
+              "quote": "减\n(%)\n2022年\n营业收入 170,899,152,276.34 147,693,604,994.14 15.71 124,099,843,771.99\n归属于上市公司股东的净\n利润 86,228,146,421.62 74,734,071,550.75 15.38 62,717,467,870.12\n归属于上市公司股东的扣\n除非经常性损益的净利润 86,240,905,977.42 74,752,564,425."
+            }
+          },
+          {
+            "metric": "operating_cash_flow",
+            "period": {
+              "start": "2024-01-01",
+              "end": "2024-12-31",
+              "kind": "annual"
+            },
+            "rawValue": "92463692168.43",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "basis": "cumulative",
+            "normalizedYuan": "92463692168.43",
+            "citation": {
+              "documentId": "600519-2024-annual",
+              "bytesSha256": "5299f4940e2ce4e91084b73dc457d558b9d335fa76fbfee6227e4254eb7f4a30",
+              "filePage": 5,
+              "quote": "市公司股东的扣\n除非经常性损益的净利润 86,240,905,977.42 74,752,564,425.52 15.37 62,792,896,829.57\n经营活动产生的现金流量\n净额 92,463,692,168.43 66,593,247,721.09 38.85 36,698,595,830.03\n2024年末 2023年末\n本期末\n比上年\n同期末\n增减（\n%）\n2022年末\n归属于上市公司股东的净\n资产 23"
+            }
+          }
+        ],
+        "changes": [
+          {
+            "metric": "revenue",
+            "percentage": "15.71"
+          },
+          {
+            "metric": "parent_net_profit",
+            "percentage": "15.38"
+          },
+          {
+            "metric": "operating_cash_flow",
+            "percentage": "38.85"
+          }
+        ],
+        "riskCitations": [
+          {
+            "documentId": "600519-2023-annual",
+            "bytesSha256": "2125ff97a452ea79b0d784e2432f7d224b6aecc330b644b593477d69e22f4ed1",
+            "filePage": 21,
+            "quote": "一是宏观经济风险；二是安全风险；三是舆情风险；四是环境保护风险。"
+          },
+          {
+            "documentId": "600519-2024-annual",
+            "bytesSha256": "5299f4940e2ce4e91084b73dc457d558b9d335fa76fbfee6227e4254eb7f4a30",
+            "filePage": 22,
+            "quote": "一是宏观经济风险；二是安全风险；三是舆情风险；四是环境保护风险。"
+          }
+        ],
+        "riskAnswer": "两期均列宏观经济、安全、舆情、环境保护四类风险；不能据此断言风险程度未变化。"
+      }
+    },
+    {
+      "id": "dev-000858",
+      "company": {
+        "symbol": "000858.SZ",
+        "name": "五粮液"
+      },
+      "documentIds": [
+        "000858-2023-annual",
+        "000858-2024-annual"
+      ],
+      "asOf": "2025-06-30T15:59:59.999Z",
+      "questions": [
+        {
+          "id": "q1",
+          "text": "比较两期营业收入与归母净利润及增幅，说明口径。"
+        },
+        {
+          "id": "q2",
+          "text": "比较两期经营活动现金流量净额及增幅，与利润方向是否一致？解释须有证据。"
+        },
+        {
+          "id": "q3",
+          "text": "比较主要风险的延续与表述变化，引用两期原文；不要把未发现写成风险消失。"
+        }
+      ],
+      "reference": {
+        "status": "source_checked_agent_reference",
+        "humanReview": "pending",
+        "facts": [
+          {
+            "metric": "revenue",
+            "period": {
+              "start": "2023-01-01",
+              "end": "2023-12-31",
+              "kind": "annual"
+            },
+            "rawValue": "83272067317.19",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "basis": "cumulative",
+            "normalizedYuan": "83272067317.19",
+            "citation": {
+              "documentId": "000858-2023-annual",
+              "bytesSha256": "1aab0efbe751c145990ac9652c3aff165452ee060bf22a0fe0412996a55e8566",
+              "filePage": 7,
+              "quote": "溯调整或重述以前年度会计数据\n是 □否\n追溯调整或重述原因\n会计政策变更\n2023 年 2022 年 本年比上年增减 2021 年\n调整前 调整后 调整后 调整前 调整后\n营业收入（元） 83,272,067,317.19 73,968,640,704.54 73,968,640,704.54 12.58% 66,209,053,612.11 66,209,053,612.11\n归属于上市公司股东的净利润\n（元） 30"
+            }
+          },
+          {
+            "metric": "parent_net_profit",
+            "period": {
+              "start": "2023-01-01",
+              "end": "2023-12-31",
+              "kind": "annual"
+            },
+            "rawValue": "30210585269.30",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "basis": "cumulative",
+            "normalizedYuan": "30210585269.30",
+            "citation": {
+              "documentId": "000858-2023-annual",
+              "bytesSha256": "1aab0efbe751c145990ac9652c3aff165452ee060bf22a0fe0412996a55e8566",
+              "filePage": 7,
+              "quote": ",968,640,704.54 73,968,640,704.54 12.58% 66,209,053,612.11 66,209,053,612.11\n归属于上市公司股东的净利润\n（元） 30,210,585,269.30 26,690,661,397.42 26,689,983,647.20 13.19% 23,377,074,353.40 23,380,590,527.63\n归属于上市公司股东的扣除非\n经常性损益的"
+            }
+          },
+          {
+            "metric": "operating_cash_flow",
+            "period": {
+              "start": "2023-01-01",
+              "end": "2023-12-31",
+              "kind": "annual"
+            },
+            "rawValue": "41742479908.23",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "basis": "cumulative",
+            "normalizedYuan": "41742479908.23",
+            "citation": {
+              "documentId": "000858-2023-annual",
+              "bytesSha256": "1aab0efbe751c145990ac9652c3aff165452ee060bf22a0fe0412996a55e8566",
+              "filePage": 7,
+              "quote": ",662,736,708.98 26,662,058,958.76 12.96% 23,327,729,257.82 23,331,245,432.05\n经营活动产生的现金流量净额\n（元） 41,742,479,908.23 24,431,136,261.48 24,431,136,261.48 70.86%（注） 26,774,941,873.05 26,774,941,873.05\n基本每股收益（元/股） 7.783"
+            }
+          },
+          {
+            "metric": "revenue",
+            "period": {
+              "start": "2024-01-01",
+              "end": "2024-12-31",
+              "kind": "annual"
+            },
+            "rawValue": "89175178322.70",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "basis": "cumulative",
+            "normalizedYuan": "89175178322.70",
+            "citation": {
+              "documentId": "000858-2024-annual",
+              "bytesSha256": "b737191a758994a35e9442d46847de771fe48b758feb9a7f35601def922435e7",
+              "filePage": 7,
+              "quote": "职责的财务顾问\n□适用 不适用\n六、主要会计数据和财务指标\n公司是否需追溯调整或重述以前年度会计数据\n□是 否\n2024 年 2023 年 本年比上年增减 2022 年\n营业收入（元） 89,175,178,322.70 83,272,067,317.19 7.09% 73,968,640,704.54\n归属于上市公司股东的\n净利润（元） 31,853,172,533.98 30,210,585,269.30 5.4"
+            }
+          },
+          {
+            "metric": "parent_net_profit",
+            "period": {
+              "start": "2024-01-01",
+              "end": "2024-12-31",
+              "kind": "annual"
+            },
+            "rawValue": "31853172533.98",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "basis": "cumulative",
+            "normalizedYuan": "31853172533.98",
+            "citation": {
+              "documentId": "000858-2024-annual",
+              "bytesSha256": "b737191a758994a35e9442d46847de771fe48b758feb9a7f35601def922435e7",
+              "filePage": 7,
+              "quote": "减 2022 年\n营业收入（元） 89,175,178,322.70 83,272,067,317.19 7.09% 73,968,640,704.54\n归属于上市公司股东的\n净利润（元） 31,853,172,533.98 30,210,585,269.30 5.44% 26,689,983,647.20\n归属于上市公司股东的\n扣除非经常性损益的净\n利润（元）\n31,741,959,276.27 30,116,468,"
+            }
+          },
+          {
+            "metric": "operating_cash_flow",
+            "period": {
+              "start": "2024-01-01",
+              "end": "2024-12-31",
+              "kind": "annual"
+            },
+            "rawValue": "33939755192.78",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "basis": "cumulative",
+            "normalizedYuan": "33939755192.78",
+            "citation": {
+              "documentId": "000858-2024-annual",
+              "bytesSha256": "b737191a758994a35e9442d46847de771fe48b758feb9a7f35601def922435e7",
+              "filePage": 7,
+              "quote": "扣除非经常性损益的净\n利润（元）\n31,741,959,276.27 30,116,468,910.79 5.40% 26,662,058,958.76\n经营活动产生的现金流\n量净额（元） 33,939,755,192.78 41,742,479,908.23 -18.69% 24,431,136,261.48\n基本每股收益（元/股） 8.2062 7.7830 5.44% 6.876\n稀释每股收益（元/股） 8.206"
+            }
+          }
+        ],
+        "changes": [
+          {
+            "metric": "revenue",
+            "percentage": "7.09"
+          },
+          {
+            "metric": "parent_net_profit",
+            "percentage": "5.44"
+          },
+          {
+            "metric": "operating_cash_flow",
+            "percentage": "-18.69"
+          }
+        ],
+        "riskCitations": [
+          {
+            "documentId": "000858-2023-annual",
+            "bytesSha256": "1aab0efbe751c145990ac9652c3aff165452ee060bf22a0fe0412996a55e8566",
+            "filePage": 22,
+            "quote": "一是内外部环境不确定性风险；二是有效需求恢复不及预期的风险；三是行业竞争尤其是头部企业"
+          },
+          {
+            "documentId": "000858-2024-annual",
+            "bytesSha256": "b737191a758994a35e9442d46847de771fe48b758feb9a7f35601def922435e7",
+            "filePage": 21,
+            "quote": "一是内外部环境不确定性风险；二是消费需求持续低迷、恢复不及预期；三是行业竞争加剧尤其是"
+          }
+        ],
+        "riskAnswer": "不确定性、需求和头部竞争延续；2024 年需求描述新增持续低迷，不等同于新增独立风险类别。"
+      }
+    },
+    {
+      "id": "dev-000333",
+      "company": {
+        "symbol": "000333.SZ",
+        "name": "美的集团"
+      },
+      "documentIds": [
+        "000333-2023-annual",
+        "000333-2024-annual"
+      ],
+      "asOf": "2025-06-30T15:59:59.999Z",
+      "questions": [
+        {
+          "id": "q1",
+          "text": "比较两期营业收入与归母净利润及增幅，说明口径。"
+        },
+        {
+          "id": "q2",
+          "text": "比较两期经营活动现金流量净额及增幅，与利润方向是否一致？解释须有证据。"
+        },
+        {
+          "id": "q3",
+          "text": "比较主要风险的延续与表述变化，引用两期原文；不要把未发现写成风险消失。"
+        }
+      ],
+      "reference": {
+        "status": "source_checked_agent_reference",
+        "humanReview": "pending",
+        "facts": [
+          {
+            "metric": "revenue",
+            "period": {
+              "start": "2023-01-01",
+              "end": "2023-12-31",
+              "kind": "annual"
+            },
+            "rawValue": "372037280",
+            "unit": "thousand_yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "basis": "cumulative",
+            "normalizedYuan": "372037280000",
+            "citation": {
+              "documentId": "000333-2023-annual",
+              "bytesSha256": "22f4915d91ada74a37eab8d074aef4c15420f3b1a8b5f5bd5777c00f97d58b86",
+              "filePage": 10,
+              "quote": "顾问\n□ 适用 √ 不适用\n六、主要会计数据和财务指标\n公司是否需追溯调整或重述以前年度会计数据\n□ 是 √ 否\n2023 年 2022 年 本年比上年增减 2021 年\n营业收入（千元） 372,037,280 343,917,531 8.18% 341,233,208\n归属于上市公司股东的净利润（千元） 33,719,935 29,553,507 14.10% 28,573,650\n归属于上市公司股东的扣"
+            }
+          },
+          {
+            "metric": "parent_net_profit",
+            "period": {
+              "start": "2023-01-01",
+              "end": "2023-12-31",
+              "kind": "annual"
+            },
+            "rawValue": "33719935",
+            "unit": "thousand_yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "basis": "cumulative",
+            "normalizedYuan": "33719935000",
+            "citation": {
+              "documentId": "000333-2023-annual",
+              "bytesSha256": "22f4915d91ada74a37eab8d074aef4c15420f3b1a8b5f5bd5777c00f97d58b86",
+              "filePage": 10,
+              "quote": "3 年 2022 年 本年比上年增减 2021 年\n营业收入（千元） 372,037,280 343,917,531 8.18% 341,233,208\n归属于上市公司股东的净利润（千元） 33,719,935 29,553,507 14.10% 28,573,650\n归属于上市公司股东的扣除非经常性损\n益的净利润（千元） 32,974,908 28,607,973 15.26% 25,929,086\n经营"
+            }
+          },
+          {
+            "metric": "operating_cash_flow",
+            "period": {
+              "start": "2023-01-01",
+              "end": "2023-12-31",
+              "kind": "annual"
+            },
+            "rawValue": "57902611",
+            "unit": "thousand_yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "basis": "cumulative",
+            "normalizedYuan": "57902611000",
+            "citation": {
+              "documentId": "000333-2023-annual",
+              "bytesSha256": "22f4915d91ada74a37eab8d074aef4c15420f3b1a8b5f5bd5777c00f97d58b86",
+              "filePage": 10,
+              "quote": ",573,650\n归属于上市公司股东的扣除非经常性损\n益的净利润（千元） 32,974,908 28,607,973 15.26% 25,929,086\n经营活动产生的现金流量净额（千元） 57,902,611 34,657,828 67.07% 35,091,704\n基本每股收益（元/股） 4.93 4.34 13.59% 4.17\n稀释每股收益（元/股） 4.92 4.33 13.63% 4.14\n加权"
+            }
+          },
+          {
+            "metric": "revenue",
+            "period": {
+              "start": "2024-01-01",
+              "end": "2024-12-31",
+              "kind": "annual"
+            },
+            "rawValue": "407149600",
+            "unit": "thousand_yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "basis": "cumulative",
+            "normalizedYuan": "407149600000",
+            "citation": {
+              "documentId": "000333-2024-annual",
+              "bytesSha256": "b17a9b9b84bca1d2a4e4a3cadc5dd5ba5c85e3f1fd2d758acd3315b5b040ecd9",
+              "filePage": 9,
+              "quote": "顾问\n□ 适用 √ 不适用\n六、主要会计数据和财务指标\n公司是否需追溯调整或重述以前年度会计数据\n□ 是 √ 否\n2024 年 2023 年 本年比上年增减 2022 年\n营业收入（千元） 407,149,600 372,037,280 9.44% 343,917,531\n归属于上市公司股东的净利润（千元） 38,537,237 33,719,935 14.29% 29,553,507\n归属于上市公司股东的扣"
+            }
+          },
+          {
+            "metric": "parent_net_profit",
+            "period": {
+              "start": "2024-01-01",
+              "end": "2024-12-31",
+              "kind": "annual"
+            },
+            "rawValue": "38537237",
+            "unit": "thousand_yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "basis": "cumulative",
+            "normalizedYuan": "38537237000",
+            "citation": {
+              "documentId": "000333-2024-annual",
+              "bytesSha256": "b17a9b9b84bca1d2a4e4a3cadc5dd5ba5c85e3f1fd2d758acd3315b5b040ecd9",
+              "filePage": 9,
+              "quote": "4 年 2023 年 本年比上年增减 2022 年\n营业收入（千元） 407,149,600 372,037,280 9.44% 343,917,531\n归属于上市公司股东的净利润（千元） 38,537,237 33,719,935 14.29% 29,553,507\n归属于上市公司股东的扣除非经常性损\n益的净利润（千元） 35,741,418 32,974,908 8.39% 28,607,973\n经营活"
+            }
+          },
+          {
+            "metric": "operating_cash_flow",
+            "period": {
+              "start": "2024-01-01",
+              "end": "2024-12-31",
+              "kind": "annual"
+            },
+            "rawValue": "60511572",
+            "unit": "thousand_yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "basis": "cumulative",
+            "normalizedYuan": "60511572000",
+            "citation": {
+              "documentId": "000333-2024-annual",
+              "bytesSha256": "b17a9b9b84bca1d2a4e4a3cadc5dd5ba5c85e3f1fd2d758acd3315b5b040ecd9",
+              "filePage": 9,
+              "quote": "9,553,507\n归属于上市公司股东的扣除非经常性损\n益的净利润（千元） 35,741,418 32,974,908 8.39% 28,607,973\n经营活动产生的现金流量净额（千元） 60,511,572 57,902,611 4.51% 34,657,828\n基本每股收益（元/股） 5.44 4.93 10.34% 4.34\n稀释每股收益（元/股） 5.42 4.92 10.16% 4.33\n加权平"
+            }
+          }
+        ],
+        "changes": [
+          {
+            "metric": "revenue",
+            "percentage": "9.44"
+          },
+          {
+            "metric": "parent_net_profit",
+            "percentage": "14.29"
+          },
+          {
+            "metric": "operating_cash_flow",
+            "percentage": "4.51"
+          }
+        ],
+        "riskCitations": [
+          {
+            "documentId": "000333-2023-annual",
+            "bytesSha256": "22f4915d91ada74a37eab8d074aef4c15420f3b1a8b5f5bd5777c00f97d58b86",
+            "filePage": 68,
+            "quote": "（5）贸易摩擦和关税壁垒带来市场风险"
+          },
+          {
+            "documentId": "000333-2024-annual",
+            "bytesSha256": "b17a9b9b84bca1d2a4e4a3cadc5dd5ba5c85e3f1fd2d758acd3315b5b040ecd9",
+            "filePage": 65,
+            "quote": "和加征关税等措施引起的贸易摩擦，加重了企业的经营成本"
+          }
+        ],
+        "riskAnswer": "宏观、要素价格、海外配置、汇兑、贸易壁垒风险延续；2024 文本增加加征关税表述，不能把整类风险说成首次出现。"
+      }
+    },
+    {
+      "id": "dev-600309",
+      "company": {
+        "symbol": "600309.SH",
+        "name": "万华化学"
+      },
+      "documentIds": [
+        "600309-2023-annual",
+        "600309-2024-annual"
+      ],
+      "asOf": "2025-06-30T15:59:59.999Z",
+      "questions": [
+        {
+          "id": "q1",
+          "text": "比较两期营业收入与归母净利润及增幅，说明口径。"
+        },
+        {
+          "id": "q2",
+          "text": "比较两期经营活动现金流量净额及增幅，与利润方向是否一致？解释须有证据。"
+        },
+        {
+          "id": "q3",
+          "text": "比较主要风险的延续与表述变化，引用两期原文；不要把未发现写成风险消失。"
+        }
+      ],
+      "reference": {
+        "status": "source_checked_agent_reference",
+        "humanReview": "pending",
+        "facts": [
+          {
+            "metric": "revenue",
+            "period": {
+              "start": "2023-01-01",
+              "end": "2023-12-31",
+              "kind": "annual"
+            },
+            "rawValue": "175360935668.36",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "basis": "cumulative",
+            "normalizedYuan": "175360935668.36",
+            "citation": {
+              "documentId": "600309-2023-annual",
+              "bytesSha256": "64eb90a55396add030faaa7a05996fdd5f0095c1c26f0f1309ab6f19522991f1",
+              "filePage": 7,
+              "quote": "计师姓名 赵海舟、谢巍\n七、近三年主要会计数据和财务指标\n(一)主要会计数据\n单位：元 币种：人民币\n主要会计数据 2023年 2022年 本期比上年同期\n增减(%) 2021年\n营业收入 175,360,935,668.36 165,565,484,373.69 5.92 145,537,817,628.55\n归属于上市公司股\n东的净利润 16,815,755,534.31 16,233,626,024.32 3.59 "
+            }
+          },
+          {
+            "metric": "parent_net_profit",
+            "period": {
+              "start": "2023-01-01",
+              "end": "2023-12-31",
+              "kind": "annual"
+            },
+            "rawValue": "16815755534.31",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "basis": "cumulative",
+            "normalizedYuan": "16815755534.31",
+            "citation": {
+              "documentId": "600309-2023-annual",
+              "bytesSha256": "64eb90a55396add030faaa7a05996fdd5f0095c1c26f0f1309ab6f19522991f1",
+              "filePage": 7,
+              "quote": "\n增减(%) 2021年\n营业收入 175,360,935,668.36 165,565,484,373.69 5.92 145,537,817,628.55\n归属于上市公司股\n东的净利润 16,815,755,534.31 16,233,626,024.32 3.59 24,648,748,123.08\n归属于上市公司股\n东的扣除非经常性\n损益的净利润\n16,438,841,961.03 15,797,326,614."
+            }
+          },
+          {
+            "metric": "operating_cash_flow",
+            "period": {
+              "start": "2023-01-01",
+              "end": "2023-12-31",
+              "kind": "annual"
+            },
+            "rawValue": "26796752552.51",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "basis": "cumulative",
+            "normalizedYuan": "26796752552.51",
+            "citation": {
+              "documentId": "600309-2023-annual",
+              "bytesSha256": "64eb90a55396add030faaa7a05996fdd5f0095c1c26f0f1309ab6f19522991f1",
+              "filePage": 7,
+              "quote": "市公司股\n东的扣除非经常性\n损益的净利润\n16,438,841,961.03 15,797,326,614.07 4.06 24,356,144,091.02\n经营活动产生的现\n金流量净额 26,796,752,552.51 36,336,824,920.33 -26.25 27,922,292,184.74\n2023年末 2022年末 本期末比上年同\n期末增减（%） 2021年末\n归属于上市公司股\n东的净资产 88,6"
+            }
+          },
+          {
+            "metric": "revenue",
+            "period": {
+              "start": "2024-01-01",
+              "end": "2024-12-31",
+              "kind": "annual"
+            },
+            "rawValue": "182069119160.94",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "basis": "cumulative",
+            "normalizedYuan": "182069119160.94",
+            "citation": {
+              "documentId": "600309-2024-annual",
+              "bytesSha256": "0c37e70c554609f4a22990fd97f3da4ee92bb717e44d641ac7800083789d4df7",
+              "filePage": 7,
+              "quote": "姓名 安秀艳、李辉华\n七、近三年主要会计数据和财务指标\n(一) 主要会计数据\n单位：元 币种：人民币\n主要会计数据 2024年 2023年 本期比上年同期\n增减(%) 2022年\n营业收入 182,069,119,160.94 175,360,935,668.36 3.83 165,565,484,373.69\n归属于上市公司股\n东的净利润 13,033,066,612.84 16,815,755,534.31 -22.4"
+            }
+          },
+          {
+            "metric": "parent_net_profit",
+            "period": {
+              "start": "2024-01-01",
+              "end": "2024-12-31",
+              "kind": "annual"
+            },
+            "rawValue": "13033066612.84",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "basis": "cumulative",
+            "normalizedYuan": "13033066612.84",
+            "citation": {
+              "documentId": "600309-2024-annual",
+              "bytesSha256": "0c37e70c554609f4a22990fd97f3da4ee92bb717e44d641ac7800083789d4df7",
+              "filePage": 7,
+              "quote": "\n增减(%) 2022年\n营业收入 182,069,119,160.94 175,360,935,668.36 3.83 165,565,484,373.69\n归属于上市公司股\n东的净利润 13,033,066,612.84 16,815,755,534.31 -22.49 16,233,626,024.32\n归属于上市公司股\n东的扣除非经常性\n损益的净利润\n13,358,861,995.56 16,438,841,96"
+            }
+          },
+          {
+            "metric": "operating_cash_flow",
+            "period": {
+              "start": "2024-01-01",
+              "end": "2024-12-31",
+              "kind": "annual"
+            },
+            "rawValue": "30053435178.33",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "basis": "cumulative",
+            "normalizedYuan": "30053435178.33",
+            "citation": {
+              "documentId": "600309-2024-annual",
+              "bytesSha256": "0c37e70c554609f4a22990fd97f3da4ee92bb717e44d641ac7800083789d4df7",
+              "filePage": 7,
+              "quote": "司股\n东的扣除非经常性\n损益的净利润\n13,358,861,995.56 16,438,841,961.03 -18.74 15,797,326,614.07\n经营活动产生的现\n金流量净额 30,053,435,178.33 26,796,752,552.51 12.15 36,336,824,920.33\n2024年末 2023年末 本期末比上年同\n期末增减（%） 2022年末\n归属于上市公司股\n东的净资产 94,62"
+            }
+          }
+        ],
+        "changes": [
+          {
+            "metric": "revenue",
+            "percentage": "3.83"
+          },
+          {
+            "metric": "parent_net_profit",
+            "percentage": "-22.49"
+          },
+          {
+            "metric": "operating_cash_flow",
+            "percentage": "12.15"
+          }
+        ],
+        "riskCitations": [
+          {
+            "documentId": "600309-2023-annual",
+            "bytesSha256": "64eb90a55396add030faaa7a05996fdd5f0095c1c26f0f1309ab6f19522991f1",
+            "filePage": 32,
+            "quote": "2.组织绩效管理跟不上业务发展的风险"
+          },
+          {
+            "documentId": "600309-2024-annual",
+            "bytesSha256": "0c37e70c554609f4a22990fd97f3da4ee92bb717e44d641ac7800083789d4df7",
+            "filePage": 33,
+            "quote": "2.激励体系与业务发展不匹配的风险"
+          }
+        ],
+        "riskAnswer": "安全和人才风险延续；第二项从绩效管理适应性改为激励体系适配，属于表述与关注变化，不能断言旧风险消除。"
+      }
+    }
+  ]
+}

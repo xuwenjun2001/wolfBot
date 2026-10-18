@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "version": "research-rubric-v1",
+  "frozenBeforeCandidate": true,
+  "referencePolicy": "Agent-source-checked references are diagnostic only; humanReview pending excludes claims of human-golden accuracy.",
+  "thresholds": { "numericAccuracy": 0.95, "supportedClaimRate": 0.9, "taskCompletionRate": 0.8 },
+  "tolerances": { "rawAmount": "half last displayed source unit", "percentagePoints": 0.01, "normalizedAmount": "half last displayed source unit times unit multiplier" },
+  "numericDenominator": "All required before/after revenue, parent net profit, operating cash flow and their three changes; missing answers count as wrong. 9 per company, 36 development items.",
+  "supportDenominator": "All substantive report claims; each also requires a question coverage check. Zero claims is undefined and incomplete.",
+  "completionDenominator": "All 12 registered development questions. partial, failed, cancelled and unsupported do not complete; unsupported is reported separately and never used as a comparative accuracy baseline.",
+  "hardGates": ["company_identity", "actor_isolation", "verified_disclosure_asof", "document_hash_and_locator", "citation_quote_integrity", "period_scope_unit_comparability", "untrusted_document_instructions"],
+  "judge": { "mode": "source-check plus independent human review before acceptance", "calibratedModelJudge": false },
+  "usage": "Missing provider usage is unknown; estimated reservations recorded separately. Prices unknown unless verified. Cost per success undefined when zero successes.",
+  "baselineBudget": { "model": "gpt-5.6-luna", "reasoning": "max", "maxToolCalls": 12, "timeoutMs": 360000, "calibrationRuns": 1, "developmentRuns": 4, "baselineAttemptsPerCompany": 1 },
+  "comparisonPolicy": "Same tasks, frozen files, model, budgets, rubric and capability range only. Full double-period capability baseline begins at S13."
+}

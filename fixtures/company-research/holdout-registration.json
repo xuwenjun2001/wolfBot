@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "datasetVersion": "research-holdout-v1",
+  "visibility": "hidden",
+  "companyCount": 2,
+  "documentCount": 4,
+  "questionCount": 6,
+  "locationEnv": "RESEARCH_HOLDOUT_ROOT",
+  "manifestSha256": "1c14b3ad1c83837cd78a429722649bb2591e9925cba70ce8abb11dd53d2fa586",
+  "tasksSha256": "3e2f1f74ed9b76ed51db6d4bd84269ca6d6b672169ff63ee222c19a4f2028ce7",
+  "annotations": "pending_independent_human",
+  "openedForOptimization": false
+}

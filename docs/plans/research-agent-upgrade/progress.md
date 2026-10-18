@@ -9,10 +9,10 @@
 | 最后更新 | 2026-10-18（北京时间） |
 | 计划版本 | v1 |
 | 总体状态 | 用户已授权完成 S01—S05；正在核实基线，按步骤实施并保存验证证据 |
-| 已完成开发步骤 | 1/20 |
-| 当前进行中步骤 | S02 |
-| 下一步骤 | S02：固定资料和评测合同 |
-| 下一具体动作 | 取得双期公开财报、固定内容 hash，登记开发/保留拆分及原文核验参考答案 |
+| 已完成开发步骤 | 2/20 |
+| 当前进行中步骤 | S03 |
+| 下一步骤 | S03：隔离运行现状基线 |
+| 下一具体动作 | 固定资料适配现有研究，用测试身份/独立库执行校准及开发集，保存真实网关失败或结果 |
 | 当前会话登记 | 2026-10-18-foundation-s01-s05：核实、数据评测、现状测量、合同、持久化 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
 | 当前参考分支 / HEAD | `codex/research-foundation-s01-s05`；源码起点 `d17ac89`，各步骤改动随本文件提交，最终身份见 `git log -1` |
@@ -32,8 +32,8 @@
 | 步骤 | 工作包 | 最低依赖 | 状态 | 证据 / 阻塞 |
 | --- | --- | --- | --- | --- |
 | S01 | 现状核实与首版场景 | 无 | done | E-S01-01；baseline.md |
-| S02 | 固定资料、人工答案与评测合同 | S01 | in_progress | 资料采集与原文标注中 |
-| S03 | 实测基线与失败记录 | S01、S02 | pending | — |
+| S02 | 固定资料、人工答案与评测合同 | S01 | done | E-S02-01；evaluation.md；参考答案 source-checked，独立人工签字 pending，不是 human golden |
+| S03 | 实测基线与失败记录 | S01、S02 | in_progress | 隔离库已建立，runner 实现中 |
 | S04 | 版本化领域与事件合同 | S01、S02 | pending | — |
 | S05 | 持久化、隔离与迁移 | S04 | pending | — |
 | S06 | 财报发现、导入与时间证据 | S05 | pending | — |
@@ -105,6 +105,13 @@ E-Sxx-01 / 日期 / 会话标识：
 ```
 
 ## 会话历史
+
+### 2026-10-18-foundation-s01-s05 / S02
+
+- 新增采集、提取、验证脚本和 `fixtures/company-research/` 固定输入；6 家/12 年报，4 开发/2 仓库外保留，无公司交叉。真实原件与派生扫描样本明确区分。
+- E-S02-01：`node --import tsx scripts/research/verify-fixtures.ts`（带外部路径）退出 0，8 开发文档、24 原始数值、32 引用、12 问题；保留 hash/隔离通过。原件 `data/research-agent-upgrade/dataset-v1/`；验证 `data/research-agent-upgrade/evidence/S02/verification.json`。开发答案 hash `000f1fdbdaad9f48d98c632bbe6afa3f602a5c550a3ffc8b95e2f0a35d101cf8`；rubric hash `81df0d53f38650a955957896c6c9883030588dc455cb482b95eff2ac7e0f0d45`。
+- 验收分层：已完成资料和评分准备、确定性引用核查；人工 golden=0，独立人工标注待执行，保留答案 pending；没有宣称真实模型质量通过。准备脚本首次曾因运行格式/引用转录错误失败，已按原文修正后复验，不改变验收门槛。
+- 新建 disposable 容器 `wolfbot-research-test-20261018`，端口 55439；只用于本轮研究验证，旧迁移 deploy 成功。业务库/服务未改。继续 S03。
 
 ### 2026-10-18-foundation-s01-s05 / S01
 
