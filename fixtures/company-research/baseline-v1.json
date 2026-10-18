@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "version": "legacy-research-baseline-v1",
+  "codeHead": "0126d416ad3edb5c8868209d3fc85f9eaa1149ee",
+  "sourceHashes": {
+    "contracts.ts": "436a1a8bad4bd209a33818205d44cef645959655201dff676df7fad56beff2d0",
+    "runtime.ts": "8bed4670ec7df4720f13d88f7653444b11d018753f258cef0a385eb93e4a5aa3",
+    "tools.ts": "4bcd6ee0309c65e75fba4b6a5fcf5630bdd5611d8c83acb10b83445933628e7d",
+    "connectors.ts": "d17b85998109ae43805c099783240c53f8eec2088e94e6bcf5cb613d70eaa29c",
+    "provider.ts": "fa8c9707ff36d8473fdc8dd3f3016cd00d023036257afc70bf309a375ed5312e",
+    "store.ts": "df4aec061d37da2add6dc8c15c841b8df5ce044061d2cf8532ea06a794016156",
+    "ledger.ts": "7cb4533a1a34f003b9bc4da7293d6102ab3319c42ad302eb2bbbcad90aea560b",
+    "evidence.ts": "f11b723f1dbb690a0e5da73432163c3a4d3b723a6fb03d675c7fe3487d512a2b",
+    "discovery.ts": "96f20fce47635355b8500dc538b4ab53001cc2e66bdd8be6deeae747554e0297"
+  },
+  "runnerHashes": {
+    "run-baseline.ts": "f4fa90e18d522fd882765980cb407ec09d72154402ea7e8a1dc10958ff8578b0",
+    "baseline-fixture-adapter.ts": "b0effce0cb61540fb86ef0ffc4542cb3ec05ff3db804408c3e04b77c377afb24"
+  },
+  "datasetSha256": "000f1fdbdaad9f48d98c632bbe6afa3f602a5c550a3ffc8b95e2f0a35d101cf8",
+  "rubricSha256": "81df0d53f38650a955957896c6c9883030588dc455cb482b95eff2ac7e0f0d45",
+  "manifestPath": "data/research-agent-upgrade/evidence/S03/development-1792329381075/manifest.json",
+  "manifestSha256": "5e59b94618ff77385c739296129fc4387af9bfc573dc7fae4fff5bf69dec9a01",
+  "model": "gpt-5.6-luna",
+  "budget": {
+    "maxToolCalls": 12,
+    "timeoutMs": 360000
+  },
+  "runs": [
+    {
+      "caseId": "dev-600519",
+      "runId": "ceadcf24-9dd5-4e0c-ad34-10ce88b928d8",
+      "status": "failed",
+      "failureStage": "gateway_authentication",
+      "modelRequests": 1,
+      "usage": null,
+      "cost": "unknown",
+      "rawPath": "data/research-agent-upgrade/evidence/S03/development-1792329381075/dev-600519.json",
+      "rawSha256": "6a986aca0d8880f620bf2d0e8d517b8edbe23a61b8716ccac76b697d291ac654",
+      "questions": [
+        {
+          "id": "q1",
+          "classification": "unsupported",
+          "reason": "Legacy request and report have no explicit two-period change task contract",
+          "semanticScore": null
+        },
+        {
+          "id": "q2",
+          "classification": "unsupported",
+          "reason": "Legacy request and report have no explicit two-period change task contract",
+          "semanticScore": null
+        },
+        {
+          "id": "q3",
+          "classification": "unsupported",
+          "reason": "Legacy request and report have no explicit two-period change task contract",
+          "semanticScore": null
+        }
+      ]
+    },
+    {
+      "caseId": "dev-000858",
+      "runId": "4f722b5d-56b7-497c-a7ea-8f4e2cdbdfca",
+      "status": "failed",
+      "failureStage": "gateway_authentication",
+      "modelRequests": 1,
+      "usage": null,
+      "cost": "unknown",
+      "rawPath": "data/research-agent-upgrade/evidence/S03/development-1792329381075/dev-000858.json",
+      "rawSha256": "da3b877dcbd6c854eb5d5aacb1413fa23223c67914842765796207fd524c01b3",
+      "questions": [
+        {
+          "id": "q1",
+          "classification": "unsupported",
+          "reason": "Legacy request and report have no explicit two-period change task contract",
+          "semanticScore": null
+        },
+        {
+          "id": "q2",
+          "classification": "unsupported",
+          "reason": "Legacy request and report have no explicit two-period change task contract",
+          "semanticScore": null
+        },
+        {
+          "id": "q3",
+          "classification": "unsupported",
+          "reason": "Legacy request and report have no explicit two-period change task contract",
+          "semanticScore": null
+        }
+      ]
+    },
+    {
+      "caseId": "dev-000333",
+      "runId": "7b8e72ba-19a2-4038-a2b6-8238692488eb",
+      "status": "failed",
+      "failureStage": "gateway_authentication",
+      "modelRequests": 1,
+      "usage": null,
+      "cost": "unknown",
+      "rawPath": "data/research-agent-upgrade/evidence/S03/development-1792329381075/dev-000333.json",
+      "rawSha256": "90bbe86b8d1957d046c6bdb1c2ef6a6c331b312329c86df430488a89c4fa3d37",
+      "questions": [
+        {
+          "id": "q1",
+          "classification": "unsupported",
+          "reason": "Legacy request and report have no explicit two-period change task contract",
+          "semanticScore": null
+        },
+        {
+          "id": "q2",
+          "classification": "unsupported",
+          "reason": "Legacy request and report have no explicit two-period change task contract",
+          "semanticScore": null
+        },
+        {
+          "id": "q3",
+          "classification": "unsupported",
+          "reason": "Legacy request and report have no explicit two-period change task contract",
+          "semanticScore": null
+        }
+      ]
+    },
+    {
+      "caseId": "dev-600309",
+      "runId": "34531143-fb77-43ea-9823-eb2022c7c1ac",
+      "status": "failed",
+      "failureStage": "gateway_authentication",
+      "modelRequests": 1,
+      "usage": null,
+      "cost": "unknown",
+      "rawPath": "data/research-agent-upgrade/evidence/S03/development-1792329381075/dev-600309.json",
+      "rawSha256": "31239ef873642ed4b20f6511de6815166ad4f9bbefa9639aceefbb8e872c641e",
+      "questions": [
+        {
+          "id": "q1",
+          "classification": "unsupported",
+          "reason": "Legacy request and report have no explicit two-period change task contract",
+          "semanticScore": null
+        },
+        {
+          "id": "q2",
+          "classification": "unsupported",
+          "reason": "Legacy request and report have no explicit two-period change task contract",
+          "semanticScore": null
+        },
+        {
+          "id": "q3",
+          "classification": "unsupported",
+          "reason": "Legacy request and report have no explicit two-period change task contract",
+          "semanticScore": null
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "gateway returned HTTP 401; no model answer",
+    "dual-period questions unsupported by legacy contract",
+    "fixed public transport; no live search E2E",
+    "no independent human-golden score"
+  ]
+}

@@ -40,3 +40,31 @@ Node `v24.12.0`、npm `11.6.2`，Prisma/PostgreSQL、独立研究 Worker、marke
 2026-10-18 实跑 `npm run test:unit -- src/lib/company-research`：43 通过、2 个数据库测试跳过。`check:docs` 通过（65 文件、387 链接）；`check:module-boundaries` 因三个既有文件超限失败（chat 4161/4100、data-prefetch 2211/2040、market-data api 1541/1540）。本地原件在 `data/research-agent-upgrade/evidence/S01/`，由本升级任务所有，保留至 S20 及交接归档，不随普通 tmp 清理。
 
 没有执行生产迁移、部署或数据复制。历史安迪苏验收、旧 CI 和看板 benchmark 均不作为本轮研究模型基线。
+
+## S03 实测结果
+
+按 [冻结评测](evaluation.md) 在独立 PostgreSQL 和随机 `research-baseline-*` 身份下运行现有 `createRun → claimRun → executeResearch → checkpoint`。资料/市场/搜索是封闭的固定公开输入，模型网关是真实请求；没有调用真实 DeepSeek Search/Fetch。仅为回放从测试适配器注入冻结 asOf，旧 API 仍不支持用户指定双期和问题，不能把这个注入视为产品能力。
+
+2026-10-18 先运行 1 个校准，再执行 4 公司开发集。共 5 次真实网关请求，全部 HTTP 401 Unauthorized，全部任务 failed、0 个工具实际执行。没有收到模型 usage；token 测量与费用均 unknown，检查点零计数不是实测零消耗。失败阶段为网关鉴权，没有得到可评价的模型答案。此结果说明凭据“存在”不足以证明网关可用。
+
+| 开发任务 | 终态 | 请求数 | 耗时 ms | 双期题分类 |
+| --- | --- | --- | --- | --- |
+| 茅台 | failed | 1 | 2512 | 3 题 unsupported |
+| 五粮液 | failed | 1 | 152 | 3 题 unsupported |
+| 美的 | failed | 1 | 135 | 3 题 unsupported |
+| 万华 | failed | 1 | 138 | 3 题 unsupported |
+
+“unsupported”是事先由旧输入/输出合同确认的能力范围；网关 401 是另一个实际失败维度。开发集模型成功 0/4，不能报告财务准确率或相对提升。待网关凭据修复可另存一次运行，不能覆盖本次失败；完整双期能力首次可比基线仍在 S13。
+
+本机原件：`data/research-agent-upgrade/evidence/S03/calibration-1792329337598/` 和 `development-1792329381075/`。包含 manifest、逐任务最终快照、状态/来源、可观察工具调用片段和 usage 完整性。隐藏推理、凭据、请求 headers、未经筛选的错误正文未保存。数据库只保存测试数据；原件长期保留，不随容器删除。
+
+```powershell
+# 显式指定全新的 localhost research_test* 空库，先 migrate deploy。
+# 凭据从本地 env 读取，命令不打印。
+node --import tsx scripts/research/run-baseline.ts --calibrate
+node --import tsx scripts/research/run-baseline.ts
+# 不访问模型或数据库，仅复验已有结果和资料/评分 hash：
+node --import tsx scripts/research/verify-baseline.ts data/research-agent-upgrade/evidence/S03/development-1792329381075/manifest.json
+```
+
+运行器要求 `RESEARCH_TEST_DATABASE_URL`，拒绝隐式使用应用库、非 localhost 或非 `research_test*` 数据库，也拒绝消费已有任务。校准与正式开发各用一份空库。归档回放验证的是当时观察，不意味着模型可逐 token 确定性重现。原件不可获得时，这次结果只能读摘要，不能声称离线复验通过。

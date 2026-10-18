@@ -1,0 +1,2 @@
+# Evaluation hashes must survive Windows/Linux checkouts.
+fixtures/company-research/*.json text eol=lf
