@@ -16,11 +16,13 @@ async function main() {
   const rubricBytes = await readFile('fixtures/company-research/rubric.json');
   const rubric = JSON.parse(rubricBytes.toString());
   const calibration = process.argv.includes('--calibrate');
+  const configCalibration = process.argv.includes('--config-calibration');
+  if (configCalibration && !calibration) throw new Error('--config-calibration requires --calibrate; frozen development runs cannot override model configuration');
   process.env.COMPANY_RESEARCH_MAX_CALLS = String(calibration ? 4 : rubric.baselineBudget.maxToolCalls);
   process.env.COMPANY_RESEARCH_TIMEOUT_MS = String(rubric.baselineBudget.timeoutMs);
   const { researchConfig, safeError } = await import('../../src/lib/company-research/config');
   const config = researchConfig();
-  if (config.model !== rubric.baselineBudget.model) throw new Error('Configured model differs from frozen rubric');
+  if (!configCalibration && (config.model !== rubric.baselineBudget.model || config.reasoning !== rubric.baselineBudget.reasoning)) throw new Error('Configured model/reasoning differs from frozen rubric; use --calibrate --config-calibration for a separate configuration probe');
   const { prisma } = await import('../../src/lib/db/client');
   const { createRun, getRun, publicRun, claimRun } = await import('../../src/lib/company-research/store');
   const { executeResearch } = await import('../../src/lib/company-research/runtime');
@@ -28,15 +30,16 @@ async function main() {
   const dataset = JSON.parse(datasetBytes.toString());
   const documents = JSON.parse(await readFile('fixtures/company-research/documents.json', 'utf8')).documents;
   const identity = `research-baseline-${randomUUID()}`;
-  const directory = `data/research-agent-upgrade/evidence/S03/${calibration ? 'calibration' : 'development'}-${Date.now()}`;
+  const directory = `data/research-agent-upgrade/evidence/S03/${configCalibration ? 'config-calibration' : calibration ? 'calibration' : 'development'}-${Date.now()}`;
   await mkdir(directory, { recursive: true });
   const manifest: any = { schemaVersion: 1, startedAt: new Date().toISOString(), head: execFileSync('git', ['rev-parse', 'HEAD']).toString().trim(),
     workingChanges: execFileSync('git', ['status', '--short']).toString().trim().split('\n').filter(Boolean), identity, storage: 'exclusive disposable PostgreSQL',
     mode: 'real model gateway + fixed public document/market/search transport; not live search E2E', calibration,
+    configurationCalibration: configCalibration, comparableToFrozenBaseline: !configCalibration,
     model: config.model, gateway: new URL(config.baseUrl).origin, reasoning: config.reasoning, maxToolCalls: config.maxCalls, timeoutMs: config.timeoutMs,
     datasetSha256: sha(datasetBytes), rubricSha256: sha(rubricBytes), prices: 'unknown', runs: [] };
   const save = () => writeFile(`${directory}/manifest.json`, JSON.stringify(manifest, null, 2) + '\n');
-  const sourceFiles = ['contracts.ts','runtime.ts','tools.ts','connectors.ts','provider.ts','store.ts','ledger.ts','evidence.ts','discovery.ts'];
+  const sourceFiles = ['config.ts','contracts.ts','runtime.ts','tools.ts','connectors.ts','provider.ts','store.ts','ledger.ts','evidence.ts','discovery.ts'];
   manifest.sourceHashes = Object.fromEntries(await Promise.all(sourceFiles.map(async f => [f, sha(await readFile(`src/lib/company-research/${f}`))])));
   manifest.runnerHashes = Object.fromEntries(await Promise.all(['run-baseline.ts', 'baseline-fixture-adapter.ts'].map(async f => [f, sha(await readFile(`scripts/research/${f}`))])));
   await save();

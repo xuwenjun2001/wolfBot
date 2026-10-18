@@ -71,14 +71,19 @@ describe('research network boundary', () => {
   });
 });
 describe('research gateway', () => {
-  it('sends the requested model and max effort without DeepSeek thinking fields', async () => {
+  it.each([['gpt-5.6-luna', 'max'], ['gpt-6.1-sol', 'high']] as const)('sends requested model %s with %s effort without DeepSeek thinking fields', async (model, reasoning) => {
     vi.stubEnv('COMPANY_RESEARCH_API_KEY', 'test-secret');
-    vi.stubEnv('COMPANY_RESEARCH_MODEL', 'gpt-5.6-luna');
+    vi.stubEnv('COMPANY_RESEARCH_MODEL', model);
+    vi.stubEnv('COMPANY_RESEARCH_REASONING', reasoning);
     const fetchMock = vi.fn(async () => new Response('data: {"id":"a","model":"gpt-5.6-luna","choices":[{"index":0,"delta":{"content":"ok"},"finish_reason":null}]}\n\ndata: {"id":"a","model":"gpt-5.6-luna","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}\n\ndata: [DONE]\n\n', { headers: { 'Content-Type': 'text/event-stream' } }));
     vi.stubGlobal('fetch', fetchMock);
-    for await (const _event of createResearchProvider().complete({ model: 'gpt-5.6-luna', messages: [{ role: 'user', content: 'test' }], maxTokens: 100, reasoning: { enabled: true, effort: 'max' } })) { /* consume */ }
+    for await (const _event of createResearchProvider().complete({ model, messages: [{ role: 'user', content: 'test' }], maxTokens: 100, reasoning: { enabled: true, effort: reasoning } })) { /* consume */ }
     const body = JSON.parse(String((fetchMock.mock.calls[0] as unknown as [unknown, RequestInit])[1].body));
-    expect(body).toMatchObject({ model: 'gpt-5.6-luna', reasoning_effort: 'max', max_completion_tokens: 100, parallel_tool_calls: false });
+    expect(body).toMatchObject({ model, reasoning_effort: reasoning, max_completion_tokens: 100, parallel_tool_calls: false });
     expect(body.thinking).toBeUndefined();
+  });
+  it('rejects invalid effort before creating a model provider', () => {
+    vi.stubEnv('COMPANY_RESEARCH_REASONING', 'invalid-effort');
+    expect(() => createResearchProvider()).toThrow('reasoning effort must be high or max');
   });
 });

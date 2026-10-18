@@ -195,7 +195,7 @@ export async function executeResearch(run: StoredRun, shutdown?: AbortSignal) {
     });
     // Resume from materialized task/evidence state, never persist or replay private reasoning.
     const result = await engine.run({ runId: `research_${run.id}_${run.generation}`, signal,
-      reasoning: { enabled: true, effort: 'max' }, messages: [
+      reasoning: { enabled: true, effort: config.reasoning }, messages: [
         { role: 'system', content: SYSTEM },
         { role: 'user', content: JSON.stringify({ task: `研究 ${state.company.name}（${state.company.symbol}）的主营业务、上下游和近期财报`, checkpoint: { ...state, sources: state.sources.map(s => sourceExcerpt(s)) }, remainingCalls: config.maxCalls - state.toolCalls }) },
       ] }, { durableSink: onEvent });

@@ -68,3 +68,11 @@ node --import tsx scripts/research/verify-baseline.ts data/research-agent-upgrad
 ```
 
 运行器要求 `RESEARCH_TEST_DATABASE_URL`，拒绝隐式使用应用库、非 localhost 或非 `research_test*` 数据库，也拒绝消费已有任务。校准与正式开发各用一份空库。归档回放验证的是当时观察，不意味着模型可逐 token 确定性重现。原件不可获得时，这次结果只能读摘要，不能声称离线复验通过。
+
+## 用户指定新模型的配置校准
+
+2026-10-18 用户指定在同一网关使用 `gpt-6.1-sol` / `high`。本机密钥仅存 `.env.local`；研究配置允许 high/max，runtime 与请求体保持一致。旧模型/max 的失败原件、rubric 和资料 hash 保留。
+
+新配置探测用 `node --import tsx scripts/research/run-baseline.ts --calibrate --config-calibration`，仍需全新的隔离空库。该模式只跑第一个开发案例，沿用校准的 4 次工具/360 秒预算；产物保存为独立 `config-calibration-*`，明确 `comparableToFrozenBaseline=false`。普通校准/开发运行继续严格核对冻结的模型与 reasoning，不能用这个参数运行完整开发集或改写评分合同。
+
+这项校准只验证网关及旧执行链路接入，不证明双期研究、实时搜索或业务质量。真实结果见 progress.md 的 E-S03-02。

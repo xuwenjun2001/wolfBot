@@ -7,9 +7,9 @@ export function researchConfig() {
   const baseUrl = (process.env.COMPANY_RESEARCH_BASE_URL || 'https://sub2api.380001.xyz/v1').replace(/\/$/, '');
   if (new URL(baseUrl).protocol !== 'https:') throw new Error('Research model gateway requires HTTPS');
   const reasoning = process.env.COMPANY_RESEARCH_REASONING || 'max';
-  if (reasoning !== 'max') throw new Error('Company research requires the configured max reasoning effort');
+  if (reasoning !== 'high' && reasoning !== 'max') throw new Error('Company research reasoning effort must be high or max');
   return {
-    baseUrl, model: process.env.COMPANY_RESEARCH_MODEL || 'gpt-5.6-luna', reasoning: 'max' as const,
+    baseUrl, model: process.env.COMPANY_RESEARCH_MODEL || 'gpt-5.6-luna', reasoning: reasoning as 'high' | 'max',
     apiKey: process.env.COMPANY_RESEARCH_API_KEY || '',
     searchApiKey: process.env.COMPANY_RESEARCH_SEARCH_API_KEY || process.env.DEEPSEEK_API_KEY || '',
     maxCalls: integer('COMPANY_RESEARCH_MAX_CALLS', 40, 100),

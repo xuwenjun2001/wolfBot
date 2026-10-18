@@ -6,8 +6,10 @@
 
 1. 执行 `npx prisma migrate deploy` 应用已有迁移。旧研究链路使用四张 `company_research_*` 表，财报变化基础层另加七张版本表。
 2. 在不提交的 `.env.local` 配置研究模型的 `COMPANY_RESEARCH_API_KEY` 与 DeepSeek 官方密钥 `COMPANY_RESEARCH_SEARCH_API_KEY`。搜索密钥未单独设置时复用 `DEEPSEEK_API_KEY`。
-3. 默认网关为 `https://sub2api.380001.xyz/v1`，模型为 `gpt-5.6-luna`，推理强度为 `max`。可通过 `COMPANY_RESEARCH_BASE_URL`、`COMPANY_RESEARCH_MODEL` 指定服务端配置；不自动降级模型。
+3. 默认网关为 `https://sub2api.380001.xyz/v1`，模型为 `gpt-5.6-luna`，推理强度为 `max`。可通过 `COMPANY_RESEARCH_BASE_URL`、`COMPANY_RESEARCH_MODEL`、`COMPANY_RESEARCH_REASONING` 指定服务端配置，推理强度支持 `high` / `max`，按配置原样发送；不自动降级模型。2026-10-18 本机按用户指定切换为 `gpt-6.1-sol` / `high`，凭据保存在已忽略的 `.env.local`。
 4. `npm run dev` / `npm run dev:background` 自动管理研究 worker。也可单独运行 `npm run worker:research`；单任务运行用 `npm run worker:research:once`。
+
+常驻 Worker 在启动时加载环境变量；修改 `.env.local` 后需在维护开发栈时重启加载。独立校准使用新进程，不能据此声称已有常驻进程已经切换。
 
 生产部署时需要独立运行研究 worker，并提供同一数据库和服务端密钥。本次功能不自动部署生产。
 

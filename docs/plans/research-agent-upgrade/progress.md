@@ -8,21 +8,21 @@
 | --- | --- |
 | 最后更新 | 2026-10-18（北京时间） |
 | 计划版本 | v1 |
-| 总体状态 | S01—S05 基础实现及相关验证完成；真实模型成功验收和独立人工金标未完成，分别保留失败/待核对状态 |
+| 总体状态 | S01—S05 基础实现及相关验证完成；用户指定的新模型已通过真实网关和工具调用校准，完整研究质量与独立人工金标仍待验收 |
 | 已完成开发步骤 | 5/20 |
 | 当前进行中步骤 | 无 |
 | 下一步骤 | S06：财报发现、导入与时间证据（本轮范围至 S05，尚未开展） |
 | 下一具体动作 | 下次继续时先核对本分支、S05 追加迁移与原件目录；按 S06 扩展 discovery/connectors/network，复用新文档版本存储，不把测试采集器当生产导入器 |
-| 当前会话登记 | 2026-10-18-foundation-s01-s05：核实、数据评测、现状测量、合同、持久化 |
+| 当前会话登记 | 2026-10-18-gateway-calibration：已按用户指定更新本机研究模型为 gpt-6.1-sol/high，补充 S03 网关校准与证据；原 401 基线保留，S06 未开始 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
 | 当前参考分支 / HEAD | `codex/research-foundation-s01-s05`；源码起点 `d17ac89`，各步骤改动随本文件提交，最终身份见 `git log -1` |
 | 目标仓库 | `https://github.com/xuwenjun2001/wolfBot`，默认分支 `main` |
-| 本轮涉及文件 | 本计划与专题文档；`fixtures/company-research/`；`scripts/research/` 与隔离 DB runner；研究合同/版本 store/原件存储、`api/company-research/tasks/`；Prisma schema/新追加迁移；TS 排除证据目录、package 验证命令、评测 JSON LF 规则 |
+| 本轮涉及文件 | 补充校准：`.env.example`、研究 config/runtime/research.test、`scripts/research/run-baseline.ts`、公司研究专题与本计划 baseline/progress；本机 `.env.local` 被 Git 忽略。S01—S05 原交付见下方历史 |
 | 已有改动提醒 | 开始时干净；本轮相关改动按 S01—S05 分步提交到工作分支；下次仍以 `git status` 和远端 SHA 核实，不盲信旧记录 |
-| 运行环境 / 进程 | 未启动或终止业务应用/Worker；本轮校准与迁移专用 PostgreSQL 容器均已删除，证据原件保留；应用/生产库未执行新迁移 |
-| 模型与数据费用 | 1 校准 + 4 开发，共 5 次真实网关请求均 401；无 usage，费用 unknown；公开年报采集无付费 API；未运行真实搜索 E2E |
-| 阻塞 | 成功模型验收受网关凭据 401 阻塞；独立人工金标待核对。S06 准备不依赖模型成功。Windows 共享 Prisma DLL 正在被开发服务使用，原位置 generate 失败；独立目录客户端生成和 ORM smoke 通过 |
-| 最近验证 | 57 项单元/API 测试通过；13 项真实 PG 集成通过；旧 schema 升级、重复 deploy、新旧代码回退读取通过；types/lint/docs（68 文件、401 链接）通过。模块检查仅剩 S01 三个既有超限；Quality Node/Python 审计暂缓，未宣称全量 CI/构建通过 |
+| 运行环境 / 进程 | 业务开发栈/Worker 保持原进程，需重启后读取新环境；本轮独立新进程已验证新配置。专用 PostgreSQL 校准容器已删除；应用/生产库未执行迁移 |
+| 模型与数据费用 | 原 5 次 401 留存且 usage unknown；新配置 1 次流式探测 + 3 次研究模型请求均 200、usage 完整，合计输入 23486 / 输出 99 tokens，费用 unknown；未运行真实搜索 E2E |
+| 阻塞 | 新配置已解除独立进程的网关鉴权阻塞；常驻 Worker 仍待重新加载配置。人工金标及完整双期业务验收待后续完成；原位置 Prisma generate 的 Windows DLL 锁局限及隔离生成通过记录保留 |
+| 最近验证 | 本次 59 项单元/API 测试、types、定向 lint、docs、2 项冻结配置拒绝检查通过；新旧基线归档核验通过。13 项 DB 默认跳过，S05 实跑通过证据仍保留。模块检查仅剩原三项超限；全量 CI/构建未验收 |
 | 受控资料恢复 | 开发资料在 `data/research-agent-upgrade/`；本机 `RESEARCH_HOLDOUT_ROOT=D:/QuantPilot-private-evals/research-v1`，换机须经受控归档恢复并核对登记 hash；这里不记录保留题/答案 |
 | 范围提醒 | 完成 S01—S05；不展开 S06 之后产品能力或生产部署；已有 Quality 问题按用户要求暂缓 |
 
@@ -34,7 +34,7 @@
 | --- | --- | --- | --- | --- |
 | S01 | 现状核实与首版场景 | 无 | done | E-S01-01；baseline.md |
 | S02 | 固定资料、人工答案与评测合同 | S01 | done | E-S02-01；evaluation.md；参考答案 source-checked，独立人工签字 pending，不是 human golden |
-| S03 | 实测基线与失败记录 | S01、S02 | done | E-S03-01；5 次网关请求均 401，无模型答案；unsupported 与鉴权失败分开记录 |
+| S03 | 实测基线与失败记录 | S01、S02 | done | E-S03-01 原 401 基线保留；E-S03-02 新配置 4 次请求均 200，单案例工具调用可用、结果 partial；不作同题质量对照 |
 | S04 | 版本化领域与事件合同 | S01、S02 | done | E-S04-01；contracts.md；51 测试通过/2 DB 跳过；types 通过 |
 | S05 | 持久化、隔离与迁移 | S04 | done | E-S05-01；七张版本表、actor repository/原件存储/API；13 项 PG 测试和旧库升级/旧代码兼容通过 |
 | S06 | 财报发现、导入与时间证据 | S05 | pending | — |
@@ -62,7 +62,7 @@
 - 已有来源 hash、引用存在性校验、研究状态、Worker fencing、SSE 与取消；不能因此声称升级步骤已完成。
 - 扫描件 OCR、检索任意已读来源、结构化计划编辑和报告版本差异需按计划实现。
 - S01—S05 新增可复验的基线、评测、版本合同和持久化基础层；新请求先保存 draft，S11 才接入双期执行。旧 Worker 不领取新表。
-- 本轮真实网关基线全部在鉴权前失败，未取得模型研究答案；开发参考答案与独立人工金标分开登记，不能报告质量提升。历史看板/研究报告仅作背景。
+- 原 S03 网关基线全部在鉴权时失败；用户指定新模型后另存校准，已收到真实流式输出与工具调用，4 次请求均 200。校准案例提前收尾且无财报来源，不能报告研究质量提升；开发参考答案仍未晋为独立人工金标。
 
 ## 验收证据
 
@@ -107,6 +107,18 @@ E-Sxx-01 / 日期 / 会话标识：
 ```
 
 ## 会话历史
+
+### 2026-10-18-gateway-calibration / E-S03-02
+
+- 用户指定同一研究网关的新凭据、`gpt-6.1-sol` 和 `high`；凭据只写已忽略的本机环境文件，不进入源码、证据或 Git。开始时工作区干净，HEAD `305327f`。
+- 本轮范围：支持显式 high 推理配置，验证实际请求参数与真实网关，再用独立测试库运行一个固定资料校准案例。新模型运行单独标记，不改冻结 rubric、题目、预算或旧失败记录；S06 未开始。
+- 配置实现：允许明确的 high/max，runtime 与 provider 使用同一配置；非法值在请求前失败。普通 baseline 同时核对冻结模型和 reasoning；只有 `--calibrate --config-calibration` 可另存用户指定配置，且只跑一个案例，保留原 4 工具/360 秒预算。
+- 真实探测 `gateway-probe-1792337184425/manifest.json`：一次 HTTP 200 流式返回 OK，输入 4227 / 输出 5 tokens。真实研究原件 `config-calibration-1792337305831/manifest.json`：SHA-256 `64a660ad53a5a070628e81ed0a217e5780c313b2252a7cbb57e759fbed1bd5f0`，一个开发案例 11491 ms，3 次模型请求全部 200、usage 完整（输入 19259 / 输出 94）；公司解析、覆盖检查、报告提交三个工具完成。
+- 校准终态 partial、sources=0：四次工具额度触发既有 finalizing 策略，未进入财报正文研究。这只证明新配置可进入现有循环，不证明完整研究、实时搜索、双期变化或业务质量；`comparableToFrozenBaseline=false`，原 rubric/资料/401 证据保持不变。
+- 数据与执行隔离原件 `data/research-agent-upgrade/evidence/S03/gateway-calibration-session-2e14c27f-0e96-4109-8abb-4e08f29e56d8/manifest.json`：专用 localhost PostgreSQL 上应用 31 条迁移、单案例校准、容器删除均成功；应用/生产库未改。以上探测/校准目录均在 `data/research-agent-upgrade/evidence/S03/` 下。
+- 验证目录 `data/research-agent-upgrade/evidence/S03/config-switch-1792337184425/`：59 项研究/API 测试通过（13 项 DB 默认跳过）、types、定向 lint、docs、两项拒绝冻结配置变更的检查及新旧结果离线核验通过。首次 types 暴露返回对象字符串类型拓宽，补充经过运行时校验的 high/max 类型声明后通过；真实请求行为未改变。模块检查仍只含三项既有超限，未处理暂缓的 Quality 问题，未做完整发布/构建。
+- 生效边界：已有本地开发管理器和研究 Worker 未重启，仍在原启动环境；新配置由本次独立进程实测。下次维护开发栈时需重新加载 `.env.local`。OpenAI Docs 两个官方域名的本次文档抓取均 403，未据此推断该网关别名的官方可用性；保留用户指定模型，并以实际请求结果验证。
+- 后续从 S06 承接；完整成功案例仍在 S13，独立人工金标待核对，本轮不增加完成步骤数。
 
 ### 2026-10-18-foundation-s01-s05 / S05 与最终交接
 
