@@ -1,0 +1,23 @@
+[Unit]
+Description=wolfbot tactics screening, close reviews and report worker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=quantpilot
+Group=quantpilot
+WorkingDirectory=/opt/quantpilot/current
+EnvironmentFile=/etc/quantpilot/quantpilot.env
+# Report generation reads DEEPSEEK_API_KEY; schedules and prompts live in PostgreSQL.
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+ExecStart=/usr/bin/env npm run worker:tactics
+Restart=on-failure
+RestartSec=5
+KillMode=control-group
+TimeoutStopSec=15
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

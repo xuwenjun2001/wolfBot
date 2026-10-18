@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">wolfbot</title>
+  <desc id="desc">白色几何狼头，代表有证据、可追溯的 AI 研究工作台</desc>
+  <defs>
+    <linearGradient id="wolfbot-bg" x1="88" y1="64" x2="430" y2="448" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F47D63" />
+      <stop offset="1" stop-color="#C83F34" />
+    </linearGradient>
+  </defs>
+  <rect x="24" y="24" width="464" height="464" rx="112" fill="url(#wolfbot-bg)" />
+  <rect x="36" y="36" width="440" height="440" rx="100" fill="none" stroke="#FFFFFF" stroke-opacity="0.16" stroke-width="8" />
+  <path d="M130 108L220 166H292L382 108L354 292L256 400L158 292Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="10" stroke-linejoin="round" />
+  <path d="M148 139L207 184L163 222ZM364 139L305 184L349 222Z" fill="#F3B0A0" />
+  <path d="M164 234L232 268L256 330L280 268L348 234L326 320L256 382L186 320Z" fill="#FFE3D9" />
+  <path d="M174 236L224 250L204 268ZM338 236L288 250L308 268Z" fill="#8B2C29" />
+  <path d="M239 313H273L256 335Z" fill="#8B2C29" stroke="#8B2C29" stroke-width="6" stroke-linejoin="round" />
+  <path d="M256 335V351M238 357L256 351L274 357" fill="none" stroke="#8B2C29" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

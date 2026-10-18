@@ -1,0 +1,11 @@
+---
+description: 财报研究 Agent 20 步升级的跨会话承接入口
+alwaysApply: true
+---
+
+遵循仓库根目录 `AGENTS.md`。
+
+当任务涉及财报研究 Agent 升级或继续 20 步计划时，先读
+`docs/plans/research-agent-upgrade/README.md` 和 `progress.md`，再按入口读取本步规范与决策。
+进度以 `progress.md` 为唯一状态来源，完成步骤必须有可核对的验收记录。
+本文件只提供入口，不复制开发规范，也不要求在无关任务中开展升级。
