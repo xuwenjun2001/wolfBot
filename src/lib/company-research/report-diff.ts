@@ -1,13 +1,15 @@
 import { canonicalResearchJson } from './task-contracts';
+import { normalizedYuan } from './financial-normalization';
 import { researchReportDiffSchema, type ResearchReportDiff, type ResearchReportRevision } from './revision-contracts';
 
 function allFacts(report: ResearchReportRevision) { return [...report.facts, ...(report.supportingFacts || [])]; }
 function factKey(fact: ResearchReportRevision['facts'][number]) { return `${fact.metric}:${fact.scope}:${fact.period.id}`; }
 function factValue(fact: ResearchReportRevision['facts'][number]) {
-  return canonicalResearchJson({ value: fact.value, restatement: fact.restatement, normalization: fact.normalization, accountingBasis: fact.accountingBasis });
+  return canonicalResearchJson({ value: fact.value.status === 'known' ? { status: 'known', yuan: normalizedYuan(fact), currency: fact.value.currency } : fact.value,
+    period: fact.period, restatement: fact.restatement, accountingBasis: fact.accountingBasis });
 }
 function allCitations(report: ResearchReportRevision) {
-  return [...allFacts(report).flatMap(fact => fact.citations), ...report.claims.flatMap(claim => claim.citations)];
+  return [...allFacts(report).flatMap(fact => [...fact.citations, ...(fact.periodEvidence || [])]), ...report.claims.flatMap(claim => claim.citations)];
 }
 function citationReference(citation: ReturnType<typeof allCitations>[number]) {
   const { quote: _quote, ...reference } = citation;
@@ -17,7 +19,7 @@ function citationKey(citation: ReturnType<typeof allCitations>[number]) { return
 
 export function researchReportEvidenceHashes(report: ResearchReportRevision) {
   const hashes = report.method?.dataHashes || [];
-  return new Set(hashes.length ? hashes : allCitations(report).map(citation => citation.bytesSha256));
+  return new Set([...hashes, ...allCitations(report).map(citation => citation.bytesSha256)]);
 }
 
 export function buildResearchReportDiff(before: ResearchReportRevision, after: ResearchReportRevision): ResearchReportDiff {

@@ -8,6 +8,7 @@ export const checkpointSchema = z.object({
   schemaVersion: z.literal(1), requestRevision: z.number().int().min(1), planRevision: z.number().int().min(1),
   phase: z.enum(['researching', 'verifying', 'ready']),
   facts: z.array(financialFactSchema).max(24), claims: z.array(researchClaimSchema).max(24),
+  supportingFacts: z.array(financialFactSchema).max(100).optional(),
   observations: z.array(z.object({ tool: z.string().max(80), key: z.string().max(64), summary: z.string().max(6000) }).strict()).max(8),
   steps: z.record(z.string(), z.enum(['pending', 'running', 'completed', 'partial'])),
   stalledCalls: z.number().int().min(0).max(100), stopReason: z.string().max(400).nullable(), submitted: z.boolean(),

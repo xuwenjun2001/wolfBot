@@ -128,3 +128,5 @@ ID / 日期 / 对应步骤：
 状态：accepted。新公告检查、导入和更新确认由用户显式触发，复用现有 CNINFO discovery、内容寻址原件、任务 Worker 与 PI loop；不增加调度器或数据库表。进入上版报告的 source hash 不重复触发运行；更新仅接受已核实披露时点且 `documentAvailableAt(newAsOf)` 为真的新 hash。无变化直接返回 no-op。
 
 新 plan 从上版公开 checkpoint 派生：受影响期间 facts 与依赖 claims 失效，其他事实/结论保留；新版本重新审查保留 claims，确保 request/plan/asOf 改变后旧 reviewer 回执不被当作新版本证据。任务预算、deadline 与 usage 保持原值。历史报告 hash 和相邻报告 diff 在读取时从不可变 JSON 计算，不另存冗余 diff 表；数字差异、稳定 claim ID 状态和引用定位采用确定性对照，不让模型为变化编造原因。真实运行与该合同 fixture/PG 验证分开登记。
+
+接续补验：已检查但未进入报告引用的原件也须通过持久 update 事件去重；期间原文和 supportingFacts/derivedFrom 同样进入失效依赖。数值差异按精确规范化金额比较，原单位表达仍保留在报告中。当天选择的截止日按提交时刻限制；当日仅有日期的披露仍须到日末才可用于严格研究。

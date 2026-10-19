@@ -16,9 +16,9 @@ export const semanticReviewSchema = z.object({
 }).strict();
 export type SemanticReview = z.infer<typeof semanticReviewSchema>;
 export type ResearchClaim = ResearchReportRevision['claims'][number];
-export function claimReviewHash(report: Pick<ResearchReportRevision, 'taskId' | 'requestRevision' | 'planRevision' | 'asOf' | 'facts'>, claim: ResearchClaim) {
+export function claimReviewHash(report: Pick<ResearchReportRevision, 'taskId' | 'requestRevision' | 'planRevision' | 'asOf' | 'facts' | 'supportingFacts'>, claim: ResearchClaim) {
   return artifactDigest(canonicalResearchJson({ version: 'claim-review-v1', taskId: report.taskId, requestRevision: report.requestRevision, planRevision: report.planRevision,
-    asOf: report.asOf, claim, facts: report.facts.filter(f => claim.factIds.includes(f.id)) }));
+    asOf: report.asOf, claim, facts: [...report.facts, ...(report.supportingFacts || [])].filter(f => claim.factIds.includes(f.id)) }));
 }
 export const normalEvidence = (v: string) => v.normalize('NFKC').replace(/\s+/gu, '');
 /** Conservative native-table check. Ambiguous columns require repair, never guessed approval. */

@@ -33,30 +33,33 @@ export function ResearchReport({ task, onSource, onAccept, accepting }: {task: F
   const [historicalView, setHistoricalView] = useState<HistoricalView | null>(null), [viewRevision, setViewRevision] = useState<number | null>(task.reportRevision || null);
   const [loadingRevision, setLoadingRevision] = useState<number | null>(null), [historyError, setHistoryError] = useState('');
   const requestSequence = useRef(0), taskId = task.id, latestRevision = task.reportRevision || 0;
+  const revisionRequests = useRef(new Set<AbortController>());
   useEffect(() => {
     const controller = new AbortController(), sequence = ++requestSequence.current;
-    setViewRevision(latestRevision || null); setHistoricalView(null); setHistoryError(''); setLatestDiff(null);
+    const pending = revisionRequests.current;
+    setViewRevision(latestRevision || null); setHistoricalView(null); setHistoryError(''); setLatestDiff(null); setHistory([]); setLoadingRevision(null);
     void researchApi<{ reports: ResearchReportHistoryEntry[] }>(`tasks/${taskId}/reports/history`, { signal: controller.signal })
       .then(result => { if (sequence === requestSequence.current) setHistory(result.reports); })
       .catch(error => { if (!controller.signal.aborted && sequence === requestSequence.current) setHistoryError(error instanceof Error ? error.message : '报告历史读取失败'); });
     if (latestRevision > 1) void researchApi<{ diff: ResearchReportDiff | null }>(`tasks/${taskId}/reports/${latestRevision}/diff`, { signal: controller.signal })
       .then(result => { if (sequence === requestSequence.current) setLatestDiff(result.diff); })
       .catch(error => { if (!controller.signal.aborted && sequence === requestSequence.current) setHistoryError(error instanceof Error ? error.message : '报告差异读取失败'); });
-    return () => controller.abort();
+    return () => { controller.abort(); pending.forEach(request => request.abort()); pending.clear(); };
   }, [taskId, latestRevision]);
 
   async function selectRevision(revision: number) {
     const sequence = ++requestSequence.current;
-    setViewRevision(revision); setLoadingRevision(revision); setHistoryError('');
-    if (revision === latestRevision) { setHistoricalView(null); setLoadingRevision(null); return; }
+    setLoadingRevision(revision); setHistoryError('');
+    if (revision === latestRevision) { setViewRevision(revision); setHistoricalView(null); setLoadingRevision(null); return; }
+    const controller = new AbortController(); revisionRequests.current.add(controller);
     try {
       const [snapshot, diff] = await Promise.all([
-        researchApi<{ report: ResearchReportRevision; spec: NonNullable<FinancialTask['reportSpec']>; changes: FinancialTask['changes'] }>(`tasks/${taskId}/reports/${revision}`),
-        revision > 1 ? researchApi<{ diff: ResearchReportDiff | null }>(`tasks/${taskId}/reports/${revision}/diff`) : Promise.resolve({ diff: null }),
+        researchApi<{ report: ResearchReportRevision; spec: NonNullable<FinancialTask['reportSpec']>; changes: FinancialTask['changes'] }>(`tasks/${taskId}/reports/${revision}`, { signal: controller.signal }),
+        revision > 1 ? researchApi<{ diff: ResearchReportDiff | null }>(`tasks/${taskId}/reports/${revision}/diff`, { signal: controller.signal }) : Promise.resolve({ diff: null }),
       ]);
-      if (sequence === requestSequence.current) setHistoricalView({ ...snapshot, diff: diff.diff });
-    } catch (error) { if (sequence === requestSequence.current) setHistoryError(error instanceof Error ? error.message : '历史报告读取失败'); }
-    finally { if (sequence === requestSequence.current) setLoadingRevision(null); }
+      if (!controller.signal.aborted && sequence === requestSequence.current) { setViewRevision(revision); setHistoricalView({ ...snapshot, diff: diff.diff }); }
+    } catch (error) { if (!controller.signal.aborted && sequence === requestSequence.current) setHistoryError(error instanceof Error ? error.message : '历史报告读取失败'); }
+    finally { revisionRequests.current.delete(controller); if (!controller.signal.aborted && sequence === requestSequence.current) setLoadingRevision(null); }
   }
 
   const report = historicalView?.report || task.report, currentSpec = historicalView?.spec || (report && task.reportSpec ? task.reportSpec : task.spec);
@@ -67,7 +70,7 @@ export function ResearchReport({ task, onSource, onAccept, accepting }: {task: F
   const sourceButtons = (id: string, kind: 'factId' | 'claimId', count: number) => Array.from({ length: count }, (_, citationIndex) => <button key={citationIndex} onClick={() => onSource({ reportRevision, [kind]: id, citationIndex })} className="ml-2 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs text-emerald-900 hover:bg-emerald-100" aria-label={`查看${kind === 'factId' ? '金额' : '结论'} ${id} 的原文 ${citationIndex + 1}`}>原文 {citationIndex + 1}</button>);
   return <article className="min-w-0 space-y-7 rounded-2xl border border-slate-200 bg-white p-5 sm:p-7">
     <div><p className="text-xs font-semibold text-emerald-800">财报变化研究 · {report ? financialStatusLabels[report.status] : isFinancialTerminal(task.status) ? `${financialStatusLabels[task.status]} · 保留草稿` : '研究草稿'}</p><h2 className="mt-2 text-2xl font-semibold">{currentSpec.company.name} <span className="text-sm font-normal text-slate-500">{currentSpec.company.symbol}</span></h2><p className="mt-3 text-sm text-slate-600">{currentSpec.periods[0].end.slice(0, 4)} → {currentSpec.periods[1].end.slice(0, 4)} · {currentSpec.scope === 'consolidated' ? '合并口径' : '母公司口径'}</p><p className="mt-1 text-xs text-slate-500">资料截止 {new Date(currentSpec.asOf).toLocaleString('zh-CN')} · {report ? `报告 v${reportRevision}` : '结果尚在核查'}</p>
-      {report && !reportIsCurrent && <p role="status" className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs leading-5 text-amber-950">当前请求已更新至 v{task.requestRevision}。这里保留的是请求 v{report.requestRevision}、截止 {new Date(report.asOf).toLocaleString('zh-CN')} 的报告。</p>}
+      {report && !reportIsCurrent && <p role="status" className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs leading-5 text-amber-950">{report.requestRevision === task.requestRevision ? `正在查看历史报告 v${reportRevision}，当前报告为 v${task.reportRevision}。` : `当前请求已更新至 v${task.requestRevision}。这里保留的是请求 v${report.requestRevision} 的报告。`}资料截止 {new Date(report.asOf).toLocaleString('zh-CN')}。</p>}
       {report?.status === 'completed' && reportIsCurrent && <p className="mt-3 text-xs text-emerald-800">结构、数字与语义核验已通过。语义方式：{report.method?.semanticReview === 'human' ? '人工审查' : report.method?.semanticReview === 'separate_call_same_model' ? '同模型独立调用审查' : '未完成'}；研究结果供辅助判断。</p>}
     </div>
     {history.length > 0 && <details className="border-t pt-4"><summary className="cursor-pointer text-sm font-medium">报告版本历史 · {history.length}</summary><ol className="mt-3 space-y-1">{history.map(item => <li key={item.revision}><button type="button" disabled={loadingRevision !== null} onClick={() => void selectRevision(item.revision)} aria-current={viewRevision === item.revision ? 'true' : undefined} className={`w-full rounded-md px-3 py-2 text-left text-xs hover:bg-slate-50 disabled:opacity-50 ${viewRevision === item.revision ? 'bg-emerald-50 text-emerald-950' : 'text-slate-600'}`}>

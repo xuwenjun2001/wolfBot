@@ -2,8 +2,9 @@ import { z } from 'zod';
 import { artifactDigest } from './artifact-store';
 import { documentAvailableAt, researchDocumentSchema } from './document-contracts';
 import { checkpointSchema, initialFinancialPlan } from './execution-contracts';
+import { retainedUpdateFacts } from './update-dependencies';
 import { buildResearchReportDiff, researchReportEvidenceHashes } from './report-diff';
-import { researchReportDiffSchema, researchReportRevisionSchema } from './revision-contracts';
+import { researchReportDiffSchema, researchReportRevisionSchema, researchEventSchema } from './revision-contracts';
 import { canonicalResearchJson, researchRequestHash, researchTaskSpecSchema, timestampSchema } from './task-contracts';
 import { defaultResearchContext, assertActor, emitResearchEvent, lockResearchTask, taskSpec, ResearchPersistenceError, type ResearchRepositoryContext } from './repository-core';
 
@@ -64,6 +65,14 @@ export async function queueResearchReportUpdate(actor: string, id: string, key: 
     const documentRows = await tx.$queryRaw<{metadata: unknown}[]>`SELECT metadata FROM company_research_documents WHERE task_id=${id}`;
     const documents = documentRows.map(row => researchDocumentSchema.parse(row.metadata));
     const priorHashes = researchReportEvidenceHashes(oldReport);
+    // A checked source may be irrelevant to the final citations. Durable update receipts
+    // still prevent the same bytes from queueing another report on every check.
+    const priorUpdates = await tx.$queryRaw<{payload: unknown}[]>`SELECT payload FROM company_research_version_events
+      WHERE task_id=${id} AND payload->'event'->>'type'='report.update.queued'`;
+    for (const row of priorUpdates) {
+      const event = researchEventSchema.parse(row.payload).event;
+      if (event.type === 'report.update.queued') for (const hash of event.sourceHashes) priorHashes.add(hash);
+    }
     const priorAsOf = Date.parse(oldReport.asOf);
     const newDocuments = documents.filter(document => !priorHashes.has(document.bytesSha256)
       && documentAvailableAt(document, parsed.asOf) && ['acquired', 'parse_pending', 'ready', 'partial'].includes(document.state)
@@ -83,13 +92,14 @@ export async function queueResearchReportUpdate(actor: string, id: string, key: 
       VALUES (${id},${plan.revision},${requestRevision},${key},${payloadHash},${JSON.stringify(plan)}::jsonb)`;
 
     const affectedPeriods = [...new Set(newDocuments.map(document => document.period.id))].sort();
-    const affectedPeriodSet = new Set(affectedPeriods), removedFactIds = new Set(oldReport.facts.filter(fact => affectedPeriodSet.has(fact.period.id)).map(fact => fact.id));
+    const affectedPeriodSet = new Set(affectedPeriods);
     const documentPeriods = new Map(documents.map(document => [`${document.id}:${document.version}`, document.period.id]));
-    const affectedClaims = oldReport.claims.filter(claim => claim.factIds.some(factId => removedFactIds.has(factId))
+    const retained = retainedUpdateFacts(oldReport, affectedPeriodSet, documentPeriods);
+    const affectedClaims = oldReport.claims.filter(claim => claim.factIds.some(factId => retained.invalid.has(factId))
       || claim.citations.some(citation => affectedPeriodSet.has(documentPeriods.get(`${citation.documentId}:${citation.documentVersion}`) || ''))
       || affectedPeriodSet.size > 0 && (claim.questionId === 'income_profit' || claim.questionId === 'cash_flow'));
     const affectedClaimIds = new Set(affectedClaims.map(claim => claim.id));
-    const retainedFacts = oldReport.facts.filter(fact => !affectedPeriodSet.has(fact.period.id));
+    const retainedFacts = retained.facts;
     const retainedClaims = oldReport.claims.filter(claim => !affectedClaimIds.has(claim.id));
     const affectedQuestions = new Set(affectedClaims.map(claim => claim.questionId));
     if (affectedPeriods.length) { affectedQuestions.add('income_profit'); affectedQuestions.add('cash_flow'); }
@@ -98,7 +108,7 @@ export async function queueResearchReportUpdate(actor: string, id: string, key: 
       return [[`${question.id}-retrieve`, state], [`${question.id}-compare`, state], [`${question.id}-verify`, 'pending'], [`${question.id}-report`, 'pending']];
     }));
     const checkpoint = checkpointSchema.parse({ schemaVersion: 1, requestRevision, planRevision: plan.revision, phase: 'researching',
-      facts: retainedFacts, claims: retainedClaims, observations: [{ tool: 'update', key: payloadHash,
+      facts: retainedFacts, ...(retained.supportingFacts.length ? { supportingFacts: retained.supportingFacts } : {}), claims: retainedClaims, observations: [{ tool: 'update', key: payloadHash,
         summary: canonicalResearchJson({ sourceHashes: [...new Set(newDocuments.map(document => document.bytesSha256))], affectedPeriods, invalidatedClaimIds: [...affectedClaimIds], asOf: parsed.asOf }) }],
       steps, stalledCalls: 0, stopReason: null, submitted: false, checkedHash: null, lastCallKey: null, lastEvidenceHash: null });
     const generation = task.generation + 1;

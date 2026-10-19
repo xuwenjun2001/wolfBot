@@ -276,6 +276,13 @@ describe.skipIf(!enabled)('versioned research PostgreSQL and controlled artifact
     expect((await queueResearchReportUpdate(actor, task.id, key, input, ctx))).toMatchObject({ queued: true, idempotent: true });
     expect(await researchVersionEventsAfter(actor, task.id, 0, ctx)).toEqual(expect.arrayContaining([expect.objectContaining({ event: expect.objectContaining({ type: 'report.update.queued', fromReportRevision: 1 }) })]));
     expect(oldDocument.bytesSha256).not.toBe(artifactDigest(nextBytes));
+    const nextAttempt = await startResearchAttempt(actor, task.id, 2, 'update-next', ctx);
+    const nextReport = { ...reportFor(task.id, 2), requestRevision: 2, planRevision: 2, asOf: input.asOf };
+    // A report can honestly reject/ignore the newly checked source. It must still
+    // remember the check and avoid delivering another version for identical bytes.
+    await commitResearchReport(actor, nextAttempt, 1, nextReport, ctx);
+    expect(await queueResearchReportUpdate(actor, task.id, randomUUID(), { ...input, expectedRequestRevision: 2, expectedPlanRevision: 2, expectedReportRevision: 2 }, ctx))
+      .toEqual({ queued: false, reason: 'no_new_evidence' });
   });
   it('does not queue duplicate or late-disclosed evidence and preserves source time boundaries', async () => {
     const task = await taskWithPlan(), existing = await attachDocument(task.id);

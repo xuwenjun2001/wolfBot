@@ -30,10 +30,11 @@ export async function researchVerificationContext(actor: string, taskId: string,
 }
 export async function deterministicReportErrors(actor: string, spec: ResearchTaskSpec, report: ResearchReportRevision, ctx = defaultResearchContext) {
   const evidence = await researchVerificationContext(actor, report.taskId, ctx);
-  const citations = [...report.facts.flatMap(f => [...f.citations, ...(f.periodEvidence || [])]), ...report.claims.flatMap(c => c.citations)];
+  const allFacts = [...report.facts, ...(report.supportingFacts || [])];
+  const citations = [...allFacts.flatMap(f => [...f.citations, ...(f.periodEvidence || [])]), ...report.claims.flatMap(c => c.citations)];
   await evidence.load(citations);
   const errors = reportBindingErrors(report, spec, evidence.documents, (id, version, filePage) => evidence.page({ documentId: id, documentVersion: version, locator: { kind: 'page', filePage }, bytesSha256: '', quote: '' }), evidence.located);
-  for (const fact of report.facts) errors.push(...numericFactErrors(fact, evidence.documents, evidence.page).map(e => `${fact.id}:${e}`));
+  for (const fact of allFacts) errors.push(...numericFactErrors(fact, evidence.documents, evidence.page).map(e => `${fact.id}:${e}`));
   return { errors: [...new Set(errors)], evidence };
 }
 export async function readClaimReviews(actor: string, taskId: string, ctx = defaultResearchContext) {

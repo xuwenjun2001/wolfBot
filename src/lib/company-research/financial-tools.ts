@@ -17,7 +17,7 @@ import { defaultResearchContext } from './repository-core';
 import { safeError } from './config';
 import { financialChangeSummary } from './financial-observation';
 
-export const checkpointEvidenceHash = (state: ResearchCheckpoint) => artifactDigest(canonicalResearchJson({ facts: state.facts, claims: state.claims }));
+export const checkpointEvidenceHash = (state: ResearchCheckpoint) => artifactDigest(canonicalResearchJson({ facts: state.facts, supportingFacts: state.supportingFacts, claims: state.claims }));
 export function financialResearchTools(actor: string, token: ResearchAttemptToken, spec: ResearchTaskSpec, state: ResearchCheckpoint, model: string, save: (tool: string) => Promise<void>, ctx = defaultResearchContext, fixedDocuments = false): PiAgentTool[] {
   const reader = researchEvidenceReader(actor, token.taskId, ctx);
   // Validation uses the author's saved claims. Publication assembly may downgrade
@@ -82,7 +82,7 @@ export function financialResearchTools(actor: string, token: ResearchAttemptToke
       state.phase = 'verifying';
       const context = claim.citations.map(c => ({ ...c, context: checked.evidence.page(c)?.slice(0, 7000) }));
       const review = await reviewResearchClaim(actor, token, report, claim, { question: spec.questions.find(q => q.id === claim.questionId), periods: spec.periods, claim,
-        facts: state.facts.filter(f => claim.factIds.includes(f.id)), changes: financialChanges(report), evidence: context }, signal, ctx);
+        facts: [...state.facts, ...(state.supportingFacts || [])].filter(f => claim.factIds.includes(f.id)), changes: financialChanges(report), evidence: context }, signal, ctx);
       state.steps[`${claim.questionId}-verify`] = review?.verdict === 'supported' ? 'completed' : 'partial';
       if (review?.verdict === 'supported') state.steps[`${claim.questionId}-compare`] = 'completed';
       return review || { verdict: 'insufficient', reason: '未配置经过校准的 reviewer；引用检查不代表语义支持' };

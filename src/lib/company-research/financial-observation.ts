@@ -18,6 +18,7 @@ export function financialContextState(state: import('./execution-contracts').Res
     .map(o => ({ ...o, summary: o.summary.slice(0, compact ? 1600 : 3500) }));
   return { ...state, observations,
     facts: state.facts.map(f => ({ ...f, citations: f.citations.slice(0, 2).map(cite) })),
+    ...(state.supportingFacts ? { supportingFacts: state.supportingFacts.map(f => ({ ...f, citations: f.citations.slice(0, 2).map(cite) })) } : {}),
     claims: state.claims.map(c => ({ ...c, text: c.text.slice(0, compact ? 800 : 1200), textTruncated: c.text.length > (compact ? 800 : 1200), citations: c.citations.slice(0, 2).map(cite) })),
   };
 }

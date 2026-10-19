@@ -49,4 +49,15 @@ describe('immutable report differences', () => {
     const diff = buildResearchReportDiff(after, withdrawn);
     expect(diff.claims[0]).toMatchObject({ status: 'withdrawn', reason: '新版证据与原结论冲突' });
   });
+
+  it('compares exact normalized amounts and includes period evidence in source differences', () => {
+    const before = reportFixture(), after = structuredClone(before); after.revision = 2;
+    before.facts[0].value = { status: 'known', raw: '1000', unit: 'yuan', currency: 'CNY', decimals: 0 };
+    after.facts[0].value = { status: 'known', raw: '1', unit: 'thousand_yuan', currency: 'CNY', decimals: 0 };
+    after.facts[0].normalization = { version: 'decimal-v1', rawText: '1', unitLabel: '千元', normalizedYuan: '1000' };
+    after.facts[0].periodEvidence = [{ ...after.facts[0].citations[0], documentId: 'period-header', bytesSha256: 'c'.repeat(64) }];
+    const diff = buildResearchReportDiff(before, after);
+    expect(diff.facts[0].status).toBe('unchanged');
+    expect(diff.evidence.added).toHaveLength(1);
+  });
 });

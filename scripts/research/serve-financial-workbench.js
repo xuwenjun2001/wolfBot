@@ -10,10 +10,17 @@ const tailwind = require('tailwindcss');
 async function main() {
   const evidenceRoot = path.resolve(process.argv[2] || '');
   if (!process.argv[2] || !evidenceRoot.startsWith(path.resolve('data/research-agent-upgrade/evidence/S13') + path.sep)) throw new Error('Explicit retained S13 evidence directory required');
-  const output = path.join(evidenceRoot, 'workbench-qa'); await fs.mkdir(output, { recursive: true });
   const qaArguments = process.argv.slice(3), streamReplay = qaArguments.includes('--stream-replay');
+  const outputArgument = qaArguments.find(value => value.startsWith('--output='));
+  const updateArgument = qaArguments.find(value => value.startsWith('--update-fixture='));
+  const output = outputArgument ? path.resolve(outputArgument.slice('--output='.length)) : path.join(evidenceRoot, `workbench-qa-${Date.now()}`);
+  if (!output.startsWith(path.resolve('data/research-agent-upgrade/evidence') + path.sep)) throw new Error('QA output must stay in research evidence');
+  await fs.mkdir(path.dirname(output), { recursive: true }); await fs.mkdir(output); // Never overwrite an older acceptance run.
+  const updatePath = updateArgument ? path.resolve(updateArgument.slice('--update-fixture='.length)) : null;
+  if (updatePath && !updatePath.startsWith(path.resolve('data/research-agent-upgrade/evidence/S17') + path.sep)) throw new Error('Update fixture must stay in S17 evidence');
+  const updateFixture = updatePath ? JSON.parse(await fs.readFile(updatePath, 'utf8')) : null;
   const fixtureArgument = qaArguments.find(value => !value.startsWith('--'));
-  if (qaArguments.some(value => value !== fixtureArgument && value !== '--stream-replay')) throw new Error('Unknown QA argument');
+  if (qaArguments.some(value => value !== fixtureArgument && value !== '--stream-replay' && value !== outputArgument && value !== updateArgument)) throw new Error('Unknown QA argument');
   const fixturePath = fixtureArgument ? path.resolve(fixtureArgument) : null;
   if (fixturePath && (!fixturePath.startsWith(path.resolve('data/research-agent-upgrade/evidence/S15') + path.sep) || path.basename(fixturePath) !== 'reader-fixture.json')) throw new Error('Optional reader fixture must be a retained S15 fixture');
   const entry = `import React from 'react'; import { createRoot } from 'react-dom/client'; import FinancialWorkbench from './src/app/company-research/financial/FinancialWorkbench'; createRoot(document.getElementById('root')).render(<React.StrictMode><FinancialWorkbench /></React.StrictMode>);`;
@@ -69,6 +76,7 @@ async function main() {
       const fixture = JSON.parse(await fs.readFile(fixturePath, 'utf8'));
       tasks.push(fixture.task); sources.push(...fixture.sources.map(s => ({ ...s, _taskId: fixture.task.id })));
     }
+    if (updateFixture) { tasks.push(updateFixture.task); sources.push(...updateFixture.sources.map(s => ({ ...s, _taskId: updateFixture.task.id }))); }
     if (tasks[0]) for (const [id, replay] of replays) tasks.push(replayTask(tasks[0], id, replay));
     return { tasks, sources };
   }
@@ -80,6 +88,16 @@ async function main() {
       if (url.pathname === '/app.js') return send(200, bundle.outputFiles[0].contents, 'application/javascript');
       if (url.pathname === '/app.css') return send(200, css.css, 'text/css');
       if (url.pathname === '/api/company-research/tasks') return send(200, { tasks });
+      const versionMatch = url.pathname.match(/^\/api\/company-research\/tasks\/([^/]+)\/reports\/(history|\d+)(\/diff)?$/);
+      if (versionMatch) {
+        const task = tasks.find(t => t.id === versionMatch[1]); if (!task) return send(404, { error: 'Task not found' });
+        const versions = updateFixture?.task.id === task.id ? updateFixture.versions : task.report ? [{ report: task.report, spec: task.reportSpec || task.spec, changes: task.changes }] : [];
+        if (versionMatch[2] === 'history') return send(200, { reports: versions.map(({report}) => ({ revision: report.revision, requestRevision: report.requestRevision, planRevision: report.planRevision, status: report.status, asOf: report.asOf, generatedAt: report.generatedAt, hash: 'fixture-or-retained' })) });
+        const revision = Number(versionMatch[2]), snapshot = versions.find(v => v.report.revision === revision);
+        if (!snapshot) return send(404, { error: 'Revision not found' });
+        if (url.searchParams.get('fail') === '1') return send(503, { error: 'Synthetic history transport failure' });
+        return send(200, versionMatch[3] ? { diff: snapshot.diff || null } : snapshot);
+      }
       const match = url.pathname.match(/^\/api\/company-research\/tasks\/([^/]+)(?:\/(source|events))?$/);
       if (match) {
         const task = tasks.find(t => t.id === match[1]); if (!task) return send(404, { error: 'Retained task not found' });

@@ -9,7 +9,7 @@ export const requiredFinancialMetrics = ['revenue', 'parent_net_profit', 'operat
 export function assembleFinancialReport(taskId: string, spec: ResearchTaskSpec, planRevision: number, revision: number, state: ResearchCheckpoint, model: string, reviews: SemanticReview[] = []): ResearchReportRevision {
   const claims = state.claims.map(claim => {
     if (claim.status !== 'supported') return claim;
-    const hash = claimReviewHash({ taskId, requestRevision: spec.requestRevision, planRevision, asOf: spec.asOf, facts: state.facts }, claim);
+    const hash = claimReviewHash({ taskId, requestRevision: spec.requestRevision, planRevision, asOf: spec.asOf, facts: [...state.facts, ...(state.supportingFacts || [])] }, claim);
     const review = reviews.find(r => r.claimHash === hash);
     return review?.verdict === 'supported' ? claim : { ...claim, status: review?.verdict === 'conflict' ? 'conflict' as const : 'evidence_gap' as const, reason: review?.reason || '尚未完成独立语义核验' };
   });
@@ -29,9 +29,9 @@ export function assembleFinancialReport(taskId: string, spec: ResearchTaskSpec, 
   }
   if (state.stopReason && !state.submitted) gaps.push({ code: 'evidence_gap', questionId: 'risks', message: state.stopReason });
   return researchReportRevisionSchema.parse({ schemaVersion: 1, taskId, requestRevision: spec.requestRevision, planRevision, revision, companySymbol: spec.company.symbol,
-    periodIds: spec.periods.map(p => p.id), asOf: spec.asOf, generatedAt: new Date().toISOString(), status: gaps.length ? 'partial' : 'completed', facts: state.facts, claims, gaps,
+    periodIds: spec.periods.map(p => p.id), asOf: spec.asOf, generatedAt: new Date().toISOString(), status: gaps.length ? 'partial' : 'completed', facts: state.facts, ...(state.supportingFacts ? { supportingFacts: state.supportingFacts } : {}), claims, gaps,
     method: { model, skillVersion: researchSkillVersion, toolVersion: 'financial-tools-v2', contractVersion: 'financial-change-v1',
-      dataHashes: [...new Set([...state.facts.flatMap(f => f.citations), ...claims.flatMap(c => c.citations)].map(c => c.bytesSha256))],
+      dataHashes: [...new Set([...[...state.facts, ...(state.supportingFacts || [])].flatMap(f => [...f.citations, ...(f.periodEvidence || [])]), ...claims.flatMap(c => c.citations)].map(c => c.bytesSha256))],
       semanticReview: reviews.length ? reviews.every(r => r.independence === 'human') ? 'human' : 'separate_call_same_model' : 'unavailable' } });
 }
 export function financialChanges(report: Pick<ResearchReportRevision, 'facts' | 'periodIds'>) {

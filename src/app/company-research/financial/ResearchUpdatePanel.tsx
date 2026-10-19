@@ -4,7 +4,7 @@ import { Loader2, RefreshCw, Search } from 'lucide-react';
 import { researchApi } from './useFinancialResearch';
 import type { FinancialTask } from './workbench-state';
 
-type FilingCandidate = { id: string; periodId: string; title: string; url: string; provider: string; evidenceSha256: string;
+type FilingCandidate = { id: string; periodId: string; title: string; url: string; provider: string; evidenceSha256: string; importPage: number;
   disclosure: { status: 'unknown'; reason: string } | { status: 'verified'; precision: 'date'; on: string; timezone: 'Asia/Shanghai' } | { status: 'verified'; precision: 'instant'; at: string };
   eligibility: 'available' | 'after_cutoff' | 'date_unverified'; warnings: string[] };
 const eligibilityLabel = { available: '披露日期可用于当前截止日', after_cutoff: '晚于当前截止日', date_unverified: '披露日期待核实' };
@@ -17,7 +17,8 @@ export function ResearchUpdatePanel({ task, onChanged, onError }: { task: Financ
     setBusy(true); setMessage(''); onError('');
     try {
       const result = await researchApi<{ candidates: FilingCandidate[]; failures: string[]; hasMore: boolean; page: number }>(`tasks/${task.id}/documents?discover=1&page=${nextPage}`);
-      setCandidates(current => nextPage === 1 ? result.candidates : [...current, ...result.candidates.filter(item => !current.some(existing => existing.id === item.id))]);
+      const incoming = result.candidates.map(candidate => ({ ...candidate, importPage: result.page }));
+      setCandidates(current => nextPage === 1 ? incoming : [...current, ...incoming.filter(item => !current.some(existing => existing.id === item.id))]);
       setFailures(result.failures); setHasMore(result.hasMore); setPage(nextPage);
       if (!result.candidates.length && !result.failures.length) setMessage('没有发现符合当前两个报告期的新公告。');
     } catch (error) { onError(error instanceof Error ? error.message : '公告检查失败'); }
@@ -27,7 +28,7 @@ export function ResearchUpdatePanel({ task, onChanged, onError }: { task: Financ
     setBusy(true); setMessage(''); onError('');
     try {
       const result = await researchApi<{ reused: boolean; eligibility: string }>(`tasks/${task.id}/documents`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider: 'cninfo', candidateId: candidate.id, page }) });
+        body: JSON.stringify({ provider: 'cninfo', candidateId: candidate.id, page: candidate.importPage }) });
       setMessage(result.reused ? '文件内容已存在，未新增资料版本。' : `已导入资料，${eligibilityLabel[result.eligibility as keyof typeof eligibilityLabel] || '等待解析'}`);
       onChanged();
     } catch (error) { onError(error instanceof Error ? error.message : '公告导入失败'); }
@@ -35,7 +36,9 @@ export function ResearchUpdatePanel({ task, onChanged, onError }: { task: Financ
   }
   async function runUpdate() {
     setBusy(true); setMessage(''); onError('');
-    const payload = { expectedRequestRevision: task.requestRevision, expectedPlanRevision: task.planRevision, expectedReportRevision: task.reportRevision, asOf: `${asOf}T23:59:59.999+08:00` };
+    // Today's date has not ended yet; an instant cutoff must never be in the future.
+    const cutoff = new Date(Math.min(Date.parse(`${asOf}T23:59:59.999+08:00`), Date.now())).toISOString();
+    const payload = { expectedRequestRevision: task.requestRevision, expectedPlanRevision: task.planRevision, expectedReportRevision: task.reportRevision, asOf: cutoff };
     const storageKey = `financial-research-update:${task.id}:${task.reportRevision}`;
     const signature = JSON.stringify(payload), saved = sessionStorage.getItem(storageKey);
     const prior = saved ? JSON.parse(saved) as { signature: string; key: string } : null;
