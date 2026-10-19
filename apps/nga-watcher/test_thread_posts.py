@@ -127,7 +127,7 @@ class ThreadTests(unittest.TestCase):
                 poll(client, state)
         self.assertEqual(state, before)
 
-    def test_thread_busy_retries_each_second_but_login_does_not(self):
+    def test_thread_busy_retries_every_half_second_but_login_does_not(self):
         for text, expected in (('服务器忙,请稍后重试', 2), ('你必须登录', 1)):
             client = AuthorThreadClient()
             error = (200, json.dumps({'error': ['2048:' + text]}))
@@ -138,7 +138,7 @@ class ThreadTests(unittest.TestCase):
                     wait.assert_not_called()
                 else:
                     client.page(1)
-                    wait.assert_called_once_with(1)
+                    wait.assert_called_once_with(0.5)
                 self.assertEqual(request.call_count, expected)
 
     def test_thread_busy_retry_can_be_cancelled(self):

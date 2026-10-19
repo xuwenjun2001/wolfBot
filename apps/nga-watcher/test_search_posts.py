@@ -127,7 +127,7 @@ class SearchTests(unittest.TestCase):
         self.assertIn('page=1', urls[0])
         self.assertIn('page=2', urls[1])
 
-    def test_busy_retries_each_second_until_response_succeeds(self):
+    def test_busy_retries_every_half_second_until_response_succeeds(self):
         client = AuthorSearchClient()
         client.on_retry = Mock()
         client.cancel_event = Mock()
@@ -138,10 +138,10 @@ class SearchTests(unittest.TestCase):
             parsed = client.page(1)
         self.assertEqual(parsed['posts'][0]['pid'], 42)
         self.assertEqual(request.call_count, 3)
-        self.assertEqual([call.args for call in client.cancel_event.wait.call_args_list], [(1,), (1,)])
+        self.assertEqual([call.args for call in client.cancel_event.wait.call_args_list], [(0.5,), (0.5,)])
         self.assertEqual(client.on_retry.call_count, 2)
 
-    def test_login_error_does_not_enter_per_second_busy_retry(self):
+    def test_login_error_does_not_enter_half_second_busy_retry(self):
         client = AuthorSearchClient()
         with patch.object(Client, 'request', return_value=(200, json.dumps({'error': ['2048:你必须登录']}))) as request, patch.object(client.cancel_event, 'wait') as wait:
             with self.assertRaises(NGAAccessError) as caught:
@@ -150,13 +150,13 @@ class SearchTests(unittest.TestCase):
         self.assertEqual(request.call_count, 1)
         wait.assert_not_called()
 
-    def test_empty_http_503_uses_one_second_retry_and_reports_actual_status(self):
+    def test_empty_http_503_uses_half_second_retry_and_reports_actual_status(self):
         client = AuthorSearchClient()
         client.on_retry = Mock()
         with patch.object(Client, 'request', side_effect=[(503, ''), (200, api_body())]), patch.object(client.cancel_event, 'wait', return_value=False) as wait:
             parsed = client.page(1)
         self.assertEqual(parsed['source'], 'JSON')
-        wait.assert_called_once_with(1)
+        wait.assert_called_once_with(0.5)
         client.on_retry.assert_called_once_with((1, 'HTTP 503'))
 
     def test_http_503_with_content_is_not_an_unbounded_busy_loop(self):
@@ -336,7 +336,7 @@ class SearchTests(unittest.TestCase):
         app.handle_poll_event('retry', 3)
         self.assertTrue(app.busy)
         self.assertEqual(target.failed, 2)
-        self.assertIn('每秒重试', app.status.set.call_args.args[0])
+        self.assertIn('每 0.5 秒重试', app.status.set.call_args.args[0])
 
 
 if __name__ == '__main__':

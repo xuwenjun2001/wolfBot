@@ -32,6 +32,7 @@ from search_posts import make_post, parse_search_html, parse_search_page, poll_s
 URL = 'https://ngabbs.com/read.php?tid=47559481&authorid=60916468&opt=262144'
 AUTHOR = 60916468
 INTERVAL = 60
+BUSY_RETRY_INTERVAL = 0.5
 DATA = Path(os.environ.get('LOCALAPPDATA', str(Path.home()))) / 'NGAWatcher'
 STATE_FILE = DATA / 'state.json'
 FEISHU_CONFIG_FILE = DATA / 'feishu.json'
@@ -110,7 +111,7 @@ def check_access(status, body):
     if any(value in message for value in ('必须登录', '请先登录', '需要登录')):
         raise NGAAccessError('login', f'NGA 要求登录（ERROR:{code or 2048}）；请在“NGA 登录态”中配置或更新 Cookie，原进度已保留')
     if any(value in message for value in ('服务器忙', '访问过于频繁', '操作过于频繁')):
-        raise NGAAccessError('busy', f'NGA 服务器忙（ERROR:{code or 2048}）；60 秒后重试，原进度已保留')
+        raise NGAAccessError('busy', f'NGA 服务器忙（ERROR:{code or 2048}）；等待自动重试，原进度已保留')
     if '帖子审核未通过' in message:
         raise NGAAccessError('restricted', 'NGA 帖子审核未通过，暂时无法读取，原进度已保留')
     if 'guestJs=' in body and (status in (403, 503) or '访客不能直接访问' in message):
@@ -443,10 +444,10 @@ class PollingClient(Client):
                 reason = 'HTTP 503'
             if reason:
                 attempt += 1
-                LOG.info('NGA busy uid=%s retry=%s delay=1 source=%s reason=%s', self.author, attempt, 'JSON' if '__output' in url else 'HTML', reason)
+                LOG.info('NGA busy uid=%s retry=%s delay=%s source=%s reason=%s', self.author, attempt, BUSY_RETRY_INTERVAL, 'JSON' if '__output' in url else 'HTML', reason)
                 if self.on_retry:
                     self.on_retry((attempt, reason))
-                if self.cancel_event.wait(1):
+                if self.cancel_event.wait(BUSY_RETRY_INTERVAL):
                     raise PollCancelled()
                 continue
             return status, body
@@ -734,7 +735,7 @@ class App:
         style.theme_use('clam')
         style.configure('TButton', font=('Microsoft YaHei UI', 11), padding=9)
         tk.Label(root, text='NGA 发言雷达', bg='#0b1220', fg='#f8fafc', font=('Microsoft YaHei UI', 26, 'bold')).pack(anchor='w', padx=28, pady=(24, 5))
-        tk.Label(root, text='UID 60916468：跨帖搜索  /  UID 150058：帖子 47288722  /  各自每 60 秒检查，忙时每秒重试', bg='#0b1220', fg='#94a3b8', font=('Microsoft YaHei UI', 11)).pack(anchor='w', padx=30)
+        tk.Label(root, text=f'UID 60916468：跨帖搜索  /  UID 150058：帖子 47288722  /  各自每 60 秒检查，忙时每 {BUSY_RETRY_INTERVAL:g} 秒重试', bg='#0b1220', fg='#94a3b8', font=('Microsoft YaHei UI', 11)).pack(anchor='w', padx=30)
         self.status = tk.StringVar()
         self.details = tk.StringVar()
         self.refresh_status()
@@ -821,7 +822,7 @@ class App:
         target = self.targets[str(author)]
         if kind == 'retry':
             attempt, reason = value if isinstance(value, tuple) else (value, 'ERROR:2048')
-            target.message = f'NGA 服务器忙（{reason}）· 每秒重试中（第 {attempt} 次）· 原进度已保留'
+            target.message = f'NGA 服务器忙（{reason}）· 每 {BUSY_RETRY_INTERVAL:g} 秒重试中（第 {attempt} 次）· 原进度已保留'
             self.refresh_status()
             return
         target.busy = False
