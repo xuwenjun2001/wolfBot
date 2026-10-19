@@ -6,23 +6,23 @@
 
 | 字段 | 当前值 |
 | --- | --- |
-| 最后更新 | 2026-10-20（S16 实现与验证完成） |
+| 最后更新 | 2026-10-20（S17 验收完成，S18 开工登记） |
 | 计划版本 | v1 |
-| 总体状态 | S01—S16 已验收；本会话按用户要求继续 S17—S20，按依赖顺序推进。生产部署不在授权范围内 |
-| 已完成开发步骤 | 16/20；S16 计划修订与安全重新规划已通过隔离 PostgreSQL、定向测试、类型/ESLint 和只读工作台窄屏检查 |
-| 当前进行中步骤 | 无；S16 已 done，S17 尚未登记开始 |
-| 下一步骤 | S17：新财报触发研究更新和报告差异，pending |
-| 下一具体动作 | 核对公告发现/文档导入、报告历史 API 与 claim/citation 依赖，设计主动检查、来源去重、asOf 更新及支持/修订/撤回差异的实现边界 |
-| 当前会话登记 | 2026-10-20-s16-s20：用户要求开始实现 S16—S20。起点 HEAD `ac70c7e3a53e89511c1c37aa979a8212d19118fc`，分支 `codex/research-agent-s11-s15`，当时工作区干净且与 origin 同步。S16 已完成，E-S16-01；后续按依赖推进 S17—S20，逐步登记文件和证据 |
+| 总体状态 | S01—S17 已验收；本会话按用户要求继续 S18—S20，当前实现 S18。生产部署不在授权范围内 |
+| 已完成开发步骤 | 17/20；S17 主动更新、版本历史、确定性报告/证据差异已通过定向测试、隔离 PostgreSQL、类型/ESLint 和文档检查 |
+| 当前进行中步骤 | S18：恢复、隔离、资源限制与运行观测，in_progress |
+| 下一步骤 | S18：恢复、隔离、资源限制与运行观测，进行中 |
+| 下一具体动作 | 接入研究 Worker 的结构化运行观测与资源/usage 记录，补齐故障注入矩阵和真实隔离进程中断演练；随后登记 S19 离线 Skill 对照与 S20 综合交付 |
+| 当前会话登记 | 2026-10-20-s16-s20：用户要求实现 S16—S20。起点 HEAD `ac70c7e3a53e89511c1c37aa979a8212d19118fc`；S16 已验证并提交 `8cbe7b87f0b62a08e8002aa2de9c4b246851a971`，推送至当前工作分支。S17 已完成并待提交，S18 从 S17 收尾提交开始；S19—S20 逐步登记，不预先标记完成 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
-| 当前参考分支 / HEAD | codex/research-agent-s11-s15；本轮起点 `ac70c7e3a53e89511c1c37aa979a8212d19118fc`；本步提交/远端 SHA 以本节同步记录与最终 Git 核对为准 |
+| 当前参考分支 / HEAD | codex/research-agent-s11-s15；S16 提交 `8cbe7b87f0b62a08e8002aa2de9c4b246851a971` 已与 origin 同步；S17 收尾提交/远端 SHA 见本节同步记录，S18 工作区改动尚未提交 |
 | 目标仓库 | `https://github.com/xuwenjun2001/wolfBot`，默认分支 `main` |
-| 本轮涉及文件 | S16 已改 company-research 版本合同/store、任务 revise API、工作台修订表单/旧报告上下文/SSE 快照恢复及相应 API、PostgreSQL、合同测试；同步公司研究专题、版本合同和本交接。S17—S20 文件按实际边界追加。运行证据留在 `data/research-agent-upgrade/evidence/`，不提交私有资料 |
-| 已有改动提醒 | S16 起点干净；每步仅暂存本步相关代码、测试和文档。后续出现的无关改动保留，不纳入本步提交 |
-| 运行环境 / 进程 | S16 定向单测、隔离 PostgreSQL、类型检查、定向 ESLint、文档检查及窄屏只读工作台检查通过；PG runner 自建容器已移除。未迁移应用/生产数据库。QA HTTP 服务已关闭 |
+| 本轮涉及文件 | S16 已提交版本合同/store、修订 API、工作台计划编辑和快照恢复；S17 新增公告检查/原件 hash 去重、报告更新队列、报告历史/差异 API、差异合同/工作台和定向测试/文档。S18 当前登记运行观测、故障矩阵、隔离进程演练和 reliability 文档。运行证据留在 `data/research-agent-upgrade/evidence/`，不提交私有资料 |
+| 已有改动提醒 | S16 已单独提交并推送；S17 只包含本步相关代码、测试和文档。S18 后续每步只暂存本步相关文件；无关新增改动保留，不纳入本步提交 |
+| 运行环境 / 进程 | S17 复验：定向单测 129 passed、42 DB-only skipped；隔离 PostgreSQL 42 passed；type-check、定向 ESLint 和 docs 通过。边界检查仍被三个原有超限文件阻断。PG runner 自建容器已移除。未迁移应用/生产数据库。QA HTTP 服务已关闭 |
 | 模型与数据费用 | S16 未调用模型、搜索或 OCR，未变更预算。修订保留逻辑任务累计调用数、token、开始时间和 deadline。S19 模型/样本调用和费用逐次登记，unknown 保持 unknown；保留集仅在候选冻结后验收 |
 | 阻塞 | S16 无待结验收项。`npm run check:module-boundaries` 因既有 chat/page、quant/data-prefetch、market-data/api 三个超限文件失败，新改文件未触发该检查；Quality 依赖问题按用户要求暂缓。S17—S20 按前置验收判断 |
-| 最近验证 | S16：研究/API/UI 定向 `vitest` 123 passed、40 DB-only skipped；`npm run test:research:postgres` 40 passed，旧库升级/旧 reader 兼容通过且容器已移除；`npm run type-check`、定向 ESLint、`npm run check:docs`（71 Markdown/443 本地链接）、`git diff --check` 通过。只读 UI QA 展开计划表单并检查窄屏，无数据库/API 写入。详情见 E-S16-01 |
+| 最近验证 | S17：研究/API/UI 定向 `vitest` 129 passed、42 DB-only skipped；`npm run test:research:postgres` 42 passed，旧库升级/旧 reader 兼容通过且容器已移除；`npm run type-check`、本步定向 ESLint、`npm run check:docs`（71 Markdown/443 本地链接）和 `git diff --check` 通过。固定差异 fixture 覆盖同报告、数字重述、支持和撤回；模块边界检查仍因三个既有超限文件失败。详情见 E-S17-01 |
 | 受控资料恢复 | 开发资料在 `data/research-agent-upgrade/`；本机 `RESEARCH_HOLDOUT_ROOT=D:/QuantPilot-private-evals/research-v1`，换机须经受控归档恢复并核对登记 hash；这里不记录保留题/答案 |
 | 范围提醒 | 本次目标 S16—S20；生产部署不在范围。每步完成状态须绑定本会话真实验证；保留题/答案不得进入 Git 或交接文档 |
 
@@ -48,8 +48,8 @@
 | S14 | 工作台与事件流 | S04、S13 | done | E-S14-01、E-S13-02；桌面/手机、状态/路由、刷新/切换、浏览器 EventSource 断线/重复/乱序/终态通过 |
 | S15 | 原文定位与证据阅读器 | S07、S08、S12、S14 | done | E-S15-01、E-S13-02、E-REVIEW-02；原生 PDF/真实 OCR 派生扫描、版本/hash/坐标/逐字高亮、权限与恶意文本通过，长文本归一化引用范围回归通过 |
 | S16 | 修改计划与安全重新规划 | S04、S05、S11、S14 | done | E-S16-01；request/plan expectedRevision 与幂等、取消优先、旧 attempt fencing、同逻辑预算继承、旧报告上下文和窄屏工作台检查通过 |
-| S17 | 新财报更新与报告差异 | S06、S09、S13、S15、S16 | pending | — |
-| S18 | 恢复、隔离与运行观测 | S05、S11、S14、S16、S17 | pending | — |
+| S17 | 新财报更新与报告差异 | S06、S09、S13、S15、S16 | done | E-S17-01；42 项 PostgreSQL、129 项定向单测；同文件 no-op、重述、支持/撤回、晚披露和旧报告保留通过 |
+| S18 | 恢复、隔离与运行观测 | S05、S11、S14、S16、S17 | in_progress | 本会话登记：结构化研究观测、故障注入矩阵、隔离进程中断演练；尚未验收 |
 | S19 | 评测对照与 Skill 改进实验 | S02、S03、S13、S18 | pending | — |
 | S20 | 综合验收与面试证据包 | S01—S19 | pending | — |
 

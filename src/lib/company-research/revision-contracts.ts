@@ -28,6 +28,20 @@ export const researchReportRevisionSchema = z.object({
 });
 export type ResearchReportRevision = z.infer<typeof researchReportRevisionSchema>;
 
+const researchCitationReferenceSchema = researchCitationSchema.omit({ quote: true });
+export const researchReportDiffSchema = z.object({
+  schemaVersion: z.literal(1), fromRevision: revisionSchema, toRevision: revisionSchema,
+  status: z.enum(['changed', 'unchanged']), asOf: z.object({ before: timestampSchema, after: timestampSchema }).strict(),
+  facts: z.array(z.object({ key: z.string().min(1).max(300), metric: financialFactSchema.shape.metric, periodId: researchIdSchema,
+    status: z.enum(['added', 'changed', 'withdrawn', 'unchanged']), before: financialFactSchema.nullable(), after: financialFactSchema.nullable(), reason: z.string().min(1).max(500) }).strict()).max(200),
+  claims: z.array(z.object({ id: researchIdSchema, questionId: researchQuestionSchema.shape.id,
+    status: z.enum(['supported', 'revised', 'withdrawn', 'unchanged']), before: researchClaimSchema.nullable(), after: researchClaimSchema.nullable(), reason: z.string().min(1).max(1000) }).strict()).max(200),
+  evidence: z.object({ added: z.array(researchCitationReferenceSchema).max(400), removed: z.array(researchCitationReferenceSchema).max(400) }).strict(),
+}).strict().superRefine((diff, ctx) => {
+  if (diff.toRevision <= diff.fromRevision) ctx.addIssue({ code: 'custom', message: 'Diff revisions must be ordered' });
+});
+export type ResearchReportDiff = z.infer<typeof researchReportDiffSchema>;
+
 /** Referential/time integrity only. This does not prove semantic support. */
 export function reportBindingErrors(report: ResearchReportRevision, spec: ResearchTaskSpec, documents: ResearchDocument[], pageText?: (documentId: string, version: number, filePage: number) => string | undefined, locatedText?: (citation: VersionedCitation) => string | undefined): string[] {
   const errors: string[] = [];
@@ -73,6 +87,7 @@ export const researchEventSchema = z.object({
   event: z.discriminatedUnion('type', [
     z.object({ type: z.literal('task.created') }).strict(),
     z.object({ type: z.literal('task.revised'), fromRequestRevision: revisionSchema, changedFields: z.array(z.enum(['questions', 'periods', 'asOf'])).min(1).max(3) }).strict(),
+    z.object({ type: z.literal('report.update.queued'), fromReportRevision: revisionSchema, sourceHashes: z.array(z.string().length(64)).min(1).max(100), affectedPeriods: z.array(researchIdSchema).min(1).max(2) }).strict(),
     z.object({ type: z.literal('plan.created') }).strict(),
     z.object({ type: z.literal('document.registered'), documentId: researchIdSchema, version: revisionSchema }).strict(),
     z.object({ type: z.literal('attempt.started') }).strict(), z.object({ type: z.literal('attempt.finished'), status: z.enum(['completed', 'partial', 'failed', 'cancelled', 'superseded']) }).strict(),

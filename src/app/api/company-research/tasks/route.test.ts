@@ -4,9 +4,10 @@ import { specFixture } from '@/lib/company-research/version-test-fixtures';
 import { ResearchPersistenceError } from '@/lib/company-research/repository-errors';
 import { AuthorizationError } from '@/lib/auth/authorization';
 
-const mocked = vi.hoisted(() => ({ action: vi.fn(), create: vi.fn(), task: vi.fn(), report: vi.fn(), document: vi.fn(), artifact: vi.fn(), cancel: vi.fn(), resolve: vi.fn() }));
+const mocked = vi.hoisted(() => ({ action: vi.fn(), create: vi.fn(), task: vi.fn(), report: vi.fn(), snapshot: vi.fn(), document: vi.fn(), artifact: vi.fn(), cancel: vi.fn(), resolve: vi.fn() }));
 vi.mock('@/lib/auth/action', () => ({ requireAction: mocked.action }));
 vi.mock('@/lib/company-research/version-store', () => ({ createResearchTask: mocked.create, getResearchTask: mocked.task, getResearchReportRevision: mocked.report }));
+vi.mock('@/lib/company-research/report-update-store', () => ({ getResearchReportSnapshot: mocked.snapshot }));
 vi.mock('@/lib/company-research/document-store', () => ({ getResearchDocument: mocked.document, readResearchDocumentArtifact: mocked.artifact }));
 vi.mock('@/lib/company-research/attempt-store', () => ({ cancelResearchTask: mocked.cancel }));
 vi.mock('@/lib/company-research/connectors', () => ({ resolveCompanies: mocked.resolve }));
@@ -45,11 +46,11 @@ describe('versioned research HTTP identity boundary', () => {
     expect((await create(request(specFixture()))).status).toBe(409);
   });
   it('does not expose an inaccessible task or report and always derives read scope', async () => {
-    mocked.task.mockResolvedValue(null); mocked.report.mockResolvedValue(null);
+    mocked.task.mockResolvedValue(null); mocked.snapshot.mockResolvedValue(null);
     const response = await getTask(new Request('http://localhost/tasks/victim'), { params: Promise.resolve({ id: 'victim' }) });
     expect(response.status).toBe(404); expect(mocked.task).toHaveBeenCalledWith('authenticated-user', 'victim');
     expect((await getReport(new Request('http://localhost/reports/2'), { params: Promise.resolve({ id: 'victim', revision: '2' }) })).status).toBe(404);
-    expect(mocked.report).toHaveBeenCalledWith('authenticated-user', 'victim', 2);
+    expect(mocked.snapshot).toHaveBeenCalledWith('authenticated-user', 'victim', 2);
   });
   it('checks ownership for original bytes and returns private attachments', async () => {
     const params = Promise.resolve({ id: 'task', documentId: 'annual', version: '1' });

@@ -155,14 +155,22 @@ query 为 1—300 字符；topK 为 1—20，默认 5；maxOutputCharacters 为 
 | `GET /api/company-research/tasks` | 当前用户最近 30 个版本化任务 |
 | `POST /api/company-research/tasks/{id}/start` | `expectedPlanRevision`；重复入队复用已有计划 |
 | `POST /api/company-research/tasks/{id}/revise` | `expectedRequestRevision`、`expectedPlanRevision`、修订字段和 `Idempotency-Key`；追加请求/计划版本并重新排队 |
+| `POST /api/company-research/tasks/{id}/updates/run` | `expectedRequestRevision`、`expectedPlanRevision`、`expectedReportRevision`、`asOf` 和 `Idempotency-Key`；只对截止时点可用的新来源排入报告更新 |
 | `GET /api/company-research/tasks/{id}` | 权威快照，含计划、公开检查点、资料、报告、变化表和核验信息 |
 | `GET /api/company-research/tasks/{id}/events` | SSE；每次连接先发送 snapshot，research 事件使快照失效，后续快照恢复完整状态 |
+| `GET /api/company-research/tasks/{id}/reports/history` | 报告版本摘要、请求/计划版本、截至时间、状态和规范化报告 hash |
+| `GET /api/company-research/tasks/{id}/reports/{revision}` | 不可变报告及其对应请求规格、财务变化 |
+| `GET /api/company-research/tasks/{id}/reports/{revision}/diff` | 指定报告与前一版的确定性数字、结论和引用差异；v1 无前版时返回空差异 |
 | `GET /api/company-research/tasks/{id}/source` | `reportRevision`（0 为公开草稿）、`claimId` 或 `factId`、`citationIndex`；读取原引用的明确版本/hash |
 | `POST /api/company-research/tasks/{id}/accept` | 用户人工验收；传 `reportRevision`、`reportHash`、`checkedNumbersAndExplanations:true` |
 
 所有接口从认证 actor 派生归属。source 不接受任意 actor 或任意磁盘路径；历史原文不跟随最新索引切换。阅读器只渲染文本和结构化表格，外链过滤协议；逐字匹配才标黄，没有坐标时明确使用页/块/文本定位。派生扫描验收样本的 needs_review、未知披露时间必须保留。当前未采用 AG-UI SDK，也不声称协议兼容。
 
 工作台可修订三问、年度两期和资料截止日。修订需要同时匹配请求与计划 revision；相同幂等键及内容只接受一次，版本冲突返回 409。公司身份、口径和预算不在修订字段中；切换公司请创建新任务。成功修订会追加不可变请求和计划、保留现有报告/原件、使旧 attempt 的 generation 失效并排入新计划。检查点会按新版本重建，已取得的合格文档仍留在任务中供后续检索复用。修订不增加工具额度、token 统计、原始开始时间或截止时间；原额度已耗尽时，新 attempt 仅封存 partial。快照同时提供旧报告对应的 `reportSpec`，避免把上一请求的报告误标成新版本结果。
+
+已完成研究可显式检查巨潮公告。候选必须重新下载后才成为任务资料；同一来源的新 bytes 会成为新原件版本，但沿用旧公告日期无法证明修订 bytes 何时公开，因此会进入披露日期待核实状态。不同公告 ID 若指向同一期间、同一 bytes 和相同披露证据，会复用既有文档。模型搜索只作为候选发现，不能替代已核实官方原件。用户选择新报告截止日期后，更新入口同时检查请求、计划和报告 revision，并要求幂等键。只有来源 hash 未进入上一版报告、披露已核实且截至所选 `asOf` 可用的资料才会排队；否则返回“无新证据”，不创建报告。
+
+更新会追加 plan revision；若截止日期改变，也追加 request revision。任务沿用原逻辑工具预算、累计用量、开始时间和 deadline。公开 checkpoint 保留受影响期间之外的事实/结论，失效受影响期间的事实与其依赖结论；保留结论仍在新 plan/asOf 下重新做语义核验。新报告完成后，报告历史按规范化 JSON hash 展示版本身份，diff API 对相邻不可变报告按指标/范围/期间、稳定 claim ID 和文档版本/hash/locator 计算变化，不调用模型编写差异或原因。支持、修订、撤回和未变化均由两版报告状态确定；缺少新报告证据时，旧报告不会被改写。
 
 执行 `npm run test:research:postgres` 会创建专用临时 PostgreSQL，演练旧库升级、重复迁移、旧代码兼容及新链路测试；不会迁移应用数据库。追加 `-- --financial-e2e` 才调用当前真实模型，对固定茅台双期公开 PDF 运行完整语料/缺后期资料两例，并核对历史 OCR 输出的阅读器。需要受控开发资料与校准回执，费用未知；固定资料运行不等于实时公告发现全链路验收。原始结果在 `data/research-agent-upgrade/evidence/S13/`，开发步骤状态以升级目录 progress 为准。
 

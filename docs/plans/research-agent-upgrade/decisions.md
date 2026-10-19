@@ -122,3 +122,9 @@ ID / 日期 / 对应步骤：
 状态：accepted。Review 发现数值列顺序、会计负号、取消后的晚到文档写入和归一化引用范围不能只靠原有通过样例覆盖。本轮将数值 token/年份列判定抽成共享确定性 helper：报告标题不能充当金额列，缺失、重复、调整或百分比子列不猜测；括号、Unicode minus 和全角数字保留符号。研究文档导入、解析和注册沿用同一受信 attempt token，在外部 artifact I/O 之后、metadata INSERT 之前再次检查租约、generation、worker 和任务状态；无 token 的人工管理 API 保持兼容。阅读器把 NFKC/空白归一后的引用映射回原始 UTF-16 偏移，只在原文存在逐字字符串时高亮，归一匹配仅用于提供上下文。
 
 这些规则分别由定向单测、固定报告确定性回放和 disposable PostgreSQL 竞争回归验证；不重新消费模型预算、不改变历史报告/人工验收，也不把合成事件或模块尺寸门当作 S11—S15 的额外质量成绩。后续若支持更复杂的多级表头，应新增明确的表格结构合同和反例，而不是放宽当前保守拒绝。
+
+## D28 / 2026-10-20 / S17：更新复用不可变报告与现有执行器
+
+状态：accepted。新公告检查、导入和更新确认由用户显式触发，复用现有 CNINFO discovery、内容寻址原件、任务 Worker 与 PI loop；不增加调度器或数据库表。进入上版报告的 source hash 不重复触发运行；更新仅接受已核实披露时点且 `documentAvailableAt(newAsOf)` 为真的新 hash。无变化直接返回 no-op。
+
+新 plan 从上版公开 checkpoint 派生：受影响期间 facts 与依赖 claims 失效，其他事实/结论保留；新版本重新审查保留 claims，确保 request/plan/asOf 改变后旧 reviewer 回执不被当作新版本证据。任务预算、deadline 与 usage 保持原值。历史报告 hash 和相邻报告 diff 在读取时从不可变 JSON 计算，不另存冗余 diff 表；数字差异、稳定 claim ID 状态和引用定位采用确定性对照，不让模型为变化编造原因。真实运行与该合同 fixture/PG 验证分开登记。

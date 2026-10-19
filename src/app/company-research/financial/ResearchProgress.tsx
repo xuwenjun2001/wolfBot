@@ -2,6 +2,7 @@
 import type { FinancialTask } from './workbench-state';
 import { financialStatusLabels, isFinancialTerminal } from './workbench-state';
 import { ResearchPlanEditor } from './ResearchPlanEditor';
+import { ResearchUpdatePanel } from './ResearchUpdatePanel';
 export function ResearchProgress({task, connected, cancelPending, onCancel, onStart, onRevise, onError}: {task: FinancialTask; connected: boolean; cancelPending: boolean; onCancel: () => void; onStart: () => void; onRevise: () => void; onError: (message: string) => void}) {
   const stepLabel = (id: string) => {
     const status = task.checkpoint?.steps[id] || 'pending';
@@ -16,6 +17,7 @@ export function ResearchProgress({task, connected, cancelPending, onCancel, onSt
     {task.status !== 'cancelled' && <ResearchPlanEditor key={`${task.id}:${task.requestRevision}`} task={task} onAccepted={onRevise} onError={onError} />}
     <ol className="space-y-4">{task.spec.questions.map((q, i) => <li key={q.id}><p className="text-sm font-medium">{i + 1}. {q.text}</p><ul className="mt-2 space-y-2 border-l border-slate-200 pl-3 text-xs text-slate-500">{task.plan?.steps.filter(s => s.questionId === q.id).map(s => <li key={s.id} className="flex items-start justify-between gap-2"><span>{s.title.split(' · ').at(-1)}</span><span className="shrink-0">{stepLabel(s.id)}</span></li>) || <li>执行后生成检索、比较、核验和报告步骤</li>}</ul></li>)}</ol>
     <section className="border-t pt-4"><h3 className="mb-3 text-sm font-medium">研究资料 · {task.documents.length} 个版本</h3>{task.documents.length ? <ul className="space-y-3 text-xs text-slate-500">{task.documents.map(d => <li key={`${d.id}-${d.version}`}><p className="break-words text-slate-700">{d.title}</p><p className="mt-1">v{d.version} · {({ ready: '已解析', acquired: '待解析', partial: '部分可读', unreadable: '不可用', parse_pending: '解析中' } as Record<string, string>)[d.state]} · {d.disclosure.status === 'verified' ? '披露时间已核实' : '披露时间待核实'}</p></li>)}</ul> : <p className="text-xs text-slate-500">尚未导入财报，研究器将查找官方公告。</p>}</section>
+    {task.report && isFinancialTerminal(task.status) && task.status !== 'cancelled' && <ResearchUpdatePanel key={`${task.id}:${task.reportRevision}`} task={task} onChanged={onRevise} onError={onError} />}
     <details className="border-t pt-4 text-xs text-slate-500"><summary className="cursor-pointer">运行用量</summary><p className="mt-2 leading-6">输入 {task.usage.inputTokens ?? '未知'} / 输出 {task.usage.outputTokens ?? '未知'} Token；{task.usage.unknownModelRequests} 次请求用量未完整确认。费用未知。</p></details>
   </aside>;
 }

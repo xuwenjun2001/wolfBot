@@ -6,6 +6,7 @@ import { prisma } from '@/lib/db/client';
 import { ResearchArtifactStore, artifactDigest } from './artifact-store';
 import type { ResearchRepositoryContext } from './repository-core';
 import { createResearchTask, getResearchTask, appendResearchPlan, reviseResearchTask, getResearchReportRevision, researchVersionEventsAfter } from './version-store';
+import { getResearchReportDiff, getResearchReportSnapshot, listResearchReportHistory, queueResearchReportUpdate } from './report-update-store';
 import { registerResearchDocument, getResearchDocument, readResearchDocumentArtifact } from './document-store';
 import { startResearchAttempt, heartbeatResearchAttempt, reserveResearchToolCall, cancelResearchTask } from './attempt-store';
 import { commitResearchReport } from './report-store';
@@ -63,6 +64,9 @@ describe.skipIf(!enabled)('versioned research PostgreSQL and controlled artifact
       const first = await importTaskFiling(actor, task.id, input, AbortSignal.timeout(1000), ctx);
       const retry = await importTaskFiling(actor, task.id, input, AbortSignal.timeout(1000), ctx);
       expect(retry.reused).toBe(true); expect(retry.document).toEqual(first.document);
+      const duplicateUrl = { ...input, url: 'https://example.com/copy.pdf' };
+      const duplicate = await importTaskFiling(actor, task.id, duplicateUrl, AbortSignal.timeout(1000), ctx);
+      expect(duplicate).toMatchObject({ reused: true, duplicateSource: true, document: { id: first.document.id, version: 1 } });
       expect(first.eligibility).toBe('date_unverified');
       download.mockResolvedValue({ bytes: Buffer.concat([original, Buffer.from('revision')]), mediaType: 'application/pdf', url: input.url });
       const changed = await importTaskFiling(actor, task.id, input, AbortSignal.timeout(1000), ctx);
@@ -245,7 +249,47 @@ describe.skipIf(!enabled)('versioned research PostgreSQL and controlled artifact
     await commitResearchReport(actor, b, 1, reportFor(task.id, 2), ctx);
     expect(await getResearchReportRevision(actor, task.id, 1, ctx)).toEqual(first);
     expect((await getResearchReportRevision(actor, task.id, 2, ctx))!.revision).toBe(2);
+    expect(await getResearchReportSnapshot(actor, task.id, 1, ctx)).toMatchObject({ report: first, spec: { requestRevision: 1 } });
+    expect((await listResearchReportHistory(actor, task.id, ctx)).map(entry => entry.revision)).toEqual([1, 2]);
+    expect((await getResearchReportDiff(actor, task.id, 2, ctx))!.status).toBe('unchanged');
+    expect(await listResearchReportHistory(other, task.id, ctx)).toEqual([]);
     await expect(prisma.$executeRaw`UPDATE company_research_report_versions SET report='{}'::jsonb WHERE task_id=${task.id}`).rejects.toThrow('RESEARCH_IMMUTABLE_VERSION');
+  });
+  it('queues an update only for newly available source hashes and reuses unaffected evidence', async () => {
+    const task = await taskWithPlan(), oldDocument = await attachDocument(task.id);
+    const attempt = await startResearchAttempt(actor, task.id, 1, 'update-baseline', ctx);
+    await commitResearchReport(actor, attempt, 0, reportFor(task.id), ctx);
+    const nextBytes = Buffer.from('%PDF-1.7\nsynthetic restatement fixture\n'), evidence = Buffer.from('synthetic verified restatement notice');
+    const nextDocument = { ...documentFixture(task.id), id: 'annual-2024-restatement', title: '2024 年报更正', bytesSha256: artifactDigest(nextBytes),
+      original: ref(nextBytes), fetchedAt: new Date().toISOString(), disclosure: { status: 'verified' as const, precision: 'date' as const,
+      on: '2025-07-01', timezone: 'Asia/Shanghai' as const, evidenceUrl: 'https://www.cninfo.com.cn/notice', evidenceSha256: artifactDigest(evidence) } };
+    await registerResearchDocument(actor, nextDocument, nextBytes, undefined, ctx);
+    const input = { expectedRequestRevision: 1, expectedPlanRevision: 1, expectedReportRevision: 1, asOf: '2025-07-01T23:59:59.999+08:00' };
+    const key = randomUUID(), result = await queueResearchReportUpdate(actor, task.id, key, input, ctx);
+    expect(result).toMatchObject({ queued: true, requestRevision: 2, planRevision: 2, affectedPeriods: ['fy2024'], sourceHashes: [artifactDigest(nextBytes)] });
+    const queued = (await getResearchTask(actor, task.id, ctx))!;
+    expect(queued).toMatchObject({ status: 'queued', requestRevision: 2, planRevision: 2, reportRevision: 1, spec: { asOf: '2025-07-01T23:59:59.999+08:00' } });
+    expect(queued.checkpoint?.facts).toEqual([]);
+    expect(queued.checkpoint?.claims).toEqual([]);
+    expect(queued.usage.startedAt).not.toBeNull();
+    expect(await getResearchReportRevision(actor, task.id, 1, ctx)).not.toBeNull();
+    expect((await queueResearchReportUpdate(actor, task.id, key, input, ctx))).toMatchObject({ queued: true, idempotent: true });
+    expect(await researchVersionEventsAfter(actor, task.id, 0, ctx)).toEqual(expect.arrayContaining([expect.objectContaining({ event: expect.objectContaining({ type: 'report.update.queued', fromReportRevision: 1 }) })]));
+    expect(oldDocument.bytesSha256).not.toBe(artifactDigest(nextBytes));
+  });
+  it('does not queue duplicate or late-disclosed evidence and preserves source time boundaries', async () => {
+    const task = await taskWithPlan(), existing = await attachDocument(task.id);
+    const attempt = await startResearchAttempt(actor, task.id, 1, 'update-noop-baseline', ctx);
+    await commitResearchReport(actor, attempt, 0, reportFor(task.id), ctx);
+    const lateBytes = Buffer.from('%PDF-1.7\nlate restatement fixture\n');
+    await registerResearchDocument(actor, { ...documentFixture(task.id), id: 'annual-2024-late', bytesSha256: artifactDigest(lateBytes), original: ref(lateBytes),
+      fetchedAt: new Date().toISOString(), disclosure: { status: 'verified', precision: 'date', on: '2026-01-15', timezone: 'Asia/Shanghai',
+        evidenceUrl: 'https://www.cninfo.com.cn/late', evidenceSha256: artifactDigest(lateBytes) } }, lateBytes, undefined, ctx);
+    const result = await queueResearchReportUpdate(actor, task.id, randomUUID(), { expectedRequestRevision: 1, expectedPlanRevision: 1,
+      expectedReportRevision: 1, asOf: specFixture().asOf }, ctx);
+    expect(result).toEqual({ queued: false, reason: 'no_new_evidence' });
+    expect((await getResearchTask(actor, task.id, ctx))!.status).toBe('partial');
+    expect(existing.bytesSha256).toBe(artifactDigest(original));
   });
   it('rejects malformed or unsupported citations transactionally instead of advancing report state', async () => {
     const task = await taskWithPlan(); await attachDocument(task.id);

@@ -15,7 +15,11 @@ S04 将新合同放在 `src/lib/company-research/{task,document,revision}-contra
 | generation | 服务端递增执行权 fencing；领取新 attempt 不得重置逻辑任务工具数、tokens、开始时间和 deadline |
 | event.sequence | 同一 task 内持久递增游标，用于补放；不是任何业务 revision |
 
-S16 修订入口为 `POST /api/company-research/tasks/{id}/revise`，使用 `expectedRequestRevision`、`expectedPlanRevision` 与 `Idempotency-Key`。允许改三问、两期和 `asOf`；公司身份变化需创建独立任务。变化后的 period 必须使用新 ID。请求与计划在同一事务追加，冲突或已取消任务拒绝；旧 attempt 被 superseded、generation 前进，检查点按新版本重建，已导入文档保留并继续受新 `asOf`/期间过滤。报告仍绑定旧 request/plan revision，快照以其 `reportSpec` 保留旧期间和截止日。修订不重置工具数、tokens、开始时间或 deadline；额度耗尽时只允许封存 partial。事件增加 `task.revised`，客户端收到事件后重新读取权威快照。S17 再在该不可变基础上生成更新报告并展示报告/证据差异。
+S16 修订入口为 `POST /api/company-research/tasks/{id}/revise`，使用 `expectedRequestRevision`、`expectedPlanRevision` 与 `Idempotency-Key`。允许改三问、两期和 `asOf`；公司身份变化需创建独立任务。变化后的 period 必须使用新 ID。请求与计划在同一事务追加，冲突或已取消任务拒绝；旧 attempt 被 superseded、generation 前进，检查点按新版本重建，已导入文档保留并继续受新 `asOf`/期间过滤。报告仍绑定旧 request/plan revision，快照以其 `reportSpec` 保留旧期间和截止日。修订不重置工具数、tokens、开始时间或 deadline；额度耗尽时只允许封存 partial。事件增加 `task.revised`，客户端收到事件后重新读取权威快照。
+
+S17 的主动更新入口为 `POST /api/company-research/tasks/{id}/updates/run`，使用 `expectedRequestRevision`、`expectedPlanRevision`、`expectedReportRevision`、目标 `asOf` 与 `Idempotency-Key`。仅终态且当前报告对应当前请求时可更新。来源 hash 必须未出现在上版报告中，披露时点必须已核实且不晚于新 `asOf`；候选链接、未知披露日、超出截止时点和已纳入报告的同一 hash 都不触发新报告。无新来源返回 no-op。更新在一个 task 锁事务中追加新 plan；`asOf` 改变时另追加 request 快照，推进 generation 并排队。累计预算、用量、开始时间和 deadline 不重置。checkpoint 保留受影响期间外的 facts/claims，移除受影响期间事实及依赖结论，保留结论在新版本下重新核验。`report.update.queued` 事件公开上版 revision、新来源 hash 和受影响期间。
+
+报告历史由 `GET .../reports/history` 返回每版请求/计划、状态、`asOf`、生成时间与 canonical report hash；报告内容读取同时返回其原 request spec。`GET .../reports/{revision}/diff` 对指定版和上一版按 metric/scope/period、稳定 claim ID、文档 ID/version/hash/locator 计算确定性差异，不再调用模型。金额相同但引用不同只记作证据差异；结论由 unsupported 转 supported 标为支持，supported 文本/核验/引用变化标为修订，原受支持结论消失或不再 supported 标为撤回。报告版本及人工验收均不可变。
 
 ## 任务与财务口径
 
@@ -49,7 +53,7 @@ partial 明确缺口，不冒充 completed。completed 不能有未解缺口，�
 
 首版新 task 从 draft 创建；start API 建立初始三问计划并入队，现有研究 Worker 在旧 run 和新 task 间交替领取。合法路径为 draft → queued → running → completed/partial/failed/cancelled。取消保留原件和已有交付；过期接管使用新 attempt 与递增 generation。恢复继承逻辑 usage，不复播隐藏推理；已耗尽预算的接管只封存 partial，不能再调用模型。
 
-事件 envelope 固定 taskId、sequence、request/plan/report revision、attemptId、generation、时间和公开业务 payload。task.created、task.revised、task.queued、plan.created、document.registered、research.progress、attempt.started/finished、report.created、task.cancelled 是当前子集；没有隐藏 reasoning 字段。SSE 每次连接首先发送权威 snapshot，事件仅使状态失效，客户端随即重新读取快照以恢复完整数据。客户端拒绝旧任务、旧 generation 和倒退序号；切换任务撤销请求并关闭旧连接。当前采用原生 SSE，不声明 AG-UI 协议兼容。
+事件 envelope 固定 taskId、sequence、request/plan/report revision、attemptId、generation、时间和公开业务 payload。task.created、task.revised、report.update.queued、task.queued、plan.created、document.registered、research.progress、attempt.started/finished、report.created、task.cancelled 是当前子集；没有隐藏 reasoning 字段。SSE 每次连接首先发送权威 snapshot，事件仅使状态失效，客户端随即重新读取快照以恢复完整数据。客户端拒绝旧任务、旧 generation 和倒退序号；切换任务撤销请求并关闭旧连接。当前采用原生 SSE，不声明 AG-UI 协议兼容。
 
 ## 执行、审查与人工验收
 

@@ -82,6 +82,8 @@ describe('financial change version contracts', () => {
     expect(() => assertPlanForSpec({ ...plan, requestRevision: 2 }, spec)).toThrow('PLAN_REQUEST_MISMATCH');
     const event = { schemaVersion: 1, id: randomUUID(), taskId, sequence: 11, at: new Date().toISOString(), requestRevision: 1, planRevision: 3, reportRevision: null, attemptId: randomUUID(), generation: 7, event: { type: 'attempt.started' } };
     expect(researchEventSchema.parse(event)).toMatchObject({ sequence: 11, planRevision: 3, generation: 7 });
+    expect(researchEventSchema.parse({ ...event, id: randomUUID(), sequence: 12, planRevision: 4, reportRevision: 2, attemptId: null,
+      event: { type: 'report.update.queued', fromReportRevision: 2, sourceHashes: [fixtureHash], affectedPeriods: ['fy2024'] } })).toMatchObject({ event: { type: 'report.update.queued', affectedPeriods: ['fy2024'] } });
     expect(researchEventSchema.safeParse({ ...event, schemaVersion: 2 }).success).toBe(false);
     expect(researchEventSchema.safeParse({ ...event, attemptId: null }).success).toBe(false);
     expect(researchDocumentSchema.safeParse({ ...documentFixture(), original: { store: 'local', key: '../secret', sha256: fixtureHash, byteLength: 1 } }).success).toBe(false);
