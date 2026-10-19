@@ -6,16 +6,16 @@
 
 | 字段 | 当前值 |
 | --- | --- |
-| 最后更新 | 2026-10-20（S17 验收完成，S18 开工登记） |
+| 最后更新 | 2026-10-20（S17 补验、S18 验收完成，登记 S19） |
 | 计划版本 | v1 |
-| 总体状态 | S01—S17 已验收；本会话按用户要求继续 S18—S20，当前实现 S18。生产部署不在授权范围内 |
-| 已完成开发步骤 | 17/20；S17 主动更新、版本历史、确定性报告/证据差异已通过定向测试、隔离 PostgreSQL、类型/ESLint 和文档检查 |
-| 当前进行中步骤 | S18：恢复、隔离、资源限制与运行观测，in_progress |
-| 下一步骤 | S18：恢复、隔离、资源限制与运行观测，进行中 |
-| 下一具体动作 | 接入研究 Worker 的结构化运行观测与资源/usage 记录，补齐故障注入矩阵和真实隔离进程中断演练；随后登记 S19 离线 Skill 对照与 S20 综合交付 |
+| 总体状态 | S01—S18 已验收；本会话按用户要求继续 S19—S20。生产部署不在授权范围内 |
+| 已完成开发步骤 | 18/20；S18 结构化观测、44 项隔离 PG、真实子进程中断/自然租约接管及解析服务测试通过 |
+| 当前进行中步骤 | S19：冻结开发集基线、一个隔离 Skill 候选、配对比较及冻结后保留集，in_progress |
+| 下一步骤 | S19；质量门达到后进入 S20 综合交付 |
+| 下一具体动作 | 完成可追溯评测 runner/评分与实验合同，先跑四公司开发基线再生成一个候选；不提前读取保留题/答案，不调整预算或评分刷通过 |
 | 当前会话登记 | 2026-10-20-s16-s20：用户要求实现 S16—S20。S16 `8cbe7b87f0b62a08e8002aa2de9c4b246851a971`、S17 `c0028c9a982e9ef3cc0de4bfd68a0145f475025e` 已推送。接续核对起点工作区干净；发现 S17 最新时间边界变更未重跑 PG、缺 E-S17-01，先重开补验并修正更新依赖/分页/历史失败显示，再继续 S18—S20 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
-| 当前参考分支 / HEAD | codex/research-agent-s11-s15；接续 HEAD `c0028c9a982e9ef3cc0de4bfd68a0145f475025e`；S17 提交已与 origin 同步，补验改动按实际状态登记 |
+| 当前参考分支 / HEAD | codex/research-agent-s11-s15；S17 补验 `1c9f5b8c95668316374c109fa64c6f44b4605c4f` 已核对远端一致；S18 提交在本步收尾同步 |
 | 目标仓库 | `https://github.com/xuwenjun2001/wolfBot`，默认分支 `main` |
 | 本轮涉及文件 | S16 已提交版本合同/store、修订 API、工作台计划编辑和快照恢复；S17 新增公告检查/原件 hash 去重、报告更新队列、报告历史/差异 API、差异合同/工作台和定向测试/文档。S18 当前登记运行观测、故障矩阵、隔离进程演练和 reliability 文档。运行证据留在 `data/research-agent-upgrade/evidence/`，不提交私有资料 |
 | 已有改动提醒 | S16 已单独提交并推送；S17 只包含本步相关代码、测试和文档。S18 后续每步只暂存本步相关文件；无关新增改动保留，不纳入本步提交 |
@@ -49,8 +49,8 @@
 | S15 | 原文定位与证据阅读器 | S07、S08、S12、S14 | done | E-S15-01、E-S13-02、E-REVIEW-02；原生 PDF/真实 OCR 派生扫描、版本/hash/坐标/逐字高亮、权限与恶意文本通过，长文本归一化引用范围回归通过 |
 | S16 | 修改计划与安全重新规划 | S04、S05、S11、S14 | done | E-S16-01；request/plan expectedRevision 与幂等、取消优先、旧 attempt fencing、同逻辑预算继承、旧报告上下文和窄屏工作台检查通过 |
 | S17 | 新财报更新与报告差异 | S06、S09、S13、S15、S16 | done | E-S17-01；42 项 PostgreSQL、129 项定向单测；同文件 no-op、重述、支持/撤回、晚披露和旧报告保留通过 |
-| S18 | 恢复、隔离与运行观测 | S05、S11、S14、S16、S17 | in_progress | 本会话登记：结构化研究观测、故障注入矩阵、隔离进程中断演练；尚未验收 |
-| S19 | 评测对照与 Skill 改进实验 | S02、S03、S13、S18 | pending | — |
+| S18 | 恢复、隔离与运行观测 | S05、S11、S14、S16、S17 | done | E-S18-01；reliability.md；44 项 PG、真实 SIGKILL/自然租约接管、3 项 parser 测试，原预算/未知用量保留 |
+| S19 | 评测对照与 Skill 改进实验 | S02、S03、S13、S18 | in_progress | 本会话登记评测 runner、评分/实验合同、候选隔离、冻结后保留集；尚未调用保留模型/读取答案 |
 | S20 | 综合验收与面试证据包 | S01—S19 | pending | — |
 
 `done` 数量与上方完成数一起更新。计划文件不复制状态；一旦状态矛盾，以实际证据核对后修正本文件，不静默选择较乐观的记录。
@@ -65,6 +65,18 @@
 - 原 S03 网关基线全部在鉴权时失败；用户指定新模型后另存校准，4 次请求均 200，但提前收尾且无财报来源，不是质量提升证据。后续人工确认按 E-ANNOT-02 单独归档，不能反向把旧模型运行变为通过。
 
 ## 验收证据
+
+### E-S18-01：运行观测与真实进程恢复
+
+- 2026-10-20 / `2026-10-20-s16-s20`；S18 文件为 observability、financial-runtime 接线、reliability.integration、interrupt-financial-worker、PG runner 和 reliability 文档。S17 补验提交 `1c9f5b8` 已同步，S18 自身独立提交。
+- [可靠性矩阵与复现](reliability.md) 区分真实 PostgreSQL/进程、协议故障注入、既有浏览器与 OCR 容器证据。stdout 只记 task/attempt/request/plan/report/generation、阶段、耗时、usage 完整性和进程资源；不输出原文/参数/错误正文或隐藏推理。复用当前 stdout/Alloy/Loki。
+- `s18-pg-interruption3.log` 退出 0：44/44 PG、兼容升级、真实进程 SIGKILL、中断后自然 lease 接管、旧 checkpoint/heartbeat 被 fencing 拒绝；原 startedAt/deadline 不变，工具从 1 到 3，报告只提交一次。自然等待 63514 ms、全实验 67280 ms；已知 Token 小计 300/30，另有 1 次未知请求。原件/manifest 位置与 SHA 见 reliability.md，集群已停止，未碰业务库。
+- 模型 transport timeout 注入后 partial/unknown=1；损坏 PDF 保留原件；工具额外 actor/task/instruction 参数被严格 schema 拒绝；已有取消/接管晚回调、权限、SSRF、SSE 状态与恶意文本回归包含在 `s18-unit.log`（134 passed / 44 DB skipped）。收尾 observability/diff/依赖 8/8（s18-observability-final.log）。解析服务 `s18-parser-tests.log`：3/3，协议替身级停止/保留页验证，未重跑真实 OCR 压测。
+- `s18-types-final.log` type-check、`s18-lint.log` 定向 ESLint、文档/差异收尾均按实际退出记录。先前磁盘满、Docker 无响应、过短 deadline 未进入模型和错误 Token 断言的失败日志完整保留，不删失败或修改预算。费用 unknown，RSS 是结束时进程样本，不是峰值。
+
+### 2026-10-20-s16-s20 / S18
+
+- 完成 S18 并承接 S19。当前 C 盘仍满，验证使用 D 盘任务临时目录及 npm cache；Docker 失败后采用仓库已有可信原生 PG、每轮全新集群。未停止用户 localhost:3000 服务，没有部署或修改业务资料。S17 只读 QA 服务在本会话验收期间使用，收尾按实际进程清理。
 
 ### E-S17-01：主动更新、不可变历史与确定性差异
 

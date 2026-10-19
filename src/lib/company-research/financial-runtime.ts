@@ -15,13 +15,18 @@ import { assembleFinancialReport, financialChanges } from './report-assembly';
 import { readClaimReviews } from './verification-service';
 import { commitResearchReport } from './report-store';
 import { defaultResearchContext, ResearchPersistenceError } from './repository-core';
+import { researchObserver, researchToolStage, type ResearchObservationSink } from './observability';
 
 /** Optional diagnostic sink contains tool data only, never model reasoning or credentials. */
 export type FinancialExecutionTrace = { at: string; type: 'tool_calls' | 'tool_result' | 'tool_feedback'; data: unknown };
-export async function executeFinancialResearch(actor: string, token: ResearchAttemptToken, shutdown?: AbortSignal, ctx = defaultResearchContext, testProvider?: PiAgentModelProvider, fixedDocuments = false, trace?: (record: FinancialExecutionTrace) => Promise<void>) {
+export async function executeFinancialResearch(actor: string, token: ResearchAttemptToken, shutdown?: AbortSignal, ctx = defaultResearchContext, testProvider?: PiAgentModelProvider, fixedDocuments = false, trace?: (record: FinancialExecutionTrace) => Promise<void>, observationSink?: ResearchObservationSink) {
   const task = await getResearchTask(actor, token.taskId, ctx);
   if (!task || task.status !== 'running' || task.generation !== token.generation || !task.plan) return;
   const config = researchConfig(), state = task.checkpoint ? checkpointSchema.parse(task.checkpoint) : emptyCheckpoint(token.requestRevision, token.planRevision);
+  const observer = researchObserver(token, task.reportRevision, observationSink);
+  let outcome = 'interrupted', deliveredRevision = task.reportRevision;
+  observer.emit('attempt.started', { stage: 'worker', pid: process.pid, rssBytes: process.memoryUsage().rss, toolCalls: task.usage.toolCalls,
+    unknownModelRequests: task.usage.unknownModelRequests });
   if (state.requestRevision !== token.requestRevision || state.planRevision !== token.planRevision) throw new Error('Checkpoint version mismatch');
   const controller = new AbortController(), signal = shutdown ? AbortSignal.any([controller.signal, shutdown]) : controller.signal;
   const deadline = Date.parse(task.usage.deadline!), remaining = Math.max(0, deadline - Date.now());
@@ -30,10 +35,10 @@ export async function executeFinancialResearch(actor: string, token: ResearchAtt
   const heartbeatTimer = setInterval(() => {
     if (heartbeatBusy) return;
     heartbeatBusy = true;
-    void heartbeatResearchAttempt(actor, token, ctx).catch(() => controller.abort(new Error('执行权失效或已取消'))).finally(() => { heartbeatBusy = false; });
+    void heartbeatResearchAttempt(actor, token, ctx).catch(() => { observer.emit('attempt.fenced', { stage: 'worker', outcome: 'lease_lost_or_cancelled' }); controller.abort(new Error('执行权失效或已取消')); }).finally(() => { heartbeatBusy = false; });
   }, 10000);
   heartbeatTimer.unref();
-  const deadlineTimer = setTimeout(() => { state.stopReason = '已达到任务原始截止时间'; controller.abort(new Error(state.stopReason)); }, Math.max(1, remaining)); deadlineTimer.unref();
+  const deadlineTimer = setTimeout(() => { state.stopReason = '已达到任务原始截止时间'; observer.emit('attempt.deadline', { stage: 'worker' }); controller.abort(new Error(state.stopReason)); }, Math.max(1, remaining)); deadlineTimer.unref();
   const charged = new Set<string>();
   const onEvent = async (event: PiAgentEvent) => {
     if (event.type === 'assistant_message' && event.message.toolCalls?.length) await trace?.({ at: new Date().toISOString(), type: 'tool_calls', data: event.message.toolCalls });
@@ -45,9 +50,14 @@ export async function executeFinancialResearch(actor: string, token: ResearchAtt
       if (state.stalledCalls >= 4) state.stopReason = '连续四次重复调用没有新证据，已停止补查';
       await save(call.name);
     }
-    if (event.type === 'tool_started') await heartbeatResearchAttempt(actor, token, ctx);
+    if (event.type === 'tool_started') {
+      await heartbeatResearchAttempt(actor, token, ctx);
+      observer.emit('tool.started', { stage: researchToolStage(event.toolCall.name), tool: event.toolCall.name });
+    }
     if (event.type === 'tool_failed' || event.type === 'tool_completed') {
       materializedCallId = event.type === 'tool_completed' ? event.toolCall.id : null;
+      observer.emit('tool.finished', { stage: researchToolStage(event.toolCall.name), tool: event.toolCall.name,
+        outcome: event.result.ok ? 'succeeded' : 'failed', durationMs: event.durationMs });
       await trace?.({ at: new Date().toISOString(), type: 'tool_result', data: { toolCall: event.toolCall, result: event.result, durationMs: event.durationMs } });
       const key = artifactDigest(canonicalResearchJson({ tool: event.toolCall.name, result: event.result }));
       state.observations = [...state.observations.filter(o => o.key !== key), { tool: event.toolCall.name, key, summary: event.result.ok ? financialObservation(event.toolCall.name, event.result.data) : safeError(new Error(event.result.error.message)) }].slice(-8);
@@ -65,11 +75,15 @@ export async function executeFinancialResearch(actor: string, token: ResearchAtt
       const provider: PiAgentModelProvider = { name: source.name, async *complete(request) {
         await trace?.({ at: new Date().toISOString(), type: 'tool_feedback', data: request.messages.filter(m => m.role === 'tool') });
         signal.throwIfAborted(); await reserveResearchModelRequest(actor, token, ctx);
+        const started = performance.now();
+        observer.emit('model.started', { stage: 'model', usageKnown: false });
         let usage: {inputTokens: number; outputTokens: number; usageSource?: string} | undefined;
         try {
           for await (const event of source.complete(request)) { if (event.type === 'usage') usage = event.usage; yield event; }
         } finally {
           if (usage) await settleResearchModelUsage(actor, token, usage.inputTokens, usage.outputTokens, usage.usageSource === 'estimated' || usage.usageSource === 'mixed', ctx);
+          observer.emit('model.finished', { stage: 'model', durationMs: Math.round(performance.now() - started), usageKnown: !!usage,
+            ...(usage ? { inputTokens: usage.inputTokens, outputTokens: usage.outputTokens } : {}) });
         }
       } };
       const manager = new PiAgentContextManager({ contextWindowTokens: 128000, reservedOutputTokens: 6000, maxInputTokens: 32000 });
@@ -96,20 +110,26 @@ export async function executeFinancialResearch(actor: string, token: ResearchAtt
       const result = await engine.run({ runId: token.id, signal, reasoning: { enabled: true, effort: config.reasoning }, messages: [{ role: 'system', content: financialResearchPrompt }, { role: 'user', content: JSON.stringify(task.spec) }] }, { durableSink: onEvent });
       if (!state.submitted && !state.stopReason) state.stopReason = safeError(new Error(result.error?.message || `研究提前停止：${result.status}`));
     } else if (!state.submitted && !state.stopReason) state.stopReason = remaining <= 0 ? '已达到任务原始截止时间' : '工具调用预算已耗尽';
-    if (shutdown?.aborted) return; // Lease expires; the next attempt reconstructs only public state.
+    if (shutdown?.aborted) { outcome = 'shutdown'; return; } // Lease expires; the next attempt reconstructs only public state.
     await heartbeatResearchAttempt(actor, token, ctx);
     await save('finalize');
     const report = assembleFinancialReport(token.taskId, task.spec, token.planRevision, task.reportRevision + 1, state, config.model, await readClaimReviews(actor, token.taskId, ctx));
-    return await commitResearchReport(actor, token, task.reportRevision, report, ctx);
+    const committed = await commitResearchReport(actor, token, task.reportRevision, report, ctx);
+    outcome = committed.status; deliveredRevision = committed.revision;
+    observer.reportCommitted(deliveredRevision, outcome);
+    return committed;
   } catch (error) {
-    if (shutdown?.aborted || error instanceof ResearchPersistenceError && error.code === 'LEASE_LOST') return;
+    if (shutdown?.aborted || error instanceof ResearchPersistenceError && error.code === 'LEASE_LOST') { outcome = shutdown?.aborted ? 'shutdown' : 'fenced'; return; }
     state.stopReason = safeError(error);
     try {
       await heartbeatResearchAttempt(actor, token, ctx); await save('interrupted');
-      return await commitResearchReport(actor, token, task.reportRevision, assembleFinancialReport(token.taskId, task.spec, token.planRevision, task.reportRevision + 1, state, config.model, await readClaimReviews(actor, token.taskId, ctx)), ctx);
+      const committed = await commitResearchReport(actor, token, task.reportRevision, assembleFinancialReport(token.taskId, task.spec, token.planRevision, task.reportRevision + 1, state, config.model, await readClaimReviews(actor, token.taskId, ctx)), ctx);
+      outcome = committed.status; deliveredRevision = committed.revision;
+      observer.reportCommitted(deliveredRevision, outcome);
+      return committed;
     } catch (publishError) {
-      if (publishError instanceof ResearchPersistenceError && publishError.code === 'LEASE_LOST') return;
+      if (publishError instanceof ResearchPersistenceError && publishError.code === 'LEASE_LOST') { outcome = 'fenced'; return; }
       throw publishError;
     }
-  } finally { clearInterval(heartbeatTimer); clearTimeout(deadlineTimer); }
+  } finally { clearInterval(heartbeatTimer); clearTimeout(deadlineTimer); observer.finish(outcome, deliveredRevision); }
 }
