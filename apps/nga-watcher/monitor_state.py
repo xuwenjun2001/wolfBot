@@ -6,7 +6,8 @@ import copy
 from feishu import enqueue_posts, post_key
 
 AUTHORS = (60916468, 150058)
-THREADS = {150058: 47288722}
+THREADS = {60916468: 47710788, 150058: 47288722}
+THREAD_START_PAGES = {60916468: 6}
 PROGRESS_FIELDS = ('watermark', 'page', 'monitor', 'search_watermark',
                    'search_seen', 'recent', 'last_success', 'rows', 'source', 'thread_id')
 
@@ -47,7 +48,7 @@ def prepare_monitors(state):
             if progress.get('monitor'):
                 result.setdefault('previous_monitors', {})[f'{author}:{progress["monitor"]}'] = copy.deepcopy(progress)
             result['authors'][str(author)] = {
-                'monitor': 'author_thread', 'thread_id': tid, 'page': 1,
+                'monitor': 'author_thread', 'thread_id': tid, 'page': THREAD_START_PAGES.get(author, 1),
                 'watermark': max((post['pid'] for post in known), default=None), 'recent': known}
     recent = {post_key(post): post for author in AUTHORS
               for post in result['authors'][str(author)].get('recent', [])}

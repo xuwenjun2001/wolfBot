@@ -603,12 +603,17 @@ class AuthorThreadClient(PollingClient):
 def poll_thread(client, state, max_pages=200):
     baseline = state.get('watermark') is None
     old = state.get('watermark') or 0
-    first = client.page(1)
+    start = state.get('page', 1)
+    if not isinstance(start, int) or start < 1:
+        raise ValueError('帖子已存页码异常，原进度已保留')
+    # A verified saved page supplies current pagination. Older pages can have
+    # deleted floors and are only needed if unread posts actually extend there.
+    first = client.page(start)
     pages, number = first['pages'], first['pages']
     collected, sources, visited = {}, {first['source']}, set()
     rows = first['rows']
     for _ in range(max_pages):
-        result = first if number == 1 else client.page(number)
+        result = first if number == first['page'] else client.page(number)
         sources.add(result['source'])
         posts = result['posts']
         if result['page'] != number:
@@ -735,7 +740,8 @@ class App:
         style.theme_use('clam')
         style.configure('TButton', font=('Microsoft YaHei UI', 11), padding=9)
         tk.Label(root, text='NGA 发言雷达', bg='#0b1220', fg='#f8fafc', font=('Microsoft YaHei UI', 26, 'bold')).pack(anchor='w', padx=28, pady=(24, 5))
-        tk.Label(root, text=f'UID 60916468：跨帖搜索  /  UID 150058：帖子 47288722  /  各自每 60 秒检查，忙时每 {BUSY_RETRY_INTERVAL:g} 秒重试', bg='#0b1220', fg='#94a3b8', font=('Microsoft YaHei UI', 11)).pack(anchor='w', padx=30)
+        scopes = '  /  '.join(f'UID {author}：' + (f'帖子 {THREADS[author]}' if author in THREADS else '跨帖搜索') for author in AUTHORS)
+        tk.Label(root, text=f'{scopes}  /  各自每 60 秒检查，忙时每 {BUSY_RETRY_INTERVAL:g} 秒重试', bg='#0b1220', fg='#94a3b8', font=('Microsoft YaHei UI', 11)).pack(anchor='w', padx=30)
         self.status = tk.StringVar()
         self.details = tk.StringVar()
         self.refresh_status()

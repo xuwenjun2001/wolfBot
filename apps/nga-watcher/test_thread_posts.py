@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 from monitor_state import monitor_url, prepare_monitors
 from test_monitor_state import legacy_state
 import test_watcher
-from watcher import (App, AuthorSearchClient, AuthorThreadClient, Client, NGAAccessError,
+from watcher import (App, AuthorThreadClient, Client, NGAAccessError,
                      PollCancelled, parse_html_page, parse_thread_page, poll)
 
 
@@ -44,32 +44,40 @@ class ThreadTests(unittest.TestCase):
         return client
 
     def test_scope_switch_carries_verified_pid_and_preserves_other_user_and_queues(self):
-        state = prepare_monitors(legacy_state())
-        known = dict(record(42), timestamp=197, date='2026-10-14 09:00', page=1)
-        prior = {'monitor': 'author_search', 'search_watermark': 180,
-                 'search_seen': [f'{TID}:42'], 'recent': [known, dict(known, tid=100, pid=999)], 'page': 1}
-        state['authors'][str(AUTHOR)] = prior
-        before = copy.deepcopy(state)
-        updated = prepare_monitors(state)
-        progress = updated['authors'][str(AUTHOR)]
-        self.assertEqual(progress['monitor'], 'author_thread')
-        self.assertEqual(progress['thread_id'], TID)
-        self.assertEqual(progress['watermark'], 42)
-        self.assertEqual(progress['recent'], [known])
-        self.assertEqual(updated['previous_monitors'][f'{AUTHOR}:author_search'], prior)
-        self.assertEqual(updated['authors']['60916468'], before['authors']['60916468'])
-        self.assertEqual(updated['pending'], before['pending'])
-        self.assertEqual(updated['feishu_outbox'], before['feishu_outbox'])
-        self.assertEqual(state, before)
-        self.assertEqual(prepare_monitors(updated), updated)
+        for author, tid, other in ((60916468, 47710788, AUTHOR), (AUTHOR, TID, 60916468)):
+            with self.subTest(author=author):
+                state = prepare_monitors(legacy_state())
+                known = dict(record(42, author, tid), timestamp=197, date='2026-10-14 09:00', page=1)
+                prior = {'monitor': 'author_search', 'search_watermark': 180,
+                         'search_seen': [f'{tid}:42'],
+                         'recent': [known, dict(known, tid=100, pid=999), dict(known, authorid=other, pid=1000)], 'page': 1}
+                state['authors'][str(author)] = prior
+                before = copy.deepcopy(state)
+                updated = prepare_monitors(state)
+                progress = updated['authors'][str(author)]
+                self.assertEqual(progress['monitor'], 'author_thread')
+                self.assertEqual(progress['thread_id'], tid)
+                self.assertEqual(progress['watermark'], 42)
+                self.assertEqual(progress['page'], 6 if author == 60916468 else 1)
+                self.assertEqual(progress['recent'], [known])
+                self.assertEqual(updated['previous_monitors'][f'{author}:author_search'], prior)
+                self.assertEqual(updated['authors'][str(other)], before['authors'][str(other)])
+                self.assertEqual(updated['pending'], before['pending'])
+                self.assertEqual(updated['feishu_outbox'], before['feishu_outbox'])
+                self.assertEqual(state, before)
+                self.assertEqual(prepare_monitors(updated), updated)
 
     def test_client_factory_and_open_link_use_the_requested_thread(self):
         app = App.__new__(App)
         app.state = prepare_monitors(legacy_state())
         app.events = Mock()
-        self.assertIsInstance(app.make_client(AUTHOR, ''), AuthorThreadClient)
-        self.assertIsInstance(app.make_client(60916468, ''), AuthorSearchClient)
-        self.assertEqual(monitor_url(AUTHOR), f'https://ngabbs.com/read.php?tid={TID}&authorid={AUTHOR}')
+        for author, tid in ((60916468, 47710788), (AUTHOR, TID)):
+            with self.subTest(author=author):
+                client = app.make_client(author, '')
+                self.assertIsInstance(client, AuthorThreadClient)
+                self.assertEqual((client.author, client.tid), (author, tid))
+                self.assertEqual(monitor_url(author), f'https://ngabbs.com/read.php?tid={tid}&authorid={author}')
+                self.assertEqual(client.url, monitor_url(author))
 
     def test_json_validates_author_topic_and_all_fields_including_pid_zero(self):
         parsed = parse_thread_page(data((0, 42)), 1, AUTHOR, TID)
@@ -165,6 +173,34 @@ class ThreadTests(unittest.TestCase):
         repeated, fresh, _ = poll(client, updated)
         self.assertEqual(fresh, [])
         self.assertEqual(len(repeated['pending']), 3)
+
+    def test_saved_page_checks_latest_without_requiring_older_read_pages(self):
+        client = self.client({1: ValueError('旧页楼层缺失'),
+                              3: data((5, 6), number=3, rows=6, size=2)})
+        updated, fresh, baseline = poll(client, {'watermark': 5, 'page': 3})
+        self.assertFalse(baseline)
+        self.assertEqual([p['pid'] for p in fresh], [6])
+        self.assertEqual((updated['page'], updated['watermark']), (3, 6))
+        self.assertEqual([call.args[0] for call in client.page.call_args_list], [3])
+
+    def test_saved_page_catchup_checks_newer_pages_then_reuses_verified_page(self):
+        client = self.client({1: ValueError('旧页楼层缺失'),
+                              2: data((3, 4), number=2, rows=6, size=2),
+                              3: data((5, 6), number=3, rows=6, size=2)})
+        updated, fresh, _ = poll(client, {'watermark': 3, 'page': 2})
+        self.assertEqual([p['pid'] for p in fresh], [4, 5, 6])
+        self.assertEqual((updated['page'], updated['watermark']), (3, 6))
+        self.assertEqual([call.args[0] for call in client.page.call_args_list], [2, 3])
+
+    def test_saved_page_does_not_skip_failed_page_with_unread_posts(self):
+        client = self.client({2: TimeoutError(),
+                              3: data((5, 6), number=3, rows=6, size=2)})
+        state = {'watermark': 3, 'page': 3, 'recent': [], 'pending': []}
+        before = copy.deepcopy(state)
+        with self.assertRaises(TimeoutError):
+            poll(client, state)
+        self.assertEqual(state, before)
+        self.assertEqual([call.args[0] for call in client.page.call_args_list], [3, 2])
 
     def test_catchup_failure_never_advances_watermark_or_enqueues_partial_posts(self):
         client = self.client({1: data((1, 2), rows=6, size=2), 2: TimeoutError(), 3: data((5, 6), number=3, rows=6, size=2)})

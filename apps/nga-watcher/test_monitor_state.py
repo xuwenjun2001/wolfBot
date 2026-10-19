@@ -41,7 +41,8 @@ class MonitorTests(unittest.TestCase):
         app.events = queue.Queue()
         return app
 
-    def test_migration_preserves_existing_progress_and_notification_queues(self):
+    @patch.dict('monitor_state.THREADS', {SECOND: 47288722}, clear=True)
+    def test_legacy_search_migration_preserves_existing_progress_and_notification_queues(self):
         original = legacy_state()
         before = copy.deepcopy(original)
         state = prepare_monitors(original)
@@ -63,7 +64,8 @@ class MonitorTests(unittest.TestCase):
             save_state(state, path)
             self.assertEqual(prepare_monitors(read_state(path)), state)
 
-    def test_new_author_baselines_while_existing_author_catches_up(self):
+    @patch.dict('monitor_state.THREADS', {}, clear=True)
+    def test_search_mode_new_author_baselines_while_existing_author_catches_up(self):
         state = prepare_monitors(legacy_state())
         first = poll_search(FakeSearch({1: result([post(FIRST, 43, 250), post(FIRST, 42, 190), post(FIRST, 41, 120)])}), state['authors'][str(FIRST)])
         second = poll_search(FakeSearch({1: result([post(SECOND, 52, 500)])}), state['authors'][str(SECOND)])
