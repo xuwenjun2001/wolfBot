@@ -102,7 +102,7 @@ HTML 的 locator 是 `source-range:开始:结束`，指向保留 UTF-8 原文中
 
 输出包含真实页框、表格行列与合并跨度，保留原生 `nativeText`；不猜坐标，不自动合并跨页表。OCR 和重建表格均为 `needs_review`，报告入库会拒绝从这些块直接发布 known 财务事实。样本通过不等于任意新上传资料已经核实，业务审查工作流在后续步骤接入。
 
-本地开发验收有三份真实/派生财报样本（18 项行、年列与金额核对）和一份明确标记的两页合成扫描压力样本；人工抽查与机器结果分别记录。`verify-ocr.ts` 核对前者，运行中的服务可用 `verify-parser-service.ts` 验证取消、超时、跨页和缓存。使用 `prepare-ocr-review.ts <服务证据目录>` 生成原图与实际单元格对照，等待真人记录，不由脚本代签。
+本地开发验收有三份真实/派生财报样本（18 项行、年列与金额核对）和一份明确标记的两页合成扫描压力样本；人工抽查与机器结果分别记录。`verify-ocr.ts` 核对前者，运行中的服务可用 `verify-parser-service.ts` 验证取消、超时、跨页和缓存。使用 `prepare-ocr-review.ts <服务证据目录>` 生成原图与实际单元格对照，再由真人核对。2026-10-19 用户已逐项核对并确认本批通过，见 [E-S08-02 人工确认](plans/research-agent-upgrade/progress.md)；确认另存 acceptance.json，原对照材料保留。合成表头“合并”识别为“合井”的已知误字未改，容器验收仍待补。
 
 ### 财务口径与精确计算（S09）
 
@@ -112,7 +112,7 @@ HTML 的 locator 是 `source-range:开始:结束`，指向保留 UTF-8 原文中
 
 `deriveSingleQuarter` 只用同年、同口径、相邻的完整累计值：Q1 本身是单季，H1−Q1、前三季−H1、全年−前三季才得到后续季度。前期缺失不能补零，来源待复核、口径不一致或期间不相邻都会拒绝。引用和 derivedFrom 保留两个输入。
 
-复验：`node --import tsx scripts/research/verify-financials.ts`。四家公司 24 项金额与 12 项变化复算通过，原始报告及源码/fixture hash 留在 `data/research-agent-upgrade/evidence/S09/`。这是已给定参考输入的确定性计算验收，不是模型自动抽取事实、查明会计政策或解释现金流原因的质量成绩。S08 的人工/容器待验收仍单独保留。
+复验：`node --import tsx scripts/research/verify-financials.ts`。四家公司 24 项金额与 12 项变化复算通过，原始报告及源码/fixture hash 留在 `data/research-agent-upgrade/evidence/S09/`。这是已给定参考输入的确定性计算验收，不是模型自动抽取事实、查明会计政策或解释现金流原因的质量成绩。S08 的容器验收仍待补，样本人工确认不自动核实其他业务资料。
 
 ### 任务证据检索与分段读取（S10）
 

@@ -69,4 +69,6 @@ node --import tsx scripts/research/verify-parser-service.ts
 
 本轮 pip-audit 检查了 130 个可查询包，未发现已知漏洞；`torch/torchvision` 的 `+cpu` 版本被 PyPI 数据源跳过，另外按相应上游版本查过漏洞记录，结果也为零。上游记录不证明 CPU 二进制的完整审计。合成样本第二页的“合并口径”实际识别为“合井口径”，已保留该错误，不能由金额命中推导整表完全正确。
 
+2026-10-19 用户对本批原图与表格的单位、年份列、括号负数、负号、小数/零和合并表头逐项核对并确认通过，登记为 E-S08-02。原抽查材料保留确认前快照，最新确认在 `data/research-agent-upgrade/evidence/S08/human-review-01/acceptance.json`。这是样本人工抽查通过，业务资料仍保留 needs_review，Docker 镜像/容器/资源验收仍待补。
+
 平台的 `native/auto/docling/ocr` 路由、检索及后续 Agent 接线见[公司研究](../../docs/company-research.md)。
