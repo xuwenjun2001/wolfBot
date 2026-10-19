@@ -6,6 +6,8 @@
 
 Windows 的 DLL 锁错误先停止自己启动的 parser 再 `uv sync`，不终止其他 Python 服务。Docker 构建或解包停滞时先检查磁盘剩余空间、`docker version` 和引擎日志；返回 500/SIGBUS 时保留失败记录，用独立原生 CPU 环境继续验证。共享 Docker 的重启、存储迁移与全局清理不属于普通解析重试。命令和资源限制见 [OCR 服务](../services/document-parser/README.md)。
 
+Docker Desktop 的 Compose stop 报 500 并附带 API 版本提示时，先看 `docker version` 能否返回服务端，以及后台 `/ping` 是否超时。2026-10-19 本机故障中，恢复后的客户端/服务端都支持 1.55，问题不能归因为版本不兼容；日志另有 containerd SIGBUS，但其根因未证明。恢复时还发现失效的 Windows Unix socket 阻止后台启动：应用完全退出、确认目录仅含通信端点后，把运行时目录改名留作备份，让 Docker 重建，最终恢复引擎并停止目标项目。不要把这个处理扩展到 WSL 数据盘、配置、凭据或业务目录；动作与结果见[进度 E-S08-03](plans/research-agent-upgrade/progress.md)。
+
 ## 本地服务运行中断（2026-09-14排查）
 
 最近一轮日志显示PostgreSQL连接被管理命令终止，随后行情API和战法worker连接超时；容器记录上次停止时间为2026-09-11 00:47:34（北京时间），9月14日12:05恢复。该证据只能确认数据库停止，不能确认操作发起者；没有找到足以认定OOM的证据。恢复数据库不会自动复活此前单独启动、已经退出的Next/API进程。

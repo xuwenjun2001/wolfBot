@@ -33,7 +33,7 @@ docker compose -f docker-compose.parser.yml ps
 
 编排只发布 `127.0.0.1:7821`，模型只读挂载、缓存单独挂载；容器使用非 root、只读根文件系统、2 CPU、4 GB 内存和单个模型 Worker。`uv sync --frozen --no-dev --no-cache` 不把下载缓存留进镜像。以上是配置上限，实际峰值内存和镜像体积要以目标机器验收为准。开发默认 token 仅用于回环地址联调，其他部署由运行方配置独立凭据。
 
-2026-10-19 本机原生 CPU 服务实跑通过，Docker 构建停在镜像解包，随后引擎返回 500、containerd 日志出现 SIGBUS；该容器的启动和资源实测仍待补，不能把原生验证记成容器验证。构建失败记录保留在 S08 证据目录。不要用全局 prune 或重启共享 Docker 来代替定位；磁盘和引擎恢复后再执行本节命令。
+2026-10-19 本机原生 CPU 服务实跑通过，Docker 构建停在镜像解包，随后引擎返回 500、containerd 日志出现 SIGBUS。当天排障后引擎已恢复，客户端/服务端均为 API 1.55，但 C 盘仍只剩约 2 GB；现存 dev 镜像 history 还是没有 `--no-cache` 的旧配方，不能据此验收当前版本。先解决主机存储余量，再执行本节构建、健康和资源实测；原生验证不替代容器验证。失败与恢复记录见[进度 E-S08-01/03](../../docs/plans/research-agent-upgrade/progress.md)。不要用全局 prune 或反复重启共享 Docker 代替定位。
 
 ## 协议和限制
 
