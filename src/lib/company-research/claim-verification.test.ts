@@ -32,6 +32,27 @@ describe('layered publication and local repair', () => {
     }
     expect(check('单位：元 2023年 2024年 经营活动产生的现金流量净额 100.00 营业收入 250.00')).toContain('FACT_PERIOD_COLUMN_MISMATCH');
   });
+  it('uses the exact metric row unit, while rejecting a different metric unit or missing year column', () => {
+    const { fact, doc } = fixture();
+    const row = '经营活动产生的现金流量净额（元） 250.00 100.00';
+    fact.citations[0].quote = row;
+    expect(numericFactErrors(fact, [doc], () => `2024年 2023年\n${row}`)).toEqual([]);
+    expect(numericFactErrors(fact, [doc], () => `2024年年度报告\n${row}`)).toContain('FACT_PERIOD_COLUMN_MISMATCH');
+    const wrong = '2024年 2023年\n营业收入（元） 800.00 500.00\n经营活动产生的现金流量净额 250.00 100.00';
+    fact.citations[0].quote = '经营活动产生的现金流量净额 250.00 100.00';
+    expect(numericFactErrors(fact, [doc], () => wrong)).toContain('FACT_UNIT_UNVERIFIED');
+    fact.citations[0].quote = row;
+    expect(numericFactErrors(fact, [doc], () => `单位：万元 2024年 2023年\n${row}`)).toContain('FACT_UNIT_UNVERIFIED');
+  });
+  it.each([['千元', 'thousand_yuan'], ['万元', 'ten_thousand_yuan'], ['亿元', 'hundred_million_yuan']] as const)('preserves the scale of a row declared in %s', (label, unit) => {
+    const { fact, doc } = fixture();
+    const row = `经营活动产生的现金流量净额（人民币${label}） 250.00 100.00`;
+    fact.value = { status: 'known', raw: '250.00', unit, currency: 'CNY', decimals: 2 };
+    fact.citations[0].quote = row;
+    expect(numericFactErrors(fact, [doc], () => `2024年 2023年\n${row}`)).toEqual([]);
+    fact.value.unit = 'yuan';
+    expect(numericFactErrors(fact, [doc], () => `2024年 2023年\n${row}`)).toContain('FACT_UNIT_UNVERIFIED');
+  });
   it.each(['(250.00)', '（２５０．００）', '-250.00', '−250.00'])('preserves the sign in %s and compares complete amount tokens', amount => {
     const { fact, doc } = fixture(), text = `单位：元 2024年 2023年 经营活动产生的现金流量净额 ${amount} 100.00`;
     fact.citations[0].quote = text;

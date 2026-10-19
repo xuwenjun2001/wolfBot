@@ -2,6 +2,8 @@
 
 代码仓库：[xuwenjun2001/wolfBot](https://github.com/xuwenjun2001/wolfBot)。当前财报研究 Agent 升级按 [20 步计划](docs/plans/research-agent-upgrade/README.md) 承接，实际进度以 [交接记录](docs/plans/research-agent-upgrade/progress.md) 为准。
 
+财报变化工作台位于 `/company-research`，支持计划修订、逐条结论定位原文及报告版本差异。架构、演示和可复核的项目经历见 [交付说明](docs/plans/research-agent-upgrade/delivery.md)，质量数字见 [真实评测](docs/plans/research-agent-upgrade/evaluation-results.md)。
+
 项目由 QuantPilot 更名为 wolfbot。现有 `QUANTPILOT_*` 环境变量、`quantpilot` 数据库/服务标识、Python 包名和已发布 Skills 合同继续作为兼容标识使用，避免改名改变现有数据与外部集成作用域。本地目录名可以保持不变。
 
 wolfbot 是建立在通用 Data Agent 与开源 [PI Agent](https://github.com/earendil-works/pi) 执行内核之上的金融量化应用。用户用自然语言提出研究问题，Finance Domain Pack 会组合证券解析、真实数据、Skills、工具、Mission 和可视化规则，生成可运行工作空间，并通过自动验证、视觉检查、产物契约和评测链路把结果收敛到“好看、可用、可追溯”。同一套框架可以继续接入零售、运营、制造等业务 Domain Pack，而不把业务规则写回 Agent 内核。

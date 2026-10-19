@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const path = require('path');
+const fs = require('fs');
 const { spawnSync } = require('child_process');
 const { performance } = require('perf_hooks');
 
@@ -131,7 +132,16 @@ const results = [];
 for (const [name, command, args, cwd] of checks) {
   console.log(`\n[release] ${name}`);
   const stepStartedAt = performance.now();
-  const result = spawnSync(command, args, {
+  // Invoke npm through Node on every platform. Windows cannot exec npm.cmd
+  // with shell:false; using a shell would also lose argument boundaries.
+  const npmCli = process.env.npm_execpath
+    || path.join(path.dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js');
+  if (command === 'npm' && !fs.existsSync(npmCli)) {
+    throw new Error('npm CLI not found; run this check with npm run release:check');
+  }
+  const executable = command === 'npm' || command === 'node' ? process.execPath : command;
+  const commandArgs = command === 'npm' ? [npmCli, ...args] : args;
+  const result = spawnSync(executable, commandArgs, {
     cwd,
     env: process.env,
     shell: false,

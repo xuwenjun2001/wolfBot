@@ -13,6 +13,8 @@ wolfbot 支持这些长期运行方式：
 
 模型、Memory 和 AKEP 知识是三条独立链路，可以自由组合。例如“DeepSeek 官方直连 + 不启用 Memory/AKEP”与“ModelPort Qwen + Memory + AKEP”都受支持。
 
+财报变化研究使用独立的 `COMPANY_RESEARCH_BASE_URL/MODEL/REASONING/API_KEY`，不从主看板模型配置推断。`COMPANY_RESEARCH_REVIEW_CALIBRATION` 指向绑定 reviewer 模型与 prompt 的本地校准回执；未配置或失配时结论保持 partial。`.env.example` 保存变量说明，真实 key 和校准原件留在本机受控目录。默认 40 工具 / 20 分钟，修订/更新/接管不重置；实验候选只由受信离线 runner 注入，HTTP 不接受 prompt 覆盖。启动与复现见 [交付说明](plans/research-agent-upgrade/delivery.md)。
+
 ## 配置文件职责与优先级
 
 | 位置 | 是否提交 Git | 应该放什么 | 不应该放什么 |

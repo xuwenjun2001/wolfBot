@@ -1,12 +1,13 @@
 import type { ResearchTaskSpec } from './task-contracts';
 import { researchReportRevisionSchema, type ResearchReportRevision } from './revision-contracts';
 import type { ResearchCheckpoint } from './execution-contracts';
-import { researchSkillVersion } from './execution-contracts';
+import { researchSkillVersion, financialResearchPrompt, type FinancialResearchSkill } from './execution-contracts';
+import { artifactDigest } from './artifact-store';
 import { claimReviewHash, type SemanticReview } from './claim-verification';
 import { compareFinancialFacts } from './financial-comparison';
 
 export const requiredFinancialMetrics = ['revenue', 'parent_net_profit', 'operating_cash_flow'] as const;
-export function assembleFinancialReport(taskId: string, spec: ResearchTaskSpec, planRevision: number, revision: number, state: ResearchCheckpoint, model: string, reviews: SemanticReview[] = []): ResearchReportRevision {
+export function assembleFinancialReport(taskId: string, spec: ResearchTaskSpec, planRevision: number, revision: number, state: ResearchCheckpoint, model: string, reviews: SemanticReview[] = [], skill: FinancialResearchSkill = { version: researchSkillVersion, prompt: financialResearchPrompt }): ResearchReportRevision {
   const claims = state.claims.map(claim => {
     if (claim.status !== 'supported') return claim;
     const hash = claimReviewHash({ taskId, requestRevision: spec.requestRevision, planRevision, asOf: spec.asOf, facts: [...state.facts, ...(state.supportingFacts || [])] }, claim);
@@ -30,7 +31,7 @@ export function assembleFinancialReport(taskId: string, spec: ResearchTaskSpec, 
   if (state.stopReason && !state.submitted) gaps.push({ code: 'evidence_gap', questionId: 'risks', message: state.stopReason });
   return researchReportRevisionSchema.parse({ schemaVersion: 1, taskId, requestRevision: spec.requestRevision, planRevision, revision, companySymbol: spec.company.symbol,
     periodIds: spec.periods.map(p => p.id), asOf: spec.asOf, generatedAt: new Date().toISOString(), status: gaps.length ? 'partial' : 'completed', facts: state.facts, ...(state.supportingFacts ? { supportingFacts: state.supportingFacts } : {}), claims, gaps,
-    method: { model, skillVersion: researchSkillVersion, toolVersion: 'financial-tools-v2', contractVersion: 'financial-change-v1',
+    method: { model, skillVersion: skill.version, skillSha256: artifactDigest(skill.prompt), toolVersion: 'financial-tools-v2', contractVersion: 'financial-change-v1',
       dataHashes: [...new Set([...[...state.facts, ...(state.supportingFacts || [])].flatMap(f => [...f.citations, ...(f.periodEvidence || [])]), ...claims.flatMap(c => c.citations)].map(c => c.bytesSha256))],
       semanticReview: reviews.length ? reviews.every(r => r.independence === 'human') ? 'human' : 'separate_call_same_model' : 'unavailable' } });
 }

@@ -6,11 +6,11 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { randomUUID, createHash } = require('node:crypto');
 const net = require('node:net');
+const { reserveEvaluationPhase } = require('./research-evaluation-phase');
 const root = process.cwd(), id = randomUUID(), name = `wolfbot-research-check-${id}`;
 const evidence = path.join(root, 'data/research-agent-upgrade/evidence/S05', `rehearsal-${id}`);
 const migration = '20261018140000_research_version_foundation';
 const schemaDirectory = path.join(evidence, 'schema');
-fs.mkdirSync(path.join(schemaDirectory, 'migrations'), { recursive: true });
 const gitHead = spawnSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim();
 const allPaths = spawnSync('git',['ls-files','--cached','--others','--exclude-standard'],{encoding:'utf8'}).stdout.split('\n').filter(Boolean);
 const relevant = allPaths.filter(p => /^(?:src\/lib\/company-research\/|src\/app\/api\/company-research\/tasks\/|src\/app\/company-research\/financial\/|scripts\/research\/|prisma\/migrations\/202610(?:18140000_research_version_foundation|19020000_research_evidence_indexes|19130000_research_execution)\/)/.test(p) || ['prisma/schema.prisma','scripts/checks/run-research-postgres-integration.js'].includes(p));
@@ -18,7 +18,12 @@ const sourceHashes = Object.fromEntries(relevant.filter(p=>fs.statSync(p).isFile
 const nativeArgument = process.argv.slice(2).find(a => a.startsWith('--native-postgres='));
 const financialE2e = process.argv.includes('--financial-e2e');
 const reliability = process.argv.includes('--reliability');
-if (process.argv.slice(2).some(a => a !== nativeArgument && !['--financial-e2e', '--reliability'].includes(a))) throw new Error('Unknown runner argument');
+const delivery = process.argv.includes('--delivery');
+const evaluationArgument = process.argv.slice(2).find(a => a.startsWith('--evaluation='));
+if (evaluationArgument && !['baseline','candidate','holdout'].includes(evaluationArgument.slice('--evaluation='.length))) throw new Error('Unknown evaluation phase');
+if (process.argv.slice(2).some(a => a !== nativeArgument && a !== evaluationArgument && !['--financial-e2e', '--reliability', '--delivery'].includes(a))) throw new Error('Unknown runner argument');
+if (evaluationArgument) reserveEvaluationPhase(root, process.env.RESEARCH_EVALUATION_CAMPAIGN, evaluationArgument.slice('--evaluation='.length));
+fs.mkdirSync(path.join(schemaDirectory, 'migrations'), { recursive: true });
 const nativeBin = nativeArgument ? path.resolve(nativeArgument.slice('--native-postgres='.length)) : null;
 const nativeData = path.join(evidence, 'postgres-data');
 const report = { schemaVersion: 1, startedAt: new Date().toISOString(), head: gitHead, sourceHashes, oldCodeRef: 'd17ac893b9605971f5ec47be7d1577aa32d8bd0e', postgresRuntime: nativeBin ? 'isolated-native' : 'docker', steps: [] };
@@ -95,7 +100,9 @@ async function main() {
     const vitestBin = path.join(path.dirname(require.resolve('vitest/package.json')),'vitest.mjs');
     run('database-tests',process.execPath,[vitestBin,'run','--no-file-parallelism','src/lib/company-research/store.integration.test.ts','src/lib/company-research/version-store.integration.test.ts','src/lib/company-research/evidence-retrieval.integration.test.ts','src/lib/company-research/review-regressions.integration.test.ts','src/lib/company-research/financial-runtime.integration.test.ts','src/lib/company-research/execution-review.integration.test.ts','src/lib/company-research/reliability.integration.test.ts'],env);
     if (financialE2e) run('financial-model-e2e',process.execPath,['--import','tsx','scripts/research/run-financial-e2e.ts'],env);
+    if (delivery) run('delivery-journey',process.execPath,['--import','tsx','scripts/checks/run-research-delivery.ts'],{...env,RESEARCH_DELIVERY_EVIDENCE:path.join(root,'data/research-agent-upgrade/evidence/S20',`journey-${id}`)});
     if (reliability) run('real-worker-interruption',process.execPath,['--import','tsx','scripts/research/interrupt-financial-worker.ts'], { ...env, RESEARCH_RELIABILITY_ROOT: path.join(root, 'data/research-agent-upgrade/evidence/S18', id) });
+    if (evaluationArgument) run('financial-evaluation',process.execPath,['--import','tsx','scripts/research/run-financial-evaluation.ts','--phase='+evaluationArgument.slice('--evaluation='.length)],env);
     run('migration-status',process.execPath,[prismaBin,'migrate','status','--schema',schema],env);
     report.outcome = 'passed';
   } catch(error) { report.outcome = 'failed'; report.error = error.message; process.exitCode = 1; console.error(error.message); }

@@ -2,6 +2,8 @@
 
 这份 runbook 面向本地开发和演示排障。它补充 [故障排查](troubleshooting.md)：故障排查负责“先看哪里”，runbook 负责“一个任务应该怎么安全执行、怎么停、怎么恢复”。
 
+财报变化任务由 `npm run worker:research` 领取。排队时先查 Worker 和任务快照；进程丢失后等原 lease 到期，由新 generation 接管，保留原 deadline、工具累计及未知模型用量。不要删 attempt 或重置预算。结构化 stdout 可按 taskId/attemptId/版本定位；真实中断证据及操作见 [研究可靠性](plans/research-agent-upgrade/reliability.md)，隔离认证工作台和演示方法见 [交付说明](plans/research-agent-upgrade/delivery.md)。
+
 ## 基础启动
 
 日常开发推荐直接启动完整栈；该命令会复用已健康的 market-data，否则自动启动并在退出时一并回收：

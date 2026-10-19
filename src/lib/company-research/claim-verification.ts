@@ -31,12 +31,16 @@ export function numericFactErrors(fact: FinancialFact, documents: ResearchDocume
     if (!document || !original || !normalEvidence(original).includes(quote)) { errors.push('FACT_ORIGINAL_MISSING'); continue; }
     // Join wrapped Chinese labels, but preserve the boundary between two amount columns.
     const text = numericEvidenceText(original);
+    const label = financialLabels[fact.metric].exec(text);
     const units = [...text.matchAll(/单位[:：]?(?:人民币)?(亿元|万元|千元|元)/g)].map(m => monetaryUnit(m[1]));
+    // Summary tables often declare the unit on each metric row. Bind it to this
+    // exact label; another row's unit cannot establish this fact's scale.
+    const rowUnit = label && text.slice(label.index + label[0].length).match(/^\((?:人民币)?(亿元|万元|千元|元)\)/);
+    if (rowUnit) units.push(monetaryUnit(rowUnit[1]));
     const inlineUnit = normalEvidence(citation.quote).match(/\d(?:\.\d+)?(亿元|万元|千元|元)(?![\/／股])/);
     if (!units.length && inlineUnit) units.push(monetaryUnit(inlineUnit[1]));
     if (!units.includes(fact.value.unit) || new Set(units).size > 1) errors.push('FACT_UNIT_UNVERIFIED');
     if (fact.scope === 'consolidated' && /母公司(?:利润表|现金流量表|资产负债表)/.test(text) && !/合并(?:利润表|现金流量表|资产负债表)/.test(text)) errors.push('FACT_SCOPE_MISMATCH');
-    const label = financialLabels[fact.metric].exec(text);
     if (!label) { errors.push('FACT_METRIC_UNVERIFIED'); continue; }
     const row = text.slice(label.index + label[0].length).replace(/^\((?:人民币)?(?:亿元|万元|千元|元)\)/, '').match(/^[\d.,|()−-]+/)?.[0] || '';
     const numbers = evidenceAmounts(row);

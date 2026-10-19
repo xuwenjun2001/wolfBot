@@ -6,12 +6,10 @@ from uuid import uuid4
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 
 from quantpilot_market_data.cache import MarketDataCache, RedisJsonCache, ttl_from_env
 from quantpilot_market_data.database_core import (
     DatabaseError,
-    connect,
     normalize_fetch_symbol,
 )
 from quantpilot_market_data.models import (
@@ -26,7 +24,6 @@ from quantpilot_market_data.models import (
 from quantpilot_market_data.providers.akshare import AkShareClient, AkShareError
 from quantpilot_market_data.providers.baostock import BaoStockClient, BaoStockError
 from quantpilot_market_data.providers.eastmoney import EastMoneyClient, EastMoneyError
-from quantpilot_market_data.readiness import get_market_readiness
 from quantpilot_market_data.repositories.ingestion import (
     create_ingestion_job,
     finish_ingestion_job,
@@ -44,6 +41,7 @@ from quantpilot_market_data.routers.context import create_context_router
 from quantpilot_market_data.routers.events import create_events_router
 from quantpilot_market_data.routers.foundation import router as foundation_router
 from quantpilot_market_data.routers.fundamentals import create_fundamentals_router
+from quantpilot_market_data.routers.health import create_health_router
 from quantpilot_market_data.routers.indicators import create_indicators_router
 from quantpilot_market_data.routers.ingestion import router as ingestion_router
 from quantpilot_market_data.routers.market_dashboard import create_market_dashboard_router
@@ -55,6 +53,7 @@ from quantpilot_market_data.routers.registry import create_registry_router
 from quantpilot_market_data.routers.research import create_research_router
 from quantpilot_market_data.routers.tactics import router as tactics_router
 from quantpilot_market_data.security import require_market_admin
+from quantpilot_market_data.services.chart_data import ChartDataService
 from quantpilot_market_data.services.ingestion_support import (
     baostock_required_fields,
     fetch_akshare_kline_for_ingestion,
@@ -68,9 +67,8 @@ from quantpilot_market_data.services.ingestion_support import (
     wait_for_autofill_control,
 )
 from quantpilot_market_data.services.market_dashboard import MarketDashboardService
-from quantpilot_market_data.services.chart_data import ChartDataService
-from quantpilot_market_data.services.tactic_charts import TacticChartService
 from quantpilot_market_data.services.registry import ProviderRegistryTtls
+from quantpilot_market_data.services.tactic_charts import TacticChartService
 
 QUOTE_CACHE_TTL_SECONDS = ttl_from_env("QUANTPILOT_QUOTE_CACHE_TTL_SECONDS", 5)
 SYMBOL_CACHE_TTL_SECONDS = ttl_from_env("QUANTPILOT_SYMBOL_CACHE_TTL_SECONDS", 86400)
@@ -104,6 +102,7 @@ def create_app() -> FastAPI:
     app.include_router(create_market_dashboard_router(dashboard_service))
     auto_fill_tasks: set[asyncio.Task[None]] = set()
 
+    app.include_router(create_health_router(intraday_redis_cache))
     app.include_router(analytics_router)
     app.include_router(foundation_router)
     app.include_router(ingestion_router)
@@ -174,27 +173,6 @@ def create_app() -> FastAPI:
             )
         )
     )
-
-    @app.get("/health")
-    async def health() -> dict[str, str]:
-        return {"status": "ok"}
-
-    @app.get("/ready")
-    async def ready() -> JSONResponse:
-        async def database_probe() -> None:
-            connection = await connect()
-            async with connection:
-                await connection.execute("SELECT 1")
-
-        result = await get_market_readiness(
-            database_probe=database_probe,
-            redis_probe=intraday_redis_cache.ping,
-        )
-        return JSONResponse(
-            content=result,
-            status_code=200 if result["ok"] else 503,
-            headers={"Cache-Control": "no-store, max-age=0"},
-        )
 
     @app.post(
         "/api/v1/ingestion/eastmoney/history",

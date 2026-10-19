@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { PiAgentTool } from '@/lib/agent/types';
 import type { ResearchAttemptToken } from './attempt-store';
-import type { ResearchCheckpoint } from './execution-contracts';
+import type { ResearchCheckpoint, FinancialResearchSkill } from './execution-contracts';
 import { canonicalResearchJson, type ResearchTaskSpec } from './task-contracts';
 import { researchCitationSchema } from './document-contracts';
 import { researchClaimSchema } from './revision-contracts';
@@ -18,11 +18,11 @@ import { safeError } from './config';
 import { financialChangeSummary } from './financial-observation';
 
 export const checkpointEvidenceHash = (state: ResearchCheckpoint) => artifactDigest(canonicalResearchJson({ facts: state.facts, supportingFacts: state.supportingFacts, claims: state.claims }));
-export function financialResearchTools(actor: string, token: ResearchAttemptToken, spec: ResearchTaskSpec, state: ResearchCheckpoint, model: string, save: (tool: string) => Promise<void>, ctx = defaultResearchContext, fixedDocuments = false): PiAgentTool[] {
+export function financialResearchTools(actor: string, token: ResearchAttemptToken, spec: ResearchTaskSpec, state: ResearchCheckpoint, model: string, save: (tool: string) => Promise<void>, ctx = defaultResearchContext, fixedDocuments = false, skill?: FinancialResearchSkill): PiAgentTool[] {
   const reader = researchEvidenceReader(actor, token.taskId, ctx);
   // Validation uses the author's saved claims. Publication assembly may downgrade
   // unreviewed claims, but must never overwrite the checkpoint during local repair.
-  const draft = () => ({ ...assembleFinancialReport(token.taskId, spec, token.planRevision, 1, state, model), claims: state.claims });
+  const draft = () => ({ ...assembleFinancialReport(token.taskId, spec, token.planRevision, 1, state, model, [], skill), claims: state.claims });
   const tool = <T>(name: string, description: string, schema: z.ZodType<T>, execute: (input: T, signal: AbortSignal) => Promise<unknown>, terminal = false): PiAgentTool => ({
     name, description, inputSchema: z.toJSONSchema(schema, { io: 'input' }) as Record<string, unknown>, effect: 'read', idempotency: 'intrinsic', terminal,
     async execute(input, context) {
@@ -88,7 +88,7 @@ export function financialResearchTools(actor: string, token: ResearchAttemptToke
       return review || { verdict: 'insufficient', reason: '未配置经过校准的 reviewer；引用检查不代表语义支持' };
     }),
     tool('check_coverage', 'Check the three questions, six numbers, period comparability and saved semantic reviews. Empty args. Missing facts/claims remain in denominator.', z.object({}).strict(), async () => {
-      const report = assembleFinancialReport(token.taskId, spec, token.planRevision, 1, state, model, await readClaimReviews(actor, token.taskId, ctx));
+      const report = assembleFinancialReport(token.taskId, spec, token.planRevision, 1, state, model, await readClaimReviews(actor, token.taskId, ctx), skill);
       const checked = await deterministicReportErrors(actor, spec, report, ctx); state.checkedHash = checkpointEvidenceHash(state);
       state.phase = report.status === 'completed' && checked.errors.length === 0 ? 'ready' : 'verifying';
       return { status: report.status, errors: checked.errors, gaps: report.gaps, changes: financialChangeSummary(financialChanges(report)), remainingQuestions: spec.questions.filter(q => !report.claims.some(c => c.questionId === q.id && c.status === 'supported')).map(q => q.id) };

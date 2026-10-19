@@ -8,6 +8,9 @@ const config = [
     },
   },
   {
+    // Match the upstream Next plugin registration. CJS utility scripts do not
+    // load React plugins and cannot receive component-rule overrides.
+    files: ['**/*.{js,jsx,mjs,ts,tsx,mts,cts}'],
     rules: {
       'react-hooks/config': 'off',
       'react-hooks/error-boundaries': 'off',

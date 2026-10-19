@@ -2,6 +2,8 @@
 
 目标：知道如何判断一个生成工作空间是否真的可用，以及失败时从哪里看原因。
 
+学习财报研究时，先看 [交付架构与演示](../plans/research-agent-upgrade/delivery.md)，再读 [配对实验](../plans/research-agent-upgrade/evaluation-results.md)。重点核对固定资料、失败分母、候选冻结、保留集隔离和未知成本；“有引用”不能单独证明“结论受支持”。
+
 ![评测平台](assets/eval-platform.png)
 
 ## 评测平台

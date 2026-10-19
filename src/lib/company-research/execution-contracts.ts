@@ -4,6 +4,7 @@ import { researchClaimSchema } from './revision-contracts';
 import { researchPlanSchema, type ResearchTaskSpec } from './task-contracts';
 
 export const researchSkillVersion = 'financial-change-v2';
+export type FinancialResearchSkill = Readonly<{ version: string; prompt: string }>;
 export const checkpointSchema = z.object({
   schemaVersion: z.literal(1), requestRevision: z.number().int().min(1), planRevision: z.number().int().min(1),
   phase: z.enum(['researching', 'verifying', 'ready']),

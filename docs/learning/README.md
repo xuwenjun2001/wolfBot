@@ -20,6 +20,7 @@
 
 专题深入：
 
+- [财报变化研究交付](../plans/research-agent-upgrade/delivery.md)：公开计划、证据阅读器、报告修订、恢复与评测实验的完整案例。
 - [策略平台使用与设计指南](../strategy-platform-guide.md)：股票池、ETF/指数池、补数、策略数据依赖和页面取舍。
 - [运行治理中心使用与评分指南](../ops-platform-guide.md)：工作空间健康、评分口径、日志、降级模式和排障路径。
 

@@ -3,7 +3,7 @@ import { PiAgentContextManager, PiAgentContextError } from '@/lib/agent/context'
 import type { PiAgentEvent, PiAgentModelProvider } from '@/lib/agent/types';
 import { createResearchProvider } from './provider';
 import { researchConfig, safeError } from './config';
-import { checkpointSchema, emptyCheckpoint, financialResearchPrompt } from './execution-contracts';
+import { checkpointSchema, emptyCheckpoint, financialResearchPrompt, researchSkillVersion, type FinancialResearchSkill } from './execution-contracts';
 import { financialResearchTools, checkpointEvidenceHash } from './financial-tools';
 import { artifactDigest } from './artifact-store';
 import { canonicalResearchJson } from './task-contracts';
@@ -19,7 +19,7 @@ import { researchObserver, researchToolStage, type ResearchObservationSink } fro
 
 /** Optional diagnostic sink contains tool data only, never model reasoning or credentials. */
 export type FinancialExecutionTrace = { at: string; type: 'tool_calls' | 'tool_result' | 'tool_feedback'; data: unknown };
-export async function executeFinancialResearch(actor: string, token: ResearchAttemptToken, shutdown?: AbortSignal, ctx = defaultResearchContext, testProvider?: PiAgentModelProvider, fixedDocuments = false, trace?: (record: FinancialExecutionTrace) => Promise<void>, observationSink?: ResearchObservationSink) {
+export async function executeFinancialResearch(actor: string, token: ResearchAttemptToken, shutdown?: AbortSignal, ctx = defaultResearchContext, testProvider?: PiAgentModelProvider, fixedDocuments = false, trace?: (record: FinancialExecutionTrace) => Promise<void>, observationSink?: ResearchObservationSink, skill: FinancialResearchSkill = { version: researchSkillVersion, prompt: financialResearchPrompt }) {
   const task = await getResearchTask(actor, token.taskId, ctx);
   if (!task || task.status !== 'running' || task.generation !== token.generation || !task.plan) return;
   const config = researchConfig(), state = task.checkpoint ? checkpointSchema.parse(task.checkpoint) : emptyCheckpoint(token.requestRevision, token.planRevision);
@@ -87,7 +87,7 @@ export async function executeFinancialResearch(actor: string, token: ResearchAtt
         }
       } };
       const manager = new PiAgentContextManager({ contextWindowTokens: 128000, reservedOutputTokens: 6000, maxInputTokens: 32000 });
-      const engine = new PiAgentRunEngine({ provider, model: config.model, tools: financialResearchTools(actor, token, task.spec, state, config.model, save, ctx, fixedDocuments),
+      const engine = new PiAgentRunEngine({ provider, model: config.model, tools: financialResearchTools(actor, token, task.spec, state, config.model, save, ctx, fixedDocuments, skill),
         requireWorkspaceWriteBeforeTerminal: false, requireTerminalTool: true, maxTurns: task.spec.budget.maxToolCalls - calls + 1,
         maxTotalToolCalls: task.spec.budget.maxToolCalls - calls, maxToolCallsPerTurn: 1, maxTokens: Number.MAX_SAFE_INTEGER, maxTokensPerTurn: 6000,
         timeoutMs: remaining, eventHandlerTimeoutMs: 20000, preWriteReadOnlyTurnThreshold: Number.MAX_SAFE_INTEGER, postWriteReadOnlyTurnThreshold: Number.MAX_SAFE_INTEGER, progressStallTurns: Number.MAX_SAFE_INTEGER,
@@ -96,7 +96,7 @@ export async function executeFinancialResearch(actor: string, token: ResearchAtt
           const active = index >= 0 ? messages[index] : undefined;
           const representedInState = active?.role === 'assistant' && active.toolCalls?.every(c => c.id === materializedCallId && ['record_fact', 'record_claim', 'verify_claim', 'check_coverage'].includes(c.name));
           const prepare = (compact: boolean) => manager.prepare([
-            { role: 'system', content: financialResearchPrompt },
+            { role: 'system', content: skill.prompt },
             { role: 'user', content: JSON.stringify({ spec: task.spec, plan: task.plan?.steps.map(({id, questionId, kind}) => ({id, questionId, kind})),
               documents: task.documents.map(({id, version, period, state, bytesSha256, disclosure}) => ({id, version, period, state, bytesSha256, disclosure})),
               changes: financialChangeSummary(financialChanges({ facts: state.facts, periodIds: [task.spec.periods[0].id, task.spec.periods[1].id] })),
@@ -107,13 +107,13 @@ export async function executeFinancialResearch(actor: string, token: ResearchAtt
           catch (error) { if (!(error instanceof PiAgentContextError) || error.code !== 'CONTEXT_BUDGET_EXCEEDED') throw error; return prepare(true); }
         } },
       });
-      const result = await engine.run({ runId: token.id, signal, reasoning: { enabled: true, effort: config.reasoning }, messages: [{ role: 'system', content: financialResearchPrompt }, { role: 'user', content: JSON.stringify(task.spec) }] }, { durableSink: onEvent });
+      const result = await engine.run({ runId: token.id, signal, reasoning: { enabled: true, effort: config.reasoning }, messages: [{ role: 'system', content: skill.prompt }, { role: 'user', content: JSON.stringify(task.spec) }] }, { durableSink: onEvent });
       if (!state.submitted && !state.stopReason) state.stopReason = safeError(new Error(result.error?.message || `研究提前停止：${result.status}`));
     } else if (!state.submitted && !state.stopReason) state.stopReason = remaining <= 0 ? '已达到任务原始截止时间' : '工具调用预算已耗尽';
     if (shutdown?.aborted) { outcome = 'shutdown'; return; } // Lease expires; the next attempt reconstructs only public state.
     await heartbeatResearchAttempt(actor, token, ctx);
     await save('finalize');
-    const report = assembleFinancialReport(token.taskId, task.spec, token.planRevision, task.reportRevision + 1, state, config.model, await readClaimReviews(actor, token.taskId, ctx));
+    const report = assembleFinancialReport(token.taskId, task.spec, token.planRevision, task.reportRevision + 1, state, config.model, await readClaimReviews(actor, token.taskId, ctx), skill);
     const committed = await commitResearchReport(actor, token, task.reportRevision, report, ctx);
     outcome = committed.status; deliveredRevision = committed.revision;
     observer.reportCommitted(deliveredRevision, outcome);
@@ -123,7 +123,7 @@ export async function executeFinancialResearch(actor: string, token: ResearchAtt
     state.stopReason = safeError(error);
     try {
       await heartbeatResearchAttempt(actor, token, ctx); await save('interrupted');
-      const committed = await commitResearchReport(actor, token, task.reportRevision, assembleFinancialReport(token.taskId, task.spec, token.planRevision, task.reportRevision + 1, state, config.model, await readClaimReviews(actor, token.taskId, ctx)), ctx);
+      const committed = await commitResearchReport(actor, token, task.reportRevision, assembleFinancialReport(token.taskId, task.spec, token.planRevision, task.reportRevision + 1, state, config.model, await readClaimReviews(actor, token.taskId, ctx), skill), ctx);
       outcome = committed.status; deliveredRevision = committed.revision;
       observer.reportCommitted(deliveredRevision, outcome);
       return committed;

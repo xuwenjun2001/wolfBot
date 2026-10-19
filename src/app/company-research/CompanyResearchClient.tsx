@@ -4,8 +4,13 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, ArrowUpRight, Building2, Check, ChevronDown, Circle, Loader2, Search, Square, X } from 'lucide-react';
 import { PlatformSwitcher } from '@/components/layout/PlatformSwitcher';
-import { sectionKeys, sectionLabels, terminalStatuses, type Company, type PublicRun, type ResearchStatus } from '@/lib/company-research/contracts';
+import type { Company, PublicRun, ResearchStatus, SectionKey } from '@/lib/company-research/contracts';
 
+// Keep this legacy view's display values local. The server contract barrel also
+// exports hashing and artifact verification, which cannot enter a client bundle.
+const sectionKeys = ['business', 'supplyChain', 'financials'] as const satisfies readonly SectionKey[];
+const sectionLabels: Record<SectionKey, string> = { business: '主营业务', supplyChain: '上下游产业链', financials: '近期财报' };
+const terminalStatuses: readonly ResearchStatus[] = ['completed', 'partial', 'failed', 'cancelled'];
 const statusLabels: Record<ResearchStatus, string> = { queued: '等待研究', running: '研究中', completed: '研究完成', partial: '部分完成', failed: '执行失败', cancelled: '已取消' };
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`/api/company-research/${path}`, init);

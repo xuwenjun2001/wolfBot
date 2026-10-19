@@ -48,6 +48,8 @@ npm run check:task-e2e -- --campaign=review01 --only=C01,C02 --cleanup
 
 研究索引表随任务/文档元数据级联删除，但内容寻址对象可能被多个版本引用，不能据此直接删同 digest 文件。原件、解析、索引及披露依据的未引用对象不会自动回收；将来清理需先核对 actor、引用关系、在途任务与备份。OCR 缓存同样保留原文，不在生产排障日志中输出。独立迁移演练会停止自己的临时 PostgreSQL/容器，证据数据保留；不要把其目录和业务数据库混为一谈。
 
+S19 的 protocol、逐次 task/result、工具轨迹、candidate/freeze 与外部保留资料一起按受控清单归档；私有题目、原始报告和凭据不进入 Git。S20 本地认证演示只向 runner 自建的 `research_test` 恢复存档，stop 后关闭自己的 Next/PG，保留证据文件；它不向业务库导入报告，也不产生新的人工签字。临时校验 checkout 可重建，验收依据应保存在 `data/research-agent-upgrade/evidence/`，避免 `clean:local` 删除唯一证明。
+
 ## 禁止事项
 
 - 不执行无筛选的 `TRUNCATE`，不删除 `quant` 行情表或 Timescale chunk。

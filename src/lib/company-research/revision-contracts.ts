@@ -19,6 +19,7 @@ export const researchReportRevisionSchema = z.object({
   facts: z.array(financialFactSchema).max(100), claims: z.array(researchClaimSchema).max(100),
   supportingFacts: z.array(financialFactSchema).max(100).optional(),
   method: z.object({ model: z.string().max(100), skillVersion: z.string().max(100), toolVersion: z.string().max(100), contractVersion: z.literal('financial-change-v1'),
+    skillSha256: z.string().length(64).optional(),
     dataHashes: z.array(z.string().length(64)).max(100), semanticReview: z.enum(['human', 'separate_call_same_model', 'unavailable']) }).strict().optional(),
   gaps: z.array(z.object({ code: z.enum(['evidence_gap', 'evidence_conflict', 'incomparable_period', 'future_evidence', 'unknown_disclosure', 'parse_failure']), questionId: researchQuestionSchema.shape.id, message: z.string().min(1).max(1000) }).strict()).max(100),
 }).strict().superRefine((r, ctx) => {

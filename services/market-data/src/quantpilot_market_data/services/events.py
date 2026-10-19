@@ -28,7 +28,9 @@ async def get_announcements(
     if cached is not None:
         return cached
 
-    announcements = await client.get_announcements(symbol, limit=normalized_limit, **({"page": page} if page != 1 else {}))
+    announcements = await client.get_announcements(
+        symbol, limit=normalized_limit, **({"page": page} if page != 1 else {})
+    )
     response = AnnouncementResponse(
         symbol=symbol,
         announcements=announcements,
