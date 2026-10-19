@@ -27,6 +27,10 @@ S16 才开放修改需求和安全重规划：使用 expectedRevision 和幂等�
 
 FinancialFact 新增可选 normalization（原始文本、单位标签、精确元值）、sourceQuality、disclosure、accountingBasis 和 derivedFrom，旧事实仍按原合同读取。needs_review 来源不能写成 known；自动表格/扫描块也由报告存储再次检查。schema 核对精度和规范化值，解析不是原文/语义审查的替代。金额 BigInt 十进制计算，百分比 6 位、半值远离零；零基数不产生虚假百分比，负基数使用绝对值分母并标记。
 
+文档报告期和数值所属期分别保存。引用后一期同日历范围报告中的前期重述值时，事实必须标记 restated、给出 accountingBasis，并通过可选 `periodEvidence` 引用该文档真实的年份/列头原文。所有金额引用和期间引用都重新核对版本、hash、定位和 asOf；期间标签存在不等于数字与列的语义归属已经通过 S12。
+
+单季请求只额外允许本季度末及相邻上季度末的同年累计来源，由 `researchEvidencePeriods` 确定完整期间，默认 ID 如 `ytd_2024_06`、`ytd_2024_03`；若与请求 ID 冲突则追加 `_input`。注册、发现、导入、检索与发布共用这份范围。报告可用 `supportingFacts` 保存这些原始输入，`derivedFrom` 按当前累计值、前期累计值顺序引用输入 ID；Q1 只需当前累计值。发布时重算单季值及其期间、口径、引用集合，拒绝缺输入、环、未被使用的输入和结果篡改。输入事实不充当两期最终事实覆盖，旧报告没有这些可选字段仍可读取。
+
 ## 原文、时间和引用
 
 文档记录 SHA-256、fetchedAt、verified/unknown 披露状态及核验链接/摘要。日期精度按上海时区当日结束后可用；不知道披露时间的资料不能进入严格历史结论。定位区分 PDF 文件页、印刷页、块、表格单元格和 HTML 块。框坐标仅在真实提供时记录为归一化 box，禁止空框/倒置框或猜测坐标。
@@ -34,6 +38,8 @@ FinancialFact 新增可选 normalization（原始文本、单位标签、精确�
 受控 artifact 只接受内容寻址 digest key，不能传本地路径。数据库保存元数据/引用，正文和大 PDF 放受控文件存储。原件 key 必须等于 bytes hash；解析产物有独立 hash 和 parser 版本/失败页记录。存储引用本身不授予读取权限。
 
 `reportBindingErrors` 核对任务/身份/期间、文档版本/hash/页、披露截至时间和 fact/claim 引用。传入页正文时还校验原文片段存在性；无原文校验时只表示引用关系通过，不能声称 quote 或语义验证完成。结论保留 fact/inference/opinion 和 supported/evidence_gap/conflict/incomparable。字符串在原文里不等于结论被语义支持。
+
+发布仅接受 ready/partial 文档；unreadable、缺解析产物及 issuer_or_report_year_unverified 均拒绝，只有 claim 没有 FinancialFact 的报告也一样。v2 原始解析回执中的不可用状态再次核对，不能靠文本块仍为 native 绕过文档身份失败。
 
 S10 检索合同把 actor/task 固定在应用上下文，不接受工具修改 asOf。索引绑定不可变文档版本与 parsed hash，先裁元数据，再按可选字段筛选/排序；返回 chunk/block、locator、原文片段与质量，read 分段续读。字段匹配、检索命中和 needs_review 资料都不等于事实核验。实际 API、上限和索引生命周期见公司研究专题。
 

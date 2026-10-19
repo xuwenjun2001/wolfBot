@@ -4,7 +4,7 @@ import { artifactDigest } from './artifact-store';
 import { researchLocatorSchema, type ResearchDocument } from './document-contracts';
 import { sha256Schema, researchIdSchema } from './task-contracts';
 
-export const lexicalIndexVersion = 'zh-context-bm25-v3';
+export const lexicalIndexVersion = 'zh-context-bm25-v4';
 export const evidenceFieldSchema = z.enum(['revenue', 'parent_profit', 'cash_flow', 'risk']);
 export type EvidenceField = z.infer<typeof evidenceFieldSchema>;
 export function lexicalTokens(text: string): string[] {
@@ -35,7 +35,10 @@ export function documentChunks(input: unknown): EvidenceChunk[] {
     for (const block of blocks) {
       if (block.quality === 'unreadable') continue;
       if (block.table) {
-        const headers = block.table.cells.filter(c => c.header).map(c => c.text).join('\n');
+        // Row headers describe their own metric, not every row in the table.
+        const headerRows = new Set(block.table.cells.filter(c => c.header).map(c => c.row));
+        for (const cell of block.table.cells) if (!cell.header) headerRows.delete(cell.row);
+        const headers = block.table.cells.filter(c => headerRows.has(c.row)).map(c => c.text).join('\n');
         for (const row of [...new Set(block.table.cells.map(c => c.row))]) {
           const cells = block.table.cells.filter(c => c.row === row), rowText = cells.map(c => c.text).join('\n');
           if (!rowText.trim()) continue;
@@ -86,7 +89,7 @@ export function buildLexicalIndex(document: ResearchDocument, receipt: unknown):
   }
   const chunks = documentChunks(parsed).map(c => {
     const location = blocks?.get(c.blockId);
-    const context = location ? location.page.blocks.slice(Math.max(0, location.at - 3), location.at + 4).filter(b => b.quality !== 'unreadable').map(b => b.text).join('\n') : c.text;
+    const context = c.tableRow !== undefined ? c.text : location ? location.page.blocks.slice(Math.max(0, location.at - 3), location.at + 4).filter(b => b.quality !== 'unreadable').map(b => b.text).join('\n') : c.text;
     const page = location?.page || (c.locator.kind !== 'html' ? pages.get(c.locator.filePage) : undefined);
     const tokens = lexicalTokens(context), terms: Record<string, number> = Object.create(null);
     for (const token of tokens) if (token.length <= 200) terms[token] = (terms[token] || 0) + 1;

@@ -6,25 +6,25 @@
 
 | 字段 | 当前值 |
 | --- | --- |
-| 最后更新 | 2026-10-19 12:18（北京时间，S08 验收通过） |
+| 最后更新 | 2026-10-19 12:49（北京时间，四项 review 修复验收完成） |
 | 计划版本 | v1 |
-| 总体状态 | S01—S10 完成；S08 当前 CPU 镜像、禁网解析、HTTP 健康/停止/恢复/资源验证通过，样本人工确认见 E-S08-02。业务 OCR 仍需逐份复核；S09/S10 仅完成确定性计算与检索模块自身验收。既有人工作业仍为 9 完整/3 partial、完整参考公司 1 家，研究 LLM 端到端质量未验收 |
-| 已完成开发步骤 | 10/20 |
-| 当前进行中步骤 | 无；本次 S08 验收已结束 |
-| 下一步骤 | S11（未开始）；本次只完成 S08 验收，原开发范围止于 S10 |
-| 下一具体动作 | 下次继续开发时读 S11 及依赖，核对任务版本、现有研究 Worker、工具权限、预算和索引接线；不要把本次 OCR 验收当作研究 LLM 或完整报告质量验收。样本人工确认无需重复，业务资料 needs_review 保持 |
-| 当前会话登记 | 2026-10-19-s08-container-acceptance：起点 77d3ce3，工作区干净；按用户要求完成 S08 验收。精确回收本任务失败构建缓存后重建当前镜像，补齐禁网 OCR、HTTP 取消/超时保留页与恢复、协议、资源和真实 PG 验证；未修改解析源码，详见 E-S08-04 |
+| 总体状态 | S01—S10 完成；四项 review 缺陷已修复并通过单测、真实 PG 发布/兼容及固定资料回归。S09/S10 仍为确定性模块验收；S08 人工/容器证据保留，业务 needs_review、9 完整/3 partial 参考题与研究 LLM 未验收状态保持 |
+| 已完成开发步骤 | 10/20（review 重开的五步已完成回归） |
+| 当前进行中步骤 | 无；本次四项 review 修复完成 |
+| 下一步骤 | S11（未开始）；本次范围仅为 S01—S10 review 修复 |
+| 下一具体动作 | 继续开发时承接 S11，使用 researchEvidencePeriods、periodEvidence/supportingFacts 与 v4 检索接口；保留身份、原文、期间、asOf、OCR 质量门。S12 再核验列归属及语义，不把本轮确定性回归当作研究 LLM E2E |
+| 当前会话登记 | 2026-10-19-review-fixes：起点 cc13f567c3e24e27021b60acd2d37730dd65b007，工作区干净。用户授权修复 review 四项；已修复不可用资料发布、表格行检索、重述/单季来源合同和 HTML 字符预算，详见 E-REVIEW-01 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
-| 当前参考分支 / HEAD | `codex/research-foundation-s01-s05`；本轮起点 77d3ce3，收尾发现并行 NGA 提交 de56c27 已在本地/远端。本次解析源码仍与 77d3ce3 一致，未回退并行提交；验收交接的精确身份按本文件所在提交、`git log` 与远端 SHA 核对 |
+| 当前参考分支 / HEAD | codex/research-foundation-s01-s05；起点 cc13f567c3e24e27021b60acd2d37730dd65b007，提交前 fetch 确认远端与本地起点一致。本次精确身份按本文件所在提交、git log 和远端 SHA 核对 |
 | 目标仓库 | `https://github.com/xuwenjun2001/wolfBot`，默认分支 `main` |
-| 本轮涉及文件 | 本目录 progress.md/decisions.md、services/document-parser/README.md、docs/company-research.md；源码和冻结输入未改。本地新脚本与证据位于 S08/container-acceptance-20261019/，历史证据和人工确认保留 |
-| 已有改动提醒 | 起点干净；收尾出现 apps/nga-watcher/ 下 README、monitor_state、watcher 及两份测试的并行未提交改动，全部保留，不纳入本次四份文档提交。原始证据在忽略目录保留，冻结资料、旧人工确认和保留集未改；最终以 git status/远端 SHA 为准 |
-| 运行环境 / 进程 | Windows 主机，Linux/Python 3.12 CPU 镜像；Docling 2.140.0、RapidOCR 3.10.0、ONNX 1.31.0、Torch 2.14.1+cpu。Desktop 4.89.0 / Engine 29.7.2 / API 1.55。自己的 probe、HTTP 验收容器/网络与独立 PG 已清理，镜像/模型/证据/缓存保留；knowledge-hub 七个容器仍停止，quantpilot-timescaledb/redis healthy。数据盘未迁移，业务库未执行迁移 |
-| 模型与数据费用 | S06 有公开公告查询/原件下载，后续 OCR、计算和词法检索无 LLM/搜索调用；本地 CPU 费用未计量。历史模型 401 与四次校准的 unknown 费用记录保留，不并入本轮质量成绩 |
-| 阻塞 | S08 无剩余验收阻塞。C 盘收尾约 1.89 GiB，后续大构建仍需安排存储余量；未证明历史 SIGBUS 的根因。已知“合井口径”误字、业务 needs_review、既有三题 partial、人工版本接入 runner 与研究 LLM 验收仍保留 |
-| 最近验证 | E-S08-04：当前镜像构建退出 0；禁网公开样本 18/18、HTTP 合成 12/12、六项协议、实际取消保留第一页、超时 1382 ms 保留第一页及冷进程恢复通过；峰值离线 2293723136 / HTTP 1827225600 bytes，均无 OOM。pytest 3、parser TS 4、真实 PG 18 及旧库兼容通过，ruff/lock 通过；文档与差异检查见本证据。此前模块三项尺寸门失败和暂缓的 Quality 问题不变；未运行完整 CI/研究 LLM E2E |
+| 本轮涉及文件 | company-research 合同/存储/来源期间/财务证据/检索/HTML 解析及回归测试、PG 演练 runner、公司研究/数据字典/本目录合同决策进度；Python OCR 服务、冻结 fixtures 与 SQL 迁移未改 |
+| 已有改动提醒 | 起点干净；本轮仅相关源码/测试/文档纳入同步。本地 review-fixes-20261019、S05/S09/S10 新证据按既有策略保留，不提交原件或业务数据；收尾以 git status 与远端 SHA 为准 |
+| 运行环境 / 进程 | Windows/Node/PostgreSQL 16 独立 Docker 演练。两次自建 PG 容器均已删除，应用/生产数据库未迁移；未启动 OCR 模型或修改共享服务状态。S08 容器/人工验收作为历史证据保留 |
+| 模型与数据费用 | 本轮无 LLM、搜索、公告接口或 OCR 调用；只读固定开发资料并执行本机确定性验证，CPU 费用未计量 |
+| 阻塞 | 本轮修复无剩余阻塞。既有三个模块文件尺寸门失败和暂缓的 Quality 问题保持；业务 OCR 待复核、三题 partial、人工版本接入 runner 和研究 LLM 验收仍待后续步骤 |
+| 最近验证 | 100 项 TS/API 单测通过（22 DB 默认跳过），独立 PG 另行 22 项通过、32 迁移及旧代码兼容通过；types、定向 ESLint、docs 70 文件/435 链接通过。24 金额/12 变化复算、v4 检索 23/24 页（11/12 题）通过；模块门仅原三项超限，完整 CI/研究 LLM E2E 未运行 |
 | 受控资料恢复 | 开发资料在 `data/research-agent-upgrade/`；本机 `RESEARCH_HOLDOUT_ROOT=D:/QuantPilot-private-evals/research-v1`，换机须经受控归档恢复并核对登记 hash；这里不记录保留题/答案 |
-| 范围提醒 | 本次仅 S08 验收；不展开 S11 执行器、保留集、生产部署或既有 Quality 修复。人工确认和旧 partial 结论保持 |
+| 范围提醒 | 本次只修复四项 review 问题并验证；S11、保留集、生产部署和既有 Quality 修复未展开。原人工确认和 partial 结论保持 |
 
 ## 步骤状态
 
@@ -35,13 +35,13 @@
 | S01 | 现状核实与首版场景 | 无 | done | E-S01-01；baseline.md |
 | S02 | 固定资料、人工答案与评测合同 | S01 | done | E-S02-01/02、E-ANNOT-01/02；用户确认核查 4 家/12 题，9 完整/3 partial，完整人工参考公司 1 家；冻结 v1 字段保留原状态，人工批次另存 |
 | S03 | 实测基线与失败记录 | S01、S02 | done | E-S03-01 原 401 基线保留；E-S03-02 新配置 4 次请求均 200，单案例工具调用可用、结果 partial；不作同题质量对照 |
-| S04 | 版本化领域与事件合同 | S01、S02 | done | E-S04-01；contracts.md；51 测试通过/2 DB 跳过；types 通过 |
-| S05 | 持久化、隔离与迁移 | S04 | done | E-S05-01；七张版本表、actor repository/原件存储/API；13 项 PG 测试和旧库升级/旧代码兼容通过 |
+| S04 | 版本化领域与事件合同 | S01、S02 | done | E-S04-01；contracts.md；51 测试通过/2 DB 跳过；types 通过；E-REVIEW-01 回归通过 |
+| S05 | 持久化、隔离与迁移 | S04 | done | E-S05-01；七张版本表、actor repository/原件存储/API；13 项 PG 测试和旧库升级/旧代码兼容通过；E-REVIEW-01 回归通过 |
 | S06 | 财报发现、导入与时间证据 | S05 | done | E-S06-01/02；公网原件/hash、八份日期修正；追加修订原件不能回溯旧披露日的隔离/重试实跑 |
-| S07 | 文本 PDF / HTML 定位解析 | S06 | done | E-S07-01；八份原件/32 引用定位，v1/v2 兼容、HTML/截断/跨页与 PG 发布校验 |
+| S07 | 文本 PDF / HTML 定位解析 | S06 | done | E-S07-01；八份原件/32 引用定位，v1/v2 兼容、HTML/截断/跨页与 PG 发布校验；E-REVIEW-01 回归通过 |
 | S08 | OCR 与表格结构解析 | S07 | done | E-S08-01/02/03/04；样本人工确认、当前 CPU 镜像、禁网 OCR、HTTP 健康/取消/超时保留页及恢复、资源与质量门通过；保留“合井口径”误字与业务 needs_review |
-| S09 | 财务口径与变化计算 | S07、S08 | done | E-S09-01；decimal-v1、16 项边界测试、24 金额+12 变化复算通过；限模块验收，S08 待复核 OCR 拒绝成为 known |
-| S10 | 证据检索与按需上下文 | S07、S08、S09 | done | E-S10-01；版本化索引、前置作用域/asOf/字段过滤、词法排序及有界读取；18 PG 与 k=5 的 23/24 页命中；S11 未接线、S08 质量门保持 |
+| S09 | 财务口径与变化计算 | S07、S08 | done | E-S09-01；decimal-v1、16 项边界测试、24 金额+12 变化复算通过；限模块验收，S08 待复核 OCR 拒绝成为 known；E-REVIEW-01 回归通过 |
+| S10 | 证据检索与按需上下文 | S07、S08、S09 | done | E-S10-01；版本化索引、前置作用域/asOf/字段过滤、词法排序及有界读取；18 PG 与 k=5 的 23/24 页命中；S11 未接线、S08 质量门保持；E-REVIEW-01 回归通过 |
 | S11 | 研究计划与 Agent 循环 | S04、S05、S09、S10 | pending | — |
 | S12 | 结论与证据分层核验 | S09、S11 | pending | — |
 | S13 | 报告与变化表完整交付 | S11、S12 | pending | — |
@@ -65,6 +65,16 @@
 - 原 S03 网关基线全部在鉴权时失败；用户指定新模型后另存校准，4 次请求均 200，但提前收尾且无财报来源，不是质量提升证据。后续人工确认按 E-ANNOT-02 单独归档，不能反向把旧模型运行变为通过。
 
 ## 验收证据
+
+### E-REVIEW-01：S01—S10 四项缺陷修复与回归
+
+- 日期 / 会话：2026-10-19 / 2026-10-19-review-fixes。起点 cc13f567c3e24e27021b60acd2d37730dd65b007，工作区干净。Review 的独立 PostgreSQL 反例曾确认 unreadable 身份失败资料仍能发布 known/supported；本次按用户指令修复四项，未开始 S11。相关步骤暂时重开，验收后恢复 done，旧记录不删除。
+- 发布入口同时检查文档和 v2 解析回执，拒绝不可用状态/身份失败，覆盖仅有 claim 的报告。表格行以本行和公共表头索引，不把行标题广播到其他行；v4 索引按新版本追加，实测现金流命中第 40 行且可读取正确单元格，旧 v3 不复用。HTML source-ranges-v2 计入换行和块数量，50 万字符/1 万块边界返回 partial。
+- 财务合同新增可选 periodEvidence 与 supportingFacts：真实期间标签允许后续可比报告的前期重述值；单季资料仅开放所需同年累计输入。发布重算派生金额、期间、口径和完整引用，拒绝伪造标签、缺输入、环、错误金额和任意额外期间。注册/发现/导入/检索/报告统一期间范围；actor、asOf、原文及 OCR 门保持，语义归属仍留 S12。D23 说明选择，未新增 SQL 迁移。
+- 最终单测命令 npm run test:unit -- src/lib/company-research src/app/api/company-research/tasks 退出 0，100 项通过、22 DB 默认跳过；unit-final.log 留存。npm run test:research:postgres 另行退出 0，22 项真实 PG 测试通过，包含四项新集成回归；旧库 30→32 迁移、重复 deploy、独立 Prisma、旧 reader/Worker 兼容通过。原件 S05/rehearsal-affb1a23-9868-4949-92c4-91290b006bdf/manifest.json SHA-256 ab67db9d493494a42da258380c4298e6dabefa29067bcfc6c9e5914fe3b85533，84 个源码 hash 与收尾一致，containerRemoved=true。早期 21 项通过批次另存 e8ef73c2，不算最终源码验收。
+- 固定开发资料回归：verify-financials.ts 退出 0，24/24 金额、12/12 变化；S09/2026-10-19T04-45-53-068Z/report.json SHA-256 d21bf98f3d47223fe526ac417b364a2da94adb39ef9a9948bccad947e4487f15。verify-retrieval.ts 使用 S07/2026-10-18T17-44-58-299Z 解析语料，退出 0，v4 仍为 k=5、23/24 来源页、完整 11/12 题，21005 ms；S10/2026-10-19T04-43-38-302Z/report.json SHA-256 0de8e3874b797517fb38eced9c4f50ec651422212877eff33702e0afc3e4819f。未修改题目、评分、原件或保留集；这些不是模型质量或性能提升成绩。
+- types、定向 ESLint、docs（70 Markdown/435 本地链接）均退出 0。module 门退出 1，仅既有 chat 4161/4100、data-prefetch 2211/2040、market-data API 1541/1540；这些文件本轮未改，未放宽门禁。完整构建/CI/研究 LLM E2E 未运行，依赖未改，暂缓的 Quality 工作未展开。
+- 本轮日志与汇总位于 data/research-agent-upgrade/evidence/review-fixes-20261019/，acceptance.json SHA-256 为 23c7e569b0d29042af14bbef39efc8a272037b8eb620e1d0758de5943bf28db6，源码 hash 收尾复核无漂移，git diff --check 通过；归本升级任务保留至 S20/受控归档。两次自建 PG 均清理，业务库及共享服务未改。S08 Python/模型/人工材料未变，TS 发布质量门由本轮 PG 再验。原业务 needs_review、参考答案 3 题 partial、S11/S12 后续验收边界保持。
 
 ### E-S08-04：当前 CPU 镜像与隔离容器验收
 
@@ -223,6 +233,12 @@ E-Sxx-01 / 日期 / 会话标识：
 ```
 
 ## 会话历史
+
+### 2026-10-19-review-fixes / E-REVIEW-01
+
+- 按用户指令修复本会话 review 四项，补足真实 PG 发布、期间输入检索、行/单元格检索与缓存失效回归；100 单测、22 PG、types/lint/docs 及固定资料算术/检索通过。
+- S04/S05/S07/S09/S10 重开后恢复 done，合计 10/20；本轮未开展 S11 或模型验收。同步合同、数据字典、公司研究和 D23；原证据、人工确认与业务 needs_review 保留。
+- 同步前核对 origin 与本地起点一致，仅提交本轮相关文件；模块门原三项超限及暂缓 Quality 问题继续单独保留。提交/推送身份以 Git 为准，不把推送成功当 CI 通过。
 
 ### 2026-10-19-s08-container-acceptance / E-S08-04
 

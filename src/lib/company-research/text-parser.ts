@@ -56,7 +56,7 @@ function decode(text: string) {
 }
 /** Conservative source-range HTML extraction. Source ranges refer to retained decoded UTF-8, never to a browser DOM guessed by the parser. */
 export class HtmlTextParser implements ResearchParserPort {
-  name = 'wolfbot-html'; version = 'source-ranges-v1';
+  name = 'wolfbot-html'; version = 'source-ranges-v2';
   async parse(bytes: Buffer, mediaType: ParsedDocument['mediaType'], options: ParseOptions): Promise<ParsedDocument> {
     if (mediaType !== 'text/html') throw new Error('HTML parser media type mismatch');
     options.signal.throwIfAborted();
@@ -72,14 +72,18 @@ export class HtmlTextParser implements ResearchParserPort {
       const text = decode(match[3]).replace(/\s+/g, ' ').trim();
       if (text) extracted.push({ text, selector: `source-range:${match.index}:${match.index + match[0].length}` });
     }
-    const selected: ParsedBlock[] = []; let used = 0;
+    const selected: ParsedBlock[] = []; let used = 0, truncated = false;
+    const limit = Math.min(500000, options.maxCharacters);
     for (const part of extracted) {
-      if (used >= options.maxCharacters) break;
-      const text = part.text.slice(0, Math.min(500000 - used, options.maxCharacters - used)); if (!text) break; used += text.length;
+      const separator = selected.length ? 1 : 0;
+      if (used + separator >= limit || selected.length >= 10000) { truncated = true; break; }
+      const text = part.text.slice(0, limit - used - separator);
+      used += text.length + separator;
+      if (text.length < part.text.length) truncated = true;
       const id = `h_${artifactDigest(`${originalSha256}:${part.selector}:${text}`).slice(0, 32)}`;
       selected.push({ id, order: selected.length, kind: 'text', text, locator: { kind: 'html', blockId: id, selector: part.selector }, quality: /\uFFFD/.test(text) ? 'needs_review' : 'native', flags: [] });
     }
-    const text = selected.map(b => b.text).join('\n'), truncatedPages = used < extracted.reduce((s, p) => s + p.text.length, 0) ? [1] : [];
+    const text = selected.map(b => b.text).join('\n'), truncatedPages = truncated ? [1] : [];
     return parsedDocumentV2Schema.parse({ schemaVersion: 2, originalSha256, mediaType, parser: { name: this.name, version: this.version }, pageCount: 1,
       status: !text ? 'unreadable' : truncatedPages.length || selected.some(b => b.quality !== 'native') ? 'partial' : 'ready', pages: [{ filePage: 1, text, blocks: selected }], failedPages: text ? [] : [1], truncatedPages,
       warnings: ['html_source_ranges_not_dom_coordinates', ...(options.signal.aborted ? ['cancelled_partial'] : [])] });

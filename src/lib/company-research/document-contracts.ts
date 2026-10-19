@@ -48,6 +48,8 @@ export const financialFactSchema = z.object({
   value: z.discriminatedUnion('status', [amountSchema, z.object({ status: z.literal('missing'), reason: z.string().min(1).max(500) }).strict(),
     z.object({ status: z.literal('conflict'), alternatives: z.array(amountSchema).min(2).max(5), reason: z.string().min(1).max(500) }).strict()]),
   citations: z.array(researchCitationSchema).max(10),
+  // Located column/period labels for prior-period values disclosed in a later report.
+  periodEvidence: z.array(researchCitationSchema).max(10).optional(),
   sourceQuality: z.enum(['native', 'needs_review']).optional(),
   disclosure: disclosureSchema.optional(), accountingBasis: z.string().min(1).max(100).optional(),
   derivedFrom: z.array(researchIdSchema).min(1).max(4).optional(),

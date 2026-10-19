@@ -36,4 +36,21 @@ describe('versioned parser locations', () => {
   it('rejects invented table cells and a cancelled parse before work starts', async () => {
     await expect(new HtmlTextParser().parse(Buffer.from('<html>a</html>'), 'text/html', { ...options(), signal: AbortSignal.abort() })).rejects.toThrow();
   });
+  it('counts HTML separators in the character budget and retains a partial receipt', async () => {
+    const parser = new HtmlTextParser();
+    const source = Buffer.from('<html><p>' + 'a'.repeat(250000) + '</p><p>' + 'b'.repeat(250000) + '</p></html>');
+    const parsed = await parser.parse(source, 'text/html', { ...options(), maxCharacters: 2000000 });
+    expect(parsed.status).toBe('partial'); expect(parsed.truncatedPages).toEqual([1]);
+    expect(parsed.pages[0].text.length).toBe(500000);
+    expect(parsed.pages[0].blocks[1].text.length).toBe(249999);
+    const short = Buffer.from('<html><p>abc</p><p>def</p></html>');
+    const exact = await parser.parse(short, 'text/html', { ...options(), maxCharacters: 7 });
+    expect(exact.status).toBe('ready'); expect(exact.pages[0].text).toBe('abc\ndef');
+    const truncated = await parser.parse(short, 'text/html', { ...options(), maxCharacters: 6 });
+    expect(truncated.status).toBe('partial'); expect(truncated.pages[0].text).toBe('abc\nde');
+  });
+  it('returns partial instead of violating the HTML block count limit', async () => {
+    const result = await new HtmlTextParser().parse(Buffer.from('<html>' + '<p>x</p>'.repeat(10001) + '</html>'), 'text/html', { ...options(), maxCharacters: 500000 });
+    expect(result.status).toBe('partial'); expect(result.pages[0].blocks).toHaveLength(10000);
+  });
 });

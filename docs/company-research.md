@@ -92,6 +92,8 @@ v1 页文本回执继续可读；v2 回执绑定原件 hash、解析器版本、
 
 HTML 的 locator 是 `source-range:开始:结束`，指向保留 UTF-8 原文中的字符范围，由 blockId 解析回执还原；它不是浏览器 DOM 的 CSS 选择器。不执行脚本，也不把脚本/样式当证据。此适配器仅处理静态 UTF-8 HTML；动态正文、其他编码和布局表格需后续适配。报告入库会重新核对页、块或单元格的实际原文，不能凭页上存在同一句话就认可伪造的块 ID。
 
+HTML `source-ranges-v2` 将块间换行计入字符预算，单页最多 50 万字符、1 万块；超限保存 partial 和截断标记。版本升级后不会复用旧 HTML 解析缓存。报告发布同时检查文档和 v2 回执状态，拒绝 unreadable 或公司/年份核验失败的来源；该检查适用于财务事实、输入事实及仅含结论的报告。
+
 复验：`node --import tsx scripts/research/verify-parsing.ts` 在八份固定公开年报上逐页解析，核对 32 条引用，检查重复 ID、截断、跨页段落和 HTML。原始输出位于 `data/research-agent-upgrade/evidence/S07/`；这是定位/合同验收，不是研究结论语义或 OCR 准确率。
 
 ### 扫描件与结构化表格（S08）
@@ -112,15 +114,17 @@ HTML 的 locator 是 `source-range:开始:结束`，指向保留 UTF-8 原文中
 
 `deriveSingleQuarter` 只用同年、同口径、相邻的完整累计值：Q1 本身是单季，H1−Q1、前三季−H1、全年−前三季才得到后续季度。前期缺失不能补零，来源待复核、口径不一致或期间不相邻都会拒绝。引用和 derivedFrom 保留两个输入。
 
+后续可比报告中的前期重述值需要 `restatement: restated`、accountingBasis 和 `periodEvidence`（同一来源中的真实年份/列头引用）。单季任务的辅助累计期间由 `researchEvidencePeriods(spec)` 给出，例如 2024Q2 允许 `ytd_2024_06` 与 `ytd_2024_03`；这些 ID 可用于资料导入和检索过滤，任意其他期间仍拒绝。报告将原始累计事实放在可选 supportingFacts，最终单季事实的 derivedFrom 引用它们。提交时重算金额、期间、口径和完整来源引用，输入事实不计入最终问题覆盖。所有输入与期间标签继续受 actor、公司、asOf、原文定位和 OCR 质量检查约束；语义归属仍需 S12。
+
 复验：`node --import tsx scripts/research/verify-financials.ts`。四家公司 24 项金额与 12 项变化复算通过，原始报告及源码/fixture hash 留在 `data/research-agent-upgrade/evidence/S09/`。这是已给定参考输入的确定性计算验收，不是模型自动抽取事实、查明会计政策或解释现金流原因的质量成绩。S08 的样本人工确认和容器验收不自动核实其他业务资料。
 
 ### 任务证据检索与分段读取（S10）
 
 `POST /api/company-research/tasks/{id}/evidence` 接收 `{operation:"search",input:{query:"经营现金流变化",topK:5}}`，或 `{operation:"read",input:{documentId,documentVersion,locator,offset:0,maxCharacters:2000}}`。需要同源请求及 research.report.read 权限，响应为 private/no-store；可信 actor 与任务固定在服务端，不能由工具输入指定。`researchEvidenceReader(actor,taskId)` 提供相同的 search/read 接口，S11 再注册到 Agent 循环；旧 Worker 当前不会自动使用它。
 
-搜索先裁掉其他 actor、公司、非任务完整期间、未来或披露未知的资料，再选每个来源的最新合格时间版本。新版本 unreadable 不会被旧解析成功覆盖。可选 periodIds（最多 2）、documentIds（最多 100）缩小语料；fields 可选 revenue/parent_profit/cash_flow/risk（至少 1、最多 4），在评分前筛选块字段/风险章节。字段来自原文及相邻行的词法识别，是检索提示，不能当作已核实 FinancialFact。原件/解析/index 缓存读取均先校验 actor 和持久化元数据，命中缓存不跳过权限。
+搜索先裁掉其他 actor、公司、不在任务及必要累计输入范围内的完整期间、未来或披露未知的资料，再选每个来源的最新合格时间版本。新版本 unreadable 不会被旧解析成功覆盖。可选 periodIds（最多 2）、documentIds（最多 100）缩小语料；fields 可选 revenue/parent_profit/cash_flow/risk（至少 1、最多 4），在评分前筛选块字段/风险章节。字段来自原文及相邻文本行的词法识别，是检索提示，不能当作已核实 FinancialFact。原件/解析/index 缓存读取均先校验 actor 和持久化元数据，命中缓存不跳过权限。
 
-zh-context-bm25-v3 使用中文二元词、指标别名、相邻原文行、财务摘要/数值行及风险章节加权；先覆盖两期，再按分数填充，每来源文件页最多一条。表格按行建索引，列头参与排序；命中仍返回真实块/表格定位、原件与解析 hash、质量、分数和片段。相邻文本逐块附带 locator，不把拼接文本伪装为原文引文。needs_review 可以被查到，但不能因此成为 known。
+zh-context-bm25-v4 使用中文二元词、指标别名、相邻原文行、财务摘要/数值行及风险章节加权；先覆盖各来源期间，再按分数填充，每来源文件页最多一条。表格只以当前行和公共表头建立词频/字段，行标题不会传播到其他行；不会复用旧 v3 索引。命中仍返回真实块/表格定位、原件与解析 hash、质量、分数和片段。相邻文本逐块附带 locator，不把拼接文本伪装为原文引文。needs_review 可以被查到，但不能因此成为 known。
 
 query 为 1—300 字符；topK 为 1—20，默认 5；maxOutputCharacters 为 1500—20000，默认 10000，以序列化字符计量，limited 表示输出受限。read 每次 100—5000 字符，通过 nextOffset 继续；只读取当前任务可用的对应版本及实际页/块/单元格。单任务最多读取 5000 个文档版本元数据、50 MB 已筛选解析语料和 10 万索引块，超限明确拒绝。它能重查超过 8 份来源之前的证据，不把全文塞入每轮模型上下文。
 

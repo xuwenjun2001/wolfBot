@@ -41,5 +41,6 @@ export function deriveSingleQuarter(currentInput: FinancialFact, precedingInput:
   const derivedFrom = [current.id, ...(preceding ? [preceding.id] : [])];
   return financialFactSchema.parse({ ...current, id: `quarter_${artifactDigest(derivedFrom.join(':')).slice(0, 32)}`, period: { id: `${current.period.end.slice(0, 4)}Q${endMonth / 3}`, start, end: current.period.end, kind: 'quarter', basis: 'single_quarter' },
     value: { status: 'known', raw, unit: 'yuan', currency: 'CNY', decimals: raw.split('.')[1]?.length || 0 }, derivedFrom, normalization: undefined,
-    citations: uniqueCitations([...current.citations, ...(preceding?.citations || [])]) });
+    citations: uniqueCitations([...current.citations, ...(preceding?.citations || [])]),
+    ...(current.periodEvidence || preceding?.periodEvidence ? { periodEvidence: uniqueCitations([...(current.periodEvidence || []), ...(preceding?.periodEvidence || [])]) } : {}) });
 }

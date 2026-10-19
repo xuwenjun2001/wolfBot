@@ -3,6 +3,7 @@ import { parsedReceiptSchema } from './parsed-document';
 import { artifactDigest } from './artifact-store';
 import { researchDocumentSchema, type ResearchDocument } from './document-contracts';
 import { canonicalResearchJson } from './task-contracts';
+import { isResearchEvidencePeriod } from './evidence-periods';
 import { defaultResearchContext, lockResearchTask, taskSpec, emitResearchEvent, assertActor, ResearchPersistenceError } from './repository-core';
 
 // v1 stays readable. v2 binds page/block/table output to original bytes and parser configuration.
@@ -22,8 +23,7 @@ export async function registerResearchDocument(actor: string, input: unknown, or
       await ctx.artifacts.read(actor, document.provenance.evidence);
       if (document.disclosure.status === 'verified' && document.disclosure.evidenceSha256 !== document.provenance.evidence.sha256) throw new ResearchPersistenceError('INVALID_RESEARCH', 'Disclosure evidence hash mismatch');
     }
-    const period = spec.periods.find(p => p.id === document.period.id);
-    if (document.company.symbol !== spec.company.symbol || !period || canonicalResearchJson(period) !== canonicalResearchJson(document.period)) throw new ResearchPersistenceError('INVALID_RESEARCH', 'Document task/company/period mismatch');
+    if (document.company.symbol !== spec.company.symbol || !isResearchEvidencePeriod(spec, document.period)) throw new ResearchPersistenceError('INVALID_RESEARCH', 'Document task/company/period mismatch');
     const [prior] = await tx.$queryRaw<{metadata: unknown}[]>`SELECT metadata FROM company_research_documents WHERE task_id=${task.id} AND id=${document.id} AND version=${document.version}`;
     if (prior) {
       if (canonicalResearchJson(prior.metadata) !== canonicalResearchJson(document)) throw new ResearchPersistenceError('REVISION_CONFLICT');

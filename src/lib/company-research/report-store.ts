@@ -5,6 +5,7 @@ import { researchReportRevisionSchema, reportBindingErrors } from './revision-co
 import { parsedPageReceiptSchema } from './document-store';
 import { locatedCitationText } from './citation-locator';
 import type { ParsedDocument } from './parsed-document';
+import { factCitations } from './financial-evidence';
 import { assertResearchAttempt, type ResearchAttemptToken } from './attempt-store';
 import { defaultResearchContext, lockResearchTask, taskSpec, emitResearchEvent, ResearchPersistenceError } from './repository-core';
 
@@ -24,14 +25,16 @@ export async function commitResearchReport(actor: string, token: ResearchAttempt
     const spec = await taskSpec(tx, task);
     const rows = await tx.$queryRaw<{metadata: unknown}[]>`SELECT metadata FROM company_research_documents WHERE task_id=${task.id}`;
     const documents = rows.map(r => researchDocumentSchema.parse(r.metadata)), text = new Map<string, string>(), rich = new Map<string, ParsedDocument>();
-    const citations = [...report.facts.flatMap(f => f.citations), ...report.claims.flatMap(c => c.citations)];
+    const allFacts = [...report.facts, ...(report.supportingFacts || [])];
+    const citations = [...allFacts.flatMap(factCitations), ...report.claims.flatMap(c => c.citations)];
     for (const doc of documents) if (citations.some(c => c.documentId === doc.id && c.documentVersion === doc.version)) {
-      if (!doc.parsed) throw new ResearchPersistenceError('INVALID_RESEARCH', 'Verified parsed receipt required');
+      if (!doc.parsed || !['ready', 'partial'].includes(doc.state) || doc.parser?.warnings.includes('issuer_or_report_year_unverified')) throw new ResearchPersistenceError('INVALID_RESEARCH', 'CITATION_DOCUMENT_UNUSABLE');
       const receipt = parsedPageReceiptSchema.parse(JSON.parse((await ctx.artifacts.read(actor, doc.parsed)).toString('utf8')));
+      if (receipt.schemaVersion === 2 && (receipt.status === 'unreadable' || receipt.warnings.includes('issuer_or_report_year_unverified'))) throw new ResearchPersistenceError('INVALID_RESEARCH', 'CITATION_DOCUMENT_UNUSABLE');
       if (receipt.schemaVersion === 2) rich.set(`${doc.id}:${doc.version}`, receipt);
       for (const page of receipt.pages) if (!doc.parser?.failedPages.includes(page.filePage)) text.set(`${doc.id}:${doc.version}:${page.filePage}`, page.text);
     }
-    for (const fact of report.facts.filter(f => f.value.status === 'known')) for (const c of fact.citations) {
+    for (const fact of allFacts.filter(f => f.value.status === 'known')) for (const c of factCitations(fact)) {
       const receipt = rich.get(`${c.documentId}:${c.documentVersion}`), loc = c.locator;
       if (!receipt) continue;
       const blocks = receipt.pages.flatMap(p => p.blocks).filter(b => loc.kind === 'html' || loc.kind === 'block' ? b.id === loc.blockId : loc.kind === 'table' ? b.table?.id === loc.tableId : b.locator.kind !== 'html' && b.locator.filePage === loc.filePage);

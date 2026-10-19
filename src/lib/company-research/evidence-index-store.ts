@@ -3,19 +3,20 @@ import { defaultResearchContext, ResearchPersistenceError } from './repository-c
 import { documentAvailableAt, researchDocumentSchema, type ResearchDocument } from './document-contracts';
 import { getResearchTask } from './version-store';
 import { canonicalResearchJson } from './task-contracts';
+import { isResearchEvidencePeriod, researchEvidencePeriods } from './evidence-periods';
 import { buildLexicalIndex, lexicalIndexSchema, lexicalIndexVersion } from './lexical-index';
 
 export async function scopedEvidenceDocuments(actor: string, taskId: string, filters: { periodIds?: string[]; documentIds?: string[] }, ctx = defaultResearchContext) {
   const task = await getResearchTask(actor, taskId, ctx); if (!task) throw new ResearchPersistenceError('NOT_FOUND');
-  if (filters.periodIds?.some(id => !task.spec.periods.some(p => p.id === id))) throw new ResearchPersistenceError('INVALID_RESEARCH', '期间不属于任务');
+  if (filters.periodIds?.some(id => !researchEvidencePeriods(task.spec).some(p => p.id === id))) throw new ResearchPersistenceError('INVALID_RESEARCH', '期间不属于任务');
   // Only metadata crosses this first boundary. Never load another actor's index or original to filter later.
   const rows = await ctx.db.$queryRaw<{ metadata: unknown }[]>`SELECT d.metadata FROM company_research_documents d JOIN company_research_tasks t ON t.id=d.task_id
     WHERE t.actor_id=${actor} AND d.task_id=${taskId} ORDER BY d.id,d.version LIMIT 5001`;
   if (rows.length > 5000) throw new ResearchPersistenceError('INVALID_RESEARCH', '资料版本过多，请缩小任务范围');
   const latest = new Map<string, ResearchDocument>();
   for (const row of rows) {
-    const d = researchDocumentSchema.parse(row.metadata), period = task.spec.periods.find(p => p.id === d.period.id);
-    if (d.company.symbol !== task.spec.company.symbol || !period || canonicalResearchJson(d.period) !== canonicalResearchJson(period) || !documentAvailableAt(d, task.spec.asOf)) continue;
+    const d = researchDocumentSchema.parse(row.metadata);
+    if (d.company.symbol !== task.spec.company.symbol || !isResearchEvidencePeriod(task.spec, d.period) || !documentAvailableAt(d, task.spec.asOf)) continue;
     if (filters.periodIds?.length && !filters.periodIds.includes(d.period.id)) continue;
     if (filters.documentIds?.length && !filters.documentIds.includes(d.id)) continue;
     // Choose latest admissible snapshot even if unreadable: an older parser's success must not hide a newer failure.

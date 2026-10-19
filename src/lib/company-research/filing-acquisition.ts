@@ -4,6 +4,7 @@ import { boundedJson, downloadResearchOriginal } from './network';
 import { marketGet, deepSeekTools } from './connectors';
 import { documentAvailableAt, type ResearchDocument } from './document-contracts';
 import { canonicalResearchJson, type ResearchTaskSpec } from './task-contracts';
+import { researchEvidencePeriods } from './evidence-periods';
 
 export interface FilingCandidate {
   id: string; periodId: string; title: string; url: string; provider: 'cninfo' | 'market' | 'deepseek' | 'manual';
@@ -23,7 +24,7 @@ export function cninfoDisclosure(item: { announcementTime?: number }, evidence: 
 }
 function periodForTitle(spec: ResearchTaskSpec, title: string) {
   if (/摘要|取消|英文|提示性/.test(title)) return;
-  return spec.periods.find(p => title.includes(p.end.slice(0, 4)) && (p.kind === 'annual' ? /年度报告/.test(title) && !/半年度/.test(title) : p.kind === 'interim' ? /半年度报告/.test(title) : /季度报告/.test(title) && (p.end.slice(5, 7) === '03' ? /[一1]季度/.test(title) : p.end.slice(5, 7) === '09' ? /[三3]季度/.test(title) : false)));
+  return researchEvidencePeriods(spec).find(p => p.basis === 'cumulative' && title.includes(p.end.slice(0, 4)) && (p.kind === 'annual' ? /年度报告/.test(title) && !/半年度/.test(title) : p.kind === 'interim' ? /半年度报告/.test(title) : /季度报告/.test(title) && (p.end.slice(5, 7) === '03' ? /[一1]季度/.test(title) : p.end.slice(5, 7) === '09' ? /[三3]季度/.test(title) : false)));
 }
 export async function discoverResearchFilings(spec: ResearchTaskSpec, signal: AbortSignal, page = 1) {
   z.number().int().min(1).max(100).parse(page);
@@ -68,7 +69,7 @@ export function documentEligibility(doc: Pick<ResearchDocument, 'disclosure'>, a
   return doc.disclosure.status === 'unknown' ? 'date_unverified' : documentAvailableAt(doc, asOf) ? 'available' : 'after_cutoff';
 }
 export async function acquireFiling(taskId: string, spec: ResearchTaskSpec, candidate: FilingCandidate, version: number, signal: AbortSignal) {
-  const period = spec.periods.find(p => p.id === candidate.periodId); if (!period) throw new Error('资料期间不属于任务');
+  const period = researchEvidencePeriods(spec).find(p => p.id === candidate.periodId); if (!period) throw new Error('资料期间不属于任务');
   const downloaded = await downloadResearchOriginal(candidate.url, AbortSignal.any([signal, AbortSignal.timeout(60000)]), 50_000_000);
   const document: ResearchDocument = { schemaVersion: 1, id: candidate.id, taskId, version, company: spec.company, period, title: candidate.title, url: candidate.url,
     mediaType: downloaded.mediaType, bytesSha256: artifactDigest(downloaded.bytes), fetchedAt: new Date().toISOString(), disclosure: candidate.disclosure, original: ref(downloaded.bytes), state: 'acquired',

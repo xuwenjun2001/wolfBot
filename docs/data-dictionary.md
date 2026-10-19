@@ -337,7 +337,9 @@ running -> failed
 
 需求、计划、文档、报告和事件表有禁止 UPDATE 的数据库触发器。取消只失效执行权并保留原件/报告。资料正文在 `data/company-research/artifacts/` 按 actor 摘要分区，每次授权读取后再验 hash；未引用对象不自动清理。token 未知用 NULL，不能当作零成本。详情与边界见 [公司研究](company-research.md)、[合同](plans/research-agent-upgrade/contracts.md)。
 
-索引也禁止 UPDATE，版本为 zh-context-bm25-v3；对象保存块词频、长度、财务字段、章节特征及来源/解析 hash。改解析或索引算法需新版本，不原地覆盖。缓存命中仍核对任务归属和完整文档元数据；公司、期间、asOf 过滤在原文/索引读取前完成。外键级联删除只处理元数据，文件没有自动 GC；研究资料备份与保留见 [数据生命周期](data-lifecycle.md)。
+索引也禁止 UPDATE，版本为 zh-context-bm25-v4；对象保存块词频、长度、财务字段、章节特征及来源/解析 hash。表格行使用各自正文及公共表头，旧 v3 对象保留但不复用。改解析或索引算法需新版本，不原地覆盖。缓存命中仍核对任务归属和完整文档元数据；公司、期间、asOf 过滤在原文/索引读取前完成。外键级联删除只处理元数据，文件没有自动 GC；研究资料备份与保留见 [数据生命周期](data-lifecycle.md)。
+
+报告 JSON 可选 supportingFacts 保存累计转单季的原始输入；最终事实的 derivedFrom 按当前/前期顺序引用其 ID。FinancialFact 可选 periodEvidence 保存后续报告中前期重述值的列头/年份原文引用，文档报告期仍记录真实报告期间。这些为应用 JSON 合同扩展，不新增 SQL 列；存量报告仍可读取，发布重新核对输入范围、派生算术、来源质量与时点。
 
 ## 维护规则
 

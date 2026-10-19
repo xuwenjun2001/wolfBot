@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { financialFactSchema, researchCitationSchema, documentAvailableAt, type ResearchDocument, type VersionedCitation } from './document-contracts';
 import { companyIdentitySchema, researchIdSchema, researchQuestionSchema, revisionSchema, timestampSchema, type ResearchTaskSpec } from './task-contracts';
+import { isResearchEvidencePeriod } from './evidence-periods';
+import { factCitations, financialEvidenceErrors } from './financial-evidence';
 
 export const researchClaimSchema = z.object({
   id: researchIdSchema, questionId: researchQuestionSchema.shape.id, text: z.string().min(1).max(3000),
@@ -15,9 +17,11 @@ export const researchReportRevisionSchema = z.object({
   companySymbol: companyIdentitySchema.shape.symbol, periodIds: z.tuple([researchIdSchema, researchIdSchema]), asOf: timestampSchema,
   generatedAt: timestampSchema, status: z.enum(['completed', 'partial', 'failed', 'cancelled']),
   facts: z.array(financialFactSchema).max(100), claims: z.array(researchClaimSchema).max(100),
+  supportingFacts: z.array(financialFactSchema).max(100).optional(),
   gaps: z.array(z.object({ code: z.enum(['evidence_gap', 'evidence_conflict', 'incomparable_period', 'future_evidence', 'unknown_disclosure', 'parse_failure']), questionId: researchQuestionSchema.shape.id, message: z.string().min(1).max(1000) }).strict()).max(100),
 }).strict().superRefine((r, ctx) => {
-  if (new Set(r.facts.map(f => f.id)).size !== r.facts.length || new Set(r.claims.map(c => c.id)).size !== r.claims.length) ctx.addIssue({ code: 'custom', message: 'Duplicate fact or claim IDs' });
+  const allFacts = [...r.facts, ...(r.supportingFacts || [])];
+  if (new Set(allFacts.map(f => f.id)).size !== allFacts.length || new Set(r.claims.map(c => c.id)).size !== r.claims.length) ctx.addIssue({ code: 'custom', message: 'Duplicate fact or claim IDs' });
   if (r.status === 'completed' && (r.gaps.length || !r.claims.length || r.claims.some(c => c.status !== 'supported') || r.facts.some(f => f.value.status !== 'known'))) ctx.addIssue({ code: 'custom', message: 'Completed report contains unresolved evidence' });
 });
 export type ResearchReportRevision = z.infer<typeof researchReportRevisionSchema>;
@@ -27,12 +31,11 @@ export function reportBindingErrors(report: ResearchReportRevision, spec: Resear
   const errors: string[] = [];
   if (report.requestRevision !== spec.requestRevision || report.companySymbol !== spec.company.symbol || new Date(report.asOf).getTime() !== new Date(spec.asOf).getTime() || report.periodIds.some((id, i) => id !== spec.periods[i].id)) errors.push('REPORT_REQUEST_MISMATCH');
   if (spec.comparison.status === 'incomparable' && report.status === 'completed') errors.push('INCOMPARABLE_REPORT_COMPLETED');
-  const verify = (c: VersionedCitation, periodId?: string) => {
+  const verify = (c: VersionedCitation) => {
     const d = documents.find(d => d.id === c.documentId && d.version === c.documentVersion);
     if (!d || d.taskId !== report.taskId || d.bytesSha256 !== c.bytesSha256 || d.company.symbol !== spec.company.symbol) { errors.push('CITATION_DOCUMENT_MISMATCH'); return; }
-    const expectedPeriod = spec.periods.find(p => p.id === d.period.id);
-    if (!expectedPeriod || expectedPeriod.start !== d.period.start || expectedPeriod.end !== d.period.end || expectedPeriod.basis !== d.period.basis || expectedPeriod.kind !== d.period.kind) errors.push('CITATION_PERIOD_MISMATCH');
-    if (periodId && d.period.id !== periodId) errors.push('CITATION_PERIOD_MISMATCH');
+    if (!isResearchEvidencePeriod(spec, d.period)) errors.push('CITATION_PERIOD_MISMATCH');
+    if (d.state === 'unreadable' || d.parser?.warnings.includes('issuer_or_report_year_unverified')) errors.push('CITATION_DOCUMENT_UNUSABLE');
     if (!documentAvailableAt(d, spec.asOf)) errors.push('CITATION_NOT_AVAILABLE_ASOF');
     if (c.locator.kind !== 'html') {
       if (d.mediaType !== 'application/pdf' || !d.pageCount || c.locator.filePage > d.pageCount) errors.push('CITATION_PAGE_OUT_OF_RANGE');
@@ -47,11 +50,8 @@ export function reportBindingErrors(report: ResearchReportRevision, spec: Resear
       if (!text || !normal(text).includes(normal(c.quote))) errors.push('CITATION_LOCATOR_MISMATCH');
     }
   };
-  for (const f of report.facts) {
-    const p = spec.periods.find(p => p.id === f.period.id);
-    if (!p || p.start !== f.period.start || p.end !== f.period.end || p.kind !== f.period.kind || p.basis !== f.period.basis || f.companySymbol !== spec.company.symbol || f.scope !== spec.scope) errors.push('FACT_CONTEXT_MISMATCH');
-    f.citations.forEach(c => verify(c, f.period.id));
-  }
+  errors.push(...financialEvidenceErrors(report.facts, report.supportingFacts || [], spec, documents));
+  for (const f of [...report.facts, ...(report.supportingFacts || [])]) factCitations(f).forEach(verify);
   for (const c of report.claims) {
     if (c.factIds.some(id => !report.facts.some(f => f.id === id))) errors.push('CLAIM_FACT_NOT_FOUND');
     if (c.status === 'supported' && c.factIds.some(id => report.facts.some(f => f.id === id && f.value.status !== 'known'))) errors.push('CLAIM_UNRESOLVED_FACT');

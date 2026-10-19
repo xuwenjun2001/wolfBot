@@ -4,6 +4,21 @@ import { evidenceSearchSchema } from './evidence-retrieval';
 import { documentFixture } from './version-test-fixtures';
 import { HtmlTextParser } from './text-parser';
 describe('located Chinese lexical evidence', () => {
+  it('selects the requested row in a long table without treating row labels as shared headers', () => {
+    const doc = { ...documentFixture(), parsed: documentFixture().original };
+    const labels = ['指标', '营业收入', ...Array.from({ length: 38 }, (_, i) => `其他财务附注${i}${'补充说明'.repeat(10)}`), '经营活动产生的现金流量净额'];
+    const cells = labels.flatMap((label, row) => [label, row ? '100.00' : '2024', row ? '90.00' : '2023'].map((text, column) => ({ row, column, rowSpan: 1, columnSpan: 1, text, header: row === 0 || column === 0 })));
+    const text = cells.map(c => c.text).join('\n');
+    const receipt = { schemaVersion: 2, originalSha256: doc.bytesSha256, mediaType: 'application/pdf', parser: { name: 'table-test', version: '1' }, pageCount: 1, status: 'partial', failedPages: [], truncatedPages: [], warnings: [],
+      pages: [{ filePage: 1, text, blocks: [{ id: 'table_test', order: 0, kind: 'table', text, locator: { kind: 'block', filePage: 1, blockId: 'table_test' }, quality: 'needs_review', flags: ['table_structure_requires_review'], table: { id: 'grid', rows: labels.length, columns: 3, cells } }] }] };
+    const indexes = [{ document: doc, index: buildLexicalIndex(doc, receipt) }];
+    const hits = selectEvidenceHits(rankEvidence(indexes, '经营活动产生的现金流量净额', ['cash_flow']), 5);
+    expect(hits.map(h => h.chunkId)).toEqual(['table_test_r40']);
+    const chunk = documentChunks(receipt).find(c => c.id === hits[0].chunkId)!;
+    expect(text.slice(chunk.offset, chunk.offset + 1200)).toContain('经营活动产生的现金流量净额');
+    expect(rankEvidence(indexes, '营业收入', ['revenue']).map(h => h.chunkId)).toEqual(['table_test_r1']);
+    expect(chunk.text).toContain('2024');
+  });
   it('recalls a source older than eight subsequent documents with deterministic ranking', () => {
     const indexes = Array.from({ length: 12 }, (_, i) => {
       const document = { ...documentFixture(), id: `source-${i}`, parsed: documentFixture().original };
