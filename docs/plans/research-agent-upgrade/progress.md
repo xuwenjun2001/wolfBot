@@ -12,10 +12,10 @@
 | 已完成开发步骤 | 15/20；S11—S15 修复后的机器验收证据已补齐，S16 及以后未启动 |
 | 当前进行中步骤 | 无；S11—S15 已恢复 done |
 | 下一步骤 | S16：修改计划与安全重新规划，pending，未启动 |
-| 下一具体动作 | 后续承接 S16 时读取 plan.md 的本步及 S04/S05/S11/S14 依赖，核对当前源码、版本冲突与预算继承边界后登记文件范围。本次仅归档新报告确认，绑定 task a316d272-71e8-4ec2-a793-6d5475b9b8c3 / report v1 / canonical hash 22bc9651bcc672ec227fd1af1205e351525f19342097f2cb77b9546ee88d3be5；确认回执见 E-S13-02，无需重复核查同一报告 |
+| 下一具体动作 | 后续承接 S16 时读取 plan.md 的本步及 S04/S05/S11/S14 依赖，核对当前源码、版本冲突与预算继承边界后登记文件范围；不重复核查已由 E-S13-02 绑定确认的 report v1 |
 | 当前会话登记 | 2026-10-19-s11-s15-review-fixes：用户要求修复四项 review 问题；起点 37b693fc3a916cb2ad3bd52c4c3cd8a635d5610c，工作区干净。负责 numeric 核验、资料写入 fencing、引用原文范围映射及相关单测/PG/固定报告回归，完成后更新证据并同步当前分支；不开展 S16 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
-| 当前参考分支 / HEAD | codex/research-agent-s11-s15；修复前 HEAD `37b693fc3a916cb2ad3bd52c4c3cd8a635d5610c`，修复后提交与远端 SHA 以收尾 Git 核对为准；证据 sourceHashes 绑定本轮源码 |
+| 当前参考分支 / HEAD | codex/research-agent-s11-s15；修复前 HEAD `37b693fc3a916cb2ad3bd52c4c3cd8a635d5610c`，当前提交与远端 SHA 以本轮收尾 Git 核对为准；证据 sourceHashes 绑定本轮源码 |
 | 目标仓库 | `https://github.com/xuwenjun2001/wolfBot`，默认分支 `main` |
 | 本轮涉及文件 | claim-verification、financial-normalization/数字定位辅助模块、document-store、acquisition-service、parse-service、financial-tools、source-reader、引用文本映射辅助模块与回归测试；company-research、decisions、s11-s15-validation、progress 文档。证据保留在 data/research-agent-upgrade/evidence/，不提交原件 |
 | 已有改动提醒 | 本轮起点干净；代码、回归测试和三份专题文档属于本轮，data 下原件/日志/回执不纳入 Git。提交前只暂存明确相关路径，保留任何后来出现的无关改动 |
@@ -291,7 +291,7 @@ E-Sxx-01 / 日期 / 会话标识：
 
 - 用户要求修复 S11—S15 review 发现的四项缺陷。本轮完成数值列/符号核验、attempt 写入 fencing、长引用偏移映射，加入单测和真实 PostgreSQL 回归；未进入 S16，未重跑模型或修改历史验收材料。
 - 121 项定向单测、36 项真实 PostgreSQL 测试、types、定向 ESLint 通过；固定报告确定性回放保持完整 6 facts/14 citations、资料不足 3 facts/7 citations 且无错误。模块门保留原三项失败，完整构建/CI 未运行。
-- 更新 E-REVIEW-02、D27、公司研究专题和当前交接；本轮代码与文档待按明确路径提交、推送并核对远端 SHA。临时测试 PG 已由 runner 清理，应用/生产库和共享服务未动。
+- 更新 E-REVIEW-02、D27、公司研究专题和当前交接；提交 `b076b2b70e52f1ed49a24b5eecfefa94e41dfb6f` 已推送到 `origin/codex/research-agent-s11-s15`，远端 SHA 已核对一致。临时测试 PG 已由 runner 清理，应用/生产库和共享服务未动。
 
 ### 2026-10-19-s11-s15 / 实现与机器验收交接
 
