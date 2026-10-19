@@ -14,6 +14,7 @@ export interface ResearchTaskRow {
   generation: number; sequence: number; active_attempt_id: string | null; cancel_requested: boolean; tool_calls: number;
   input_tokens: number | null; output_tokens: number | null; unknown_model_requests: number;
   created_at: Date; started_at: Date | null; deadline: Date | null;
+  checkpoint?: unknown;
 }
 export function assertActor(actor: string) { if (!actor?.trim() || actor.length > 200) throw new ResearchPersistenceError('INVALID_RESEARCH', 'Trusted actor required'); }
 export async function lockResearchTask(tx: ResearchTransaction, actor: string, id: string) {

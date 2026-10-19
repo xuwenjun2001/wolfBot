@@ -6,25 +6,25 @@
 
 | 字段 | 当前值 |
 | --- | --- |
-| 最后更新 | 2026-10-19 12:49（北京时间，四项 review 修复验收完成） |
+| 最后更新 | 2026-10-19（北京时间，S11—S15 机器验收完成，人工核查待确认） |
 | 计划版本 | v1 |
-| 总体状态 | S01—S10 完成；四项 review 缺陷已修复并通过单测、真实 PG 发布/兼容及固定资料回归。S09/S10 仍为确定性模块验收；S08 人工/容器证据保留，业务 needs_review、9 完整/3 partial 参考题与研究 LLM 未验收状态保持 |
-| 已完成开发步骤 | 10/20（review 重开的五步已完成回归） |
-| 当前进行中步骤 | 无；本次四项 review 修复完成 |
-| 下一步骤 | S11（未开始）；本次范围仅为 S01—S10 review 修复 |
-| 下一具体动作 | 继续开发时承接 S11，使用 researchEvidencePeriods、periodEvidence/supportingFacts 与 v4 检索接口；保留身份、原文、期间、asOf、OCR 质量门。S12 再核验列归属及语义，不把本轮确定性回归当作研究 LLM E2E |
-| 当前会话登记 | 2026-10-19-review-fixes：起点 cc13f567c3e24e27021b60acd2d37730dd65b007，工作区干净。用户授权修复 review 四项；已修复不可用资料发布、表格行检索、重述/单季来源合同和 HTML 字符预算，详见 E-REVIEW-01 |
+| 总体状态 | S01—S12 完成；S13—S15 代码和机器/界面验证完成。最终真实双期案例 completed（24 次，6/6 金额、三问支持），缺后期案例 partial（27 次，3/6），失败实验保留。S13 新报告人工核查 pending，S14/S15 保留依赖待结清；业务 OCR needs_review、9 完整/3 partial 参考题不变 |
+| 已完成开发步骤 | 12/20；不把机器通过当作 S13 人工验收 |
+| 当前进行中步骤 | S13：等待用户核查新报告；S14/S15 自身实现与 QA 通过，依赖 S13 尚未结清 |
+| 下一步骤 | 收到新报告核查结果后完成 S13—S15 状态结清；S16 未启动 |
+| 下一具体动作 | 读取 evidence/S13/2026-10-19T06-06-19-135Z/human-review.md，绑定 task a316d272-71e8-4ec2-a793-6d5475b9b8c3 / report v1 / canonical hash 22bc9651bcc672ec227fd1af1205e351525f19342097f2cb77b9546ee88d3be5。用户已收到核查请求，尚无确认；不代签、不重复要求旧 S02/S08 确认。确认后保存受控回执、更新本文件和依赖状态；如指出问题则局部修复并按影响复验 |
+| 当前会话登记 | 2026-10-19-s11-s15：用户授权连续实现五步；起点 ea9ce2595b02fcf8ecd5a3207ee1db9a075da117，工作区干净；分支 codex/research-agent-s11-s15 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
-| 当前参考分支 / HEAD | codex/research-foundation-s01-s05；起点 cc13f567c3e24e27021b60acd2d37730dd65b007，提交前 fetch 确认远端与本地起点一致。本次精确身份按本文件所在提交、git log 和远端 SHA 核对 |
+| 当前参考分支 / HEAD | codex/research-agent-s11-s15；起点 ea9ce2595b02fcf8ecd5a3207ee1db9a075da117。本次精确身份按本文件所在提交、git log、证据 sourceHashes 和远端 SHA 核对 |
 | 目标仓库 | `https://github.com/xuwenjun2001/wolfBot`，默认分支 `main` |
-| 本轮涉及文件 | company-research 合同/存储/来源期间/财务证据/检索/HTML 解析及回归测试、PG 演练 runner、公司研究/数据字典/本目录合同决策进度；Python OCR 服务、冻结 fixtures 与 SQL 迁移未改 |
-| 已有改动提醒 | 起点干净；本轮仅相关源码/测试/文档纳入同步。本地 review-fixes-20261019、S05/S09/S10 新证据按既有策略保留，不提交原件或业务数据；收尾以 git status 与远端 SHA 为准 |
-| 运行环境 / 进程 | Windows/Node/PostgreSQL 16 独立 Docker 演练。两次自建 PG 容器均已删除，应用/生产数据库未迁移；未启动 OCR 模型或修改共享服务状态。S08 容器/人工验收作为历史证据保留 |
-| 模型与数据费用 | 本轮无 LLM、搜索、公告接口或 OCR 调用；只读固定开发资料并执行本机确定性验证，CPU 费用未计量 |
-| 阻塞 | 本轮修复无剩余阻塞。既有三个模块文件尺寸门失败和暂缓的 Quality 问题保持；业务 OCR 待复核、三题 partial、人工版本接入 runner 和研究 LLM 验收仍待后续步骤 |
-| 最近验证 | 100 项 TS/API 单测通过（22 DB 默认跳过），独立 PG 另行 22 项通过、32 迁移及旧代码兼容通过；types、定向 ESLint、docs 70 文件/435 链接通过。24 金额/12 变化复算、v4 检索 23/24 页（11/12 题）通过；模块门仅原三项超限，完整 CI/研究 LLM E2E 未运行 |
+| 本轮涉及文件 | company-research 执行检查点/受信工具/分层核验/报告/阅读器及测试；同一 research Worker；tasks 列表、执行、SSE、原文、人工验收 API；financial 工作台及 legacy 入口；追加第 33 条迁移/Prisma；校准、真实模型、阅读器/只读 UI QA 脚本；配置样例、API/数据/公司研究专题与本目录交接 |
+| 已有改动提醒 | 起点干净，本轮相关源码/测试/迁移/文档一并同步；本文件所在提交及远端 SHA 作为同步身份，最终回复报告具体提交。data 中原件、校准、截图/日志和未提交业务数据不纳入 Git；先检查 git status，保留后来新增的无关工作 |
+| 运行环境 / 进程 | Windows/Node，专用 Docker/PostgreSQL；追加 33 条迁移只用于 disposable 库，应用/生产库未迁移。全部自建测试 PG 容器、QA server（66096/32675/22349）及临时浏览器标签已关闭，9090/10171/5430 无监听。复用 S07 解析/S08 OCR 回执，未改共享服务 |
+| 模型与数据费用 | gpt-6.1-sol/high：8 例 reviewer 校准及 7 轮×2 场景实跑；每轮实现不同，不当作同算法重复试验。Token/未知请求按批保留，费用 unknown，含失败；无 live 公告发现/搜索或新 OCR。每个逻辑任务仍为 40 次工具/20 分钟 |
+| 阻塞 | 仅 S13 计划要求的新生成报告人工核查待确认；S14/S15 保留依赖状态。原三个模块尺寸门及暂缓 Quality 依赖问题不变；未部署、未做完整构建/CI；真实进程中断、完整用户旅程和保留集/质量对照留后续步骤 |
+| 最近验证 | 113 项定向单测通过（29 DB 默认跳过），真实 PG 另行 29 项通过；33 迁移/重复 deploy/独立 Prisma/旧代码兼容通过，最终 116 文件 hash 一致。types/定向 ESLint/QA JS lint 通过；reviewer 8/8；真实完整与不足两例、阅读器/响应式/事件恢复通过。docs 71 文件/441 本地链接与差异检查通过，详见下方证据 |
 | 受控资料恢复 | 开发资料在 `data/research-agent-upgrade/`；本机 `RESEARCH_HOLDOUT_ROOT=D:/QuantPilot-private-evals/research-v1`，换机须经受控归档恢复并核对登记 hash；这里不记录保留题/答案 |
-| 范围提醒 | 本次只修复四项 review 问题并验证；S11、保留集、生产部署和既有 Quality 修复未展开。原人工确认和 partial 结论保持 |
+| 范围提醒 | 本次实现 S11—S15；保留集、S16 后续能力、生产部署和既有 Quality 修复不在本轮范围；所有完成状态须绑定真实验证 |
 
 ## 步骤状态
 
@@ -41,12 +41,12 @@
 | S07 | 文本 PDF / HTML 定位解析 | S06 | done | E-S07-01；八份原件/32 引用定位，v1/v2 兼容、HTML/截断/跨页与 PG 发布校验；E-REVIEW-01 回归通过 |
 | S08 | OCR 与表格结构解析 | S07 | done | E-S08-01/02/03/04；样本人工确认、当前 CPU 镜像、禁网 OCR、HTTP 健康/取消/超时保留页及恢复、资源与质量门通过；保留“合井口径”误字与业务 needs_review |
 | S09 | 财务口径与变化计算 | S07、S08 | done | E-S09-01；decimal-v1、16 项边界测试、24 金额+12 变化复算通过；限模块验收，S08 待复核 OCR 拒绝成为 known；E-REVIEW-01 回归通过 |
-| S10 | 证据检索与按需上下文 | S07、S08、S09 | done | E-S10-01；版本化索引、前置作用域/asOf/字段过滤、词法排序及有界读取；18 PG 与 k=5 的 23/24 页命中；S11 未接线、S08 质量门保持；E-REVIEW-01 回归通过 |
-| S11 | 研究计划与 Agent 循环 | S04、S05、S09、S10 | pending | — |
-| S12 | 结论与证据分层核验 | S09、S11 | pending | — |
-| S13 | 报告与变化表完整交付 | S11、S12 | pending | — |
-| S14 | 工作台与事件流 | S04、S13 | pending | — |
-| S15 | 原文定位与证据阅读器 | S07、S08、S12、S14 | pending | — |
+| S10 | 证据检索与按需上下文 | S07、S08、S09 | done | E-S10-01；版本化索引/asOf/字段过滤与有界读取；23/24 页、11/12 题；E-REVIEW-01 回归，S11 接线见 E-S11-01；OCR 质量门保持 |
+| S11 | 研究计划与 Agent 循环 | S04、S05、S09、S10 | done | E-S11-01；同一 PI/Worker、公开计划/checkpoint、预算继承/停止/取消及真实三问路径通过 |
+| S12 | 结论与证据分层核验 | S09、S11 | done | E-S12-01；数值/原文/身份/时间/语义发布硬门、局部修复和真实 reviewer 8/8 校准通过；同模型独立调用 |
+| S13 | 报告与变化表完整交付 | S11、S12 | in_progress | E-S13-01；最终 completed 24 次/6 数值/3 问、partial 27 次/3 数值；新报告人工核查 pending |
+| S14 | 工作台与事件流 | S04、S13 | in_progress | E-S14-01；实现与自身 QA 通过：桌面/手机、状态/路由、刷新/切换、浏览器 EventSource 断线/重复/乱序/终态；S13 人工依赖待结清 |
+| S15 | 原文定位与证据阅读器 | S07、S08、S12、S14 | in_progress | E-S15-01；原生 PDF/真实 OCR 派生扫描、版本/hash/坐标/逐字高亮、权限与恶意文本通过；依赖 S13/S14 待结清 |
 | S16 | 修改计划与安全重新规划 | S04、S05、S11、S14 | pending | — |
 | S17 | 新财报更新与报告差异 | S06、S09、S13、S15、S16 | pending | — |
 | S18 | 恢复、隔离与运行观测 | S05、S11、S14、S16、S17 | pending | — |
@@ -65,6 +65,40 @@
 - 原 S03 网关基线全部在鉴权时失败；用户指定新模型后另存校准，4 次请求均 200，但提前收尾且无财报来源，不是质量提升证据。后续人工确认按 E-ANNOT-02 单独归档，不能反向把旧模型运行变为通过。
 
 ## 验收证据
+
+### E-S11-01：双期 PI 执行与预算恢复
+
+- 日期 / 会话：2026-10-19 / `2026-10-19-s11-s15`，起点 ea9ce2595b02fcf8ecd5a3207ee1db9a075da117，分支 codex/research-agent-s11-s15，起点干净。文件范围见当前交接，详细版本/实验见 [本轮验收证据](s11-s15-validation.md)。
+- 同一 PI 引擎与研究 Worker 交替处理新旧任务；三问公开计划、检查点、受信检索/事实/审查/提交工具、heartbeat/fencing、工具/模型用量、截止时间继承和无进展停止均接线。耗尽任务接管只能封存 partial，取消后旧写入失效；不存模型对话或隐藏思维。恢复/重复/缺资料的确定性协议 fixture 与真实 PG 分别记录，不冒充真实进程崩溃实验。
+- 最终 `npm run test:unit -- src/lib/company-research src/app/api/company-research/tasks src/app/company-research/financial` 退出 0：113 passed/29 DB skipped；日志 evidence/s11-s15-unit-closeout2.log。DB 默认跳过由专用 runner 另行全部实跑。types/定向 ESLint 退出 0（types-closeout2、lint-closeout3）；QA helper 的后续独立 lint 退出 0（s11-s15-qa-lint.log）。
+- 最终 PG `S05/rehearsal-236e7660-1fd1-41f8-a198-8b3d719c10ce/manifest.json` SHA-256 `931eff763c247fec6b6f94106412d220462e5442ae7d2d64a270e2b95c32e754`：29 passed，33 迁移/重复 deploy/独立 Prisma/旧 reader/Worker 兼容/migration status 全部退出 0，116 个源码 hash 与收尾一致，containerRemoved=true。应用/生产库未迁移；新增检查点、review/acceptance 表只在测试库实跑。既有三项模块超限失败保留，完整构建/CI 未运行。
+- 收尾 `npm run check:docs` 退出 0（71 Markdown/441 本地链接，s11-s15-docs-closeout.log），`git diff --check` 退出 0。模块检查 s11-s15-modules-closeout.log 退出 1，仅原 chat/data-prefetch/market-data API 三项超限，没有新依赖错误；门禁未放宽。
+
+### E-S12-01：分层核验与真实 reviewer 校准
+
+- 身份/时间/原文/金额单位和期间列/冲突/语义分别核验；repository 发布也强制检查，局部修改只使相关审查键失效。真实 PG 覆盖直接发布绕过、错误单位/来源、冲突保留、无校准和局部修复；原有身份/asOf 负例回归通过。
+- 真实校准 `S12/2026-10-19T05-12-55-698Z/calibration.json` SHA-256 `06508863de6498a109d794d44c74b030a0ab51fb6faf7c68e8fd1aec9543d350`，2 正例/6 反例共 8/8 通过；模型 gpt-6.1-sol/high，回执绑定 reviewer prompt。明确 same-model separate-call，有限校准不当作全分布准确率。后续生成上下文修复没有修改该审查 prompt。
+
+### E-S13-01：最终完整报告、诚实 partial 与人工待核查
+
+- 原件 `S13/2026-10-19T06-06-19-135Z/`。完整 task a316d272-71e8-4ec2-a793-6d5475b9b8c3，completed、24/40 次、6/6 金额、3/3 问题解释支持；204071 ms，输入 388673/输出 6788、unknown requests=0。canonical report hash `22bc9651bcc672ec227fd1af1205e351525f19342097f2cb77b9546ee88d3be5`，人工作用域为 report v1。
+- 缺后期 task cf1d6b73-7549-420a-bbf0-c5ef4f680b51，partial、27/40 次、3/6 金额，三个 2024 金额为空且资料只有 2023；没有用参考答案/零填充缺口。固定完整公开 PDF+S07 解析，真实模型/PI/检索/存储，不是实时公告发现 E2E。每任务原 40 次/20 分钟，不重置失败预算。
+- 真实模型 PG 清单 `S05/rehearsal-002e3f6c-437a-4e26-856d-4e5a4f6969f3/manifest.json` SHA-256 `212578e1b78e166e06bd6e39caf51e5b36f02a2c857feab70d24fd90d5e8cba1`，所有阶段退出 0、containerRemoved=true。后续只读 QA helper 增加合成回放，执行/审查代码未变；最终全源码 PG 复验见 E-S11-01。
+- 七轮×两场景的失败、成功、上下文回归和提交循环失败均保留；各轮实现不同，不作为同算法重复率或对 S03 的改善率。`development-experiments.json` SHA-256 `7cc52eeb1e557e99ef01142261714f78d8100b04c7942fb074348d462d25a06b` 绑定 14 份任务结果。实际费用 unknown，包含失败；旧 cache usage 误分类留痕，没有覆写旧记录。rubric/原件/人工参考确认 hash 不变，未读保留集。
+- 同目录 `human-review.md` SHA-256 `1fbc7a6c562966855332244ead7e294b985da50c68c2ee67a90d76d9b1148fec` 给出新报告逐字解释、6 金额/3 增幅和原 PDF 链接。已向用户请求本人核查，尚无确认；源自 plan S13 的人工要求，保留 in_progress，不把已有参考答案确认代替新报告验收。
+
+### E-S14-01：工作台、刷新与浏览器事件恢复
+
+- 新 `/company-research`，旧报告 `/company-research/legacy`，旧 `?run=` 兼容重定向。组件拆分、权威快照、带序号/generation 的 SSE、epoch/abort/旧流关闭、终态与草稿/partial 均实现；不安装或声称兼容 AG-UI。
+- 状态/路由 fixture 覆盖重复、乱序、旧 generation、跨任务和终态快照。真实浏览器在实际 React/Tailwind + 保留 repository 响应上验证刷新恢复、切换/取消草稿/partial；桌面 1280、手机 390×844 无页面横向溢出。
+- `--stream-replay` 合成任务在真实 Browser EventSource 上注入缺序/重复/晚到事件并主动断线；日志记录首次断线后自动第二次连接、终态 snapshot sequence=104。另一任务断线后切换至真实报告，旧重连被清除、没有第二次连接或跨任务覆盖。合成事件不写数据库、不调用模型、不贡献财报质量成绩。
+- 最终 S13 的 `workbench-qa/verification.json` SHA-256 `070ce5066f22e8d40a2c6fc087648eb297f0e726c28af3b2554fc621a73cd306` 绑定截图/AX/bundle/事件日志。Next Link 有替身，auth/DB 门分别测试，不冒充完整 Next/auth/live Worker 旅程。实现及自身 QA 通过，依赖 S13 人工验收，状态保持 in_progress。
+
+### E-S15-01：原文阅读器、扫描与注入防护
+
+- 金额/结论按原 document version/hash 读取；2024 收入 p5、现金流原因 p9、无坐标页/文本高亮均实际点击核对。dialog 初焦点为关闭、Escape 返回原按钮；已有较新版本也读取原引用，跨 actor 拒绝。合成恶意 script/img 正文按文本展示，实际 DOM script=0/img=0/unsafe links=0。
+- 实际 S08 OCR 派生扫描 SHA-256 `2837fa338de71223de8285ceee2183bfc3cc7307c005471ee38ca0f0488afbc6`，选中 row1/col1 的 `170,899,152,276.34`，坐标来自真实 Docling/RapidOCR 回执。保留 needs_review、未知披露时点及合成派生范围，未冒充自然扫描年报或已核实业务事实。原件/解析/阅读器回执与截图保留。
+- 桌面/手机阅读器及单元格高亮通过；body/dialog 375、viewport 390，表格内部滚动不溢出页面。自身验证通过，等待 S13/S14 依赖结清；QA 服务/标签、测试 PG 已清理，公共服务未动。
 
 ### E-REVIEW-01：S01—S10 四项缺陷修复与回归
 
@@ -233,6 +267,13 @@ E-Sxx-01 / 日期 / 会话标识：
 ```
 
 ## 会话历史
+
+### 2026-10-19-s11-s15 / 实现与机器验收交接
+
+- 用户授权实现 S11—S15；按原计划和起点 ea9ce25 承接，没有子 Agent、没有进入 S16。交付执行检查点/工具/核验/报告/人工验收、同一 Worker、追加迁移、API/SSE、工作台及阅读器，规则与入口同步。代码和本轮相关文档一并提交，原件/截图/日志/校准与模型凭据不进 Git。
+- E-S11-01—E-S15-01 保存最终单测/29 项真实 PG、校准 8/8、完整真实案例 24 次/6 金额/3 问、缺后期资料 partial，以及桌面/手机/原文/安全/事件恢复。七轮开发失败保留，费用 unknown；最终执行与审查代码有精确源码身份。既有模块门/Quality 暂缓不变，未全量构建、未部署或迁移应用库。
+- S11/S12 标 done；S13 新报告人工核查仍 pending。S14/S15 实现与自身 QA 通过，但依赖 S13，保留 in_progress，总数 12/20。具体材料为最终 S13/human-review.md，已发核查请求；不能代签或用旧 S02 确认充当通过。
+- 全部自建 PG 容器、QA server 与临时浏览器标签已清理，viewport 已恢复；共享服务未动。下一动作只承接用户针对新报告的确认/问题并结清 S13—S15，不自动执行 S16。
 
 ### 2026-10-19-review-fixes / E-REVIEW-01
 

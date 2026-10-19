@@ -50,10 +50,11 @@ describe.skipIf(process.env.COMPANY_RESEARCH_TEST_POSTGRES !== '1')('review regr
     expect(await getResearchReportRevision(actor, task.id, 1, ctx)).toBeNull();
   });
   it('publishes a restated prior-year fact only with real located period evidence', async () => {
-    const task = await create(), source = await attach(task.id, task.spec, 'restated', task.spec.periods[1], '<p>2023年（调整后）</p><p>经营现金流 100.00 元</p>');
+    const task = await create(), source = await attach(task.id, task.spec, 'restated', task.spec.periods[1], '<p>2023年（调整后）</p><p>经营活动产生的现金流量净额 100.00 元</p>');
     const report = reportFixture(task.id);
     Object.assign(report.facts[0], { period: task.spec.periods[0], restatement: 'restated', accountingBasis: 'restatement-2024', value: { status: 'known', raw: '100.00', unit: 'yuan', currency: 'CNY', decimals: 2 }, citations: [source.citation(2)], periodEvidence: [source.citation(1)] });
     report.claims[0].citations = [source.citation(2)];
+    report.claims[0].status = 'evidence_gap'; report.claims[0].reason = '本用例只验证金额及重述期间，未做语义审查';
     const attempt = await startResearchAttempt(actor, task.id, 1, 'review-test', ctx);
     await expect(commitResearchReport(actor, attempt, 0, { ...report, facts: [{ ...report.facts[0], periodEvidence: [] }] }, ctx)).rejects.toThrow('CITATION_PERIOD_MISMATCH');
     const forged = structuredClone(report); forged.facts[0].periodEvidence![0].quote = '2023年（伪造列头）';
@@ -76,6 +77,7 @@ describe.skipIf(process.env.COMPANY_RESEARCH_TEST_POSTGRES !== '1')('review regr
     const current = input('h1', '250', h1Period, h1.citation(1)), preceding = input('q1', '100', q1Period, q1.citation(1));
     const quarter = deriveSingleQuarter(current, preceding);
     report.facts = [quarter]; report.supportingFacts = [current, preceding]; report.claims[0].factIds = [quarter.id]; report.claims[0].citations = quarter.citations;
+    report.claims[0].status = 'evidence_gap'; report.claims[0].reason = '本用例只验证确定性派生，未做语义审查';
     const attempt = await startResearchAttempt(actor, task.id, 1, 'review-test', ctx);
     const forged = structuredClone(report); forged.facts[0].value = { status: 'known', raw: '151', unit: 'yuan', currency: 'CNY', decimals: 0 };
     await expect(commitResearchReport(actor, attempt, 0, forged, ctx)).rejects.toThrow('DERIVED_FACT_MISMATCH');

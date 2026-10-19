@@ -1,10 +1,10 @@
 # 公司研究
 
-入口 `/company-research`。独立的 PI 研究任务从 DeepSeek Search/Fetch、PDF 与财务接口取得资料，研究主营业务、上下游及近期财报。报告和任务不依赖生成项目或 Next.js 构建。
+入口 `/company-research` 是双期财报变化工作台，研究收入利润、现金流解释与风险变化，并可点击金额/结论读取保留原文。原主营业务、上下游研究及旧报告位于 `/company-research/legacy`；旧的 `?run=` 链接会跳转到该入口。两条链路共享 PI 和研究 Worker，报告和任务不依赖生成项目。
 
 ## 本地启动
 
-1. 执行 `npx prisma migrate deploy` 应用已有迁移。旧研究链路使用四张 `company_research_*` 表，财报变化基础层另加七张版本表。
+1. 在已确认的本地开发数据库执行 `npx prisma migrate deploy` 应用迁移。旧研究链路保留四张表；财报变化使用七张版本表及索引、语义回执、人工验收表。本轮新增迁移 `20261019130000_research_execution`；生产按发布规范处理。
 2. 在不提交的 `.env.local` 配置研究模型的 `COMPANY_RESEARCH_API_KEY` 与 DeepSeek 官方密钥 `COMPANY_RESEARCH_SEARCH_API_KEY`。搜索密钥未单独设置时复用 `DEEPSEEK_API_KEY`。
 3. 默认网关为 `https://sub2api.380001.xyz/v1`，模型为 `gpt-5.6-luna`，推理强度为 `max`。可通过 `COMPANY_RESEARCH_BASE_URL`、`COMPANY_RESEARCH_MODEL`、`COMPANY_RESEARCH_REASONING` 指定服务端配置，推理强度支持 `high` / `max`，按配置原样发送；不自动降级模型。2026-10-18 本机按用户指定切换为 `gpt-6.1-sol` / `high`，凭据保存在已忽略的 `.env.local`。
 4. `npm run dev` / `npm run dev:background` 自动管理研究 worker。也可单独运行 `npm run worker:research`；单任务运行用 `npm run worker:research:once`。
@@ -120,7 +120,7 @@ HTML `source-ranges-v2` 将块间换行计入字符预算，单页最多 50 万�
 
 ### 任务证据检索与分段读取（S10）
 
-`POST /api/company-research/tasks/{id}/evidence` 接收 `{operation:"search",input:{query:"经营现金流变化",topK:5}}`，或 `{operation:"read",input:{documentId,documentVersion,locator,offset:0,maxCharacters:2000}}`。需要同源请求及 research.report.read 权限，响应为 private/no-store；可信 actor 与任务固定在服务端，不能由工具输入指定。`researchEvidenceReader(actor,taskId)` 提供相同的 search/read 接口，S11 再注册到 Agent 循环；旧 Worker 当前不会自动使用它。
+`POST /api/company-research/tasks/{id}/evidence` 接收 `{operation:"search",input:{query:"经营现金流变化",topK:5}}`，或 `{operation:"read",input:{documentId,documentVersion,locator,offset:0,maxCharacters:2000}}`。需要同源请求及 research.report.read 权限，响应为 private/no-store；可信 actor 与任务固定在服务端，不能由工具输入指定。`researchEvidenceReader(actor,taskId)` 提供相同的 search/read 接口，新财报执行器已将其注册到现有 PI 循环。
 
 搜索先裁掉其他 actor、公司、不在任务及必要累计输入范围内的完整期间、未来或披露未知的资料，再选每个来源的最新合格时间版本。新版本 unreadable 不会被旧解析成功覆盖。可选 periodIds（最多 2）、documentIds（最多 100）缩小语料；fields 可选 revenue/parent_profit/cash_flow/risk（至少 1、最多 4），在评分前筛选块字段/风险章节。字段来自原文及相邻文本行的词法识别，是检索提示，不能当作已核实 FinancialFact。原件/解析/index 缓存读取均先校验 actor 和持久化元数据，命中缓存不跳过权限。
 
@@ -139,3 +139,28 @@ query 为 1—300 字符；topK 为 1—20，默认 5；maxOutputCharacters 为 
 人工对照已保存半年报第 7 页：营业收入 9,707,078,578 元、归母净利润 904,848,549 元、经营现金流净额 1,199,704,896 元，同比为 14.04%、22.25%、-17.26%。年报产品收入和上下游表已读取并引用。实名客户/供应商不在本次已核实结论内；完成状态不等于已核实全部补充信息，也不等于逐句语义自动证明。
 
 定向验证：50 项 TypeScript 测试（含数据库隔离、检查点、SSE 事件序列、真实 PI schema 重试和硬截止模拟）、41 项 Python 测试通过。页面刷新保留步号、来源和草稿。本地交付，不含生产部署。
+
+## 双期财报执行、报告与阅读器
+
+创建任务先保存 draft；`POST /api/company-research/tasks/{id}/start` 生成公开三问计划并入队。Worker 在旧研究和新任务间交替领取，按期刷新租约；过期接管读取公开检查点，不恢复模型的隐藏对话。开始时间、40 次工具与 20 分钟默认预算属于逻辑任务，接管不会重置。连续四次同参数且没有事实变化的调用会停止并保留 partial。
+
+事实来自受授权原始财报，金额换算和比较由 decimal-v1 完成。发布同时校验身份、时间、引用原文、金额/单位/列归属与逐条语义审查。复杂多列归属不明确时需要修复，不能只凭数字在页面出现就通过。OCR 待复核仍不能成为 known。
+
+语义审查通过独立调用执行，当前使用同一个配置模型，明确标为 separate_call_same_model。先运行 `node --import tsx scripts/research/calibrate-reviewer.ts` 生成开发资料校准回执，再在服务端环境将 `COMPANY_RESEARCH_REVIEW_CALIBRATION` 指向该回执并重启需要加载配置的 Worker。回执绑定模型与 reviewer prompt hash；没有有效回执时，引用检查通过的结论仍保留语义待审，报告为 partial。校准是开发集有限反例检查，不能作为整体语义准确率。
+
+报告的 completed 表示机器核验完成。工作台另有人工验收记录，只有用户亲自核对数字和解释后提交，按 report revision/hash 绑定；模型工具不能执行这个动作。draft、partial、机器核验完成和人工验收分别显示。原件、报告和审查回执不原地覆盖。
+
+| API | 行为 |
+| --- | --- |
+| `GET /api/company-research/tasks` | 当前用户最近 30 个版本化任务 |
+| `POST /api/company-research/tasks/{id}/start` | `expectedPlanRevision`；重复入队复用已有计划 |
+| `GET /api/company-research/tasks/{id}` | 权威快照，含计划、公开检查点、资料、报告、变化表和核验信息 |
+| `GET /api/company-research/tasks/{id}/events` | SSE；每次连接先发送 snapshot，research 事件使快照失效，后续快照恢复完整状态 |
+| `GET /api/company-research/tasks/{id}/source` | `reportRevision`（0 为公开草稿）、`claimId` 或 `factId`、`citationIndex`；读取原引用的明确版本/hash |
+| `POST /api/company-research/tasks/{id}/accept` | 用户人工验收；传 `reportRevision`、`reportHash`、`checkedNumbersAndExplanations:true` |
+
+所有接口从认证 actor 派生归属。source 不接受任意 actor 或任意磁盘路径；历史原文不跟随最新索引切换。阅读器只渲染文本和结构化表格，外链过滤协议；逐字匹配才标黄，没有坐标时明确使用页/块/文本定位。派生扫描验收样本的 needs_review、未知披露时间必须保留。当前未采用 AG-UI SDK，也不声称协议兼容。
+
+执行 `npm run test:research:postgres` 会创建专用临时 PostgreSQL，演练旧库升级、重复迁移、旧代码兼容及新链路测试；不会迁移应用数据库。追加 `-- --financial-e2e` 才调用当前真实模型，对固定茅台双期公开 PDF 运行完整语料/缺后期资料两例，并核对历史 OCR 输出的阅读器。需要受控开发资料与校准回执，费用未知；固定资料运行不等于实时公告发现全链路验收。原始结果在 `data/research-agent-upgrade/evidence/S13/`，开发步骤状态以升级目录 progress 为准。
+
+页面组件验证可运行 `node scripts/research/serve-financial-workbench.js data/research-agent-upgrade/evidence/S13/<运行目录>`。可追加一个 PG 测试生成的 `data/research-agent-upgrade/evidence/S15/<批次>/reader-fixture.json`，检查恶意文本/链接作为数据渲染；追加 `--stream-replay` 会增加明确标注的合成事件任务，主动制造断线、重复、乱序和终态，供真实浏览器验证重连/切换。它只在回环地址启动只读 QA 页面，使用真实工作台组件、Tailwind 和已保存 repository 响应，Next Link 有测试替身；不等于完整 Next/auth/live Worker E2E，不写验收状态或调用模型。关闭该命令结束 QA 服务。当前实跑及限制见 [S11—S15 验收证据](plans/research-agent-upgrade/s11-s15-validation.md)。

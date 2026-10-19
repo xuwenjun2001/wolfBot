@@ -47,8 +47,18 @@ partial 明确缺口，不冒充 completed。completed 不能有未解缺口，�
 
 ## 状态与事件
 
-首版新 task 从 draft 创建；S11 才接入调度执行，旧 Worker 不领取新表。后续合法路径为 draft → queued → running → completed/partial/failed/cancelled。取消保留原件和已有交付；重试使用新 attempt 与递增 generation。恢复继承逻辑 usage，不复播隐藏推理。
+首版新 task 从 draft 创建；start API 建立初始三问计划并入队，现有研究 Worker 在旧 run 和新 task 间交替领取。合法路径为 draft → queued → running → completed/partial/failed/cancelled。取消保留原件和已有交付；过期接管使用新 attempt 与递增 generation。恢复继承逻辑 usage，不复播隐藏推理；已耗尽预算的接管只封存 partial，不能再调用模型。
 
-事件 envelope 固定 taskId、sequence、request/plan/report revision、attemptId、generation、时间和公开业务 payload。task.created、plan.created、document.registered、attempt.started/finished、report.created、task.cancelled 是当前子集；没有隐藏 reasoning 字段。未来 UI 使用快照加有序事件恢复，AG-UI 适配仍留在 S14。
+事件 envelope 固定 taskId、sequence、request/plan/report revision、attemptId、generation、时间和公开业务 payload。task.created、task.queued、plan.created、document.registered、research.progress、attempt.started/finished、report.created、task.cancelled 是当前子集；没有隐藏 reasoning 字段。SSE 每次连接首先发送权威 snapshot，事件仅使状态失效，后续快照恢复完整数据。客户端拒绝旧任务、旧 generation 和倒退序号；切换任务撤销请求并关闭旧连接。当前采用原生 SSE，不声明 AG-UI 协议兼容。
+
+## 执行、审查与人工验收
+
+checkpoint v1 保存公开计划进度、事实、结论、有界来源观察、覆盖检查摘要及停止原因。写入与报告提交均受同一 attempt 的租约和 generation 约束；模型请求前预留未知 usage，收到有效回执后再结算。公开模型上下文从 checkpoint 重建，引用预览截断会显式标记，完整原文继续按 locator 读取。工具 schema 使用输入语义，省略带默认值的参数不会在 PI 层被误拒绝。
+
+逐 claim 的语义回执绑定 task/request/plan/asOf、该结论和其依赖事实的 hash；修复其他结论不使无关回执失效。数字检查、引用原文和语义支持分别判定，直接调用报告 repository 也要通过这些门。当前 calibrated reviewer 为同模型单独调用，记录模型、提示词校准与真实独立性；无校准、冲突或不足都不能升级为 supported。复杂原生多列、未经业务复核的 OCR 仍保留缺口。
+
+报告 method 可选，存量报告不要求补填。新报告保存模型、Skill、工具、合同与资料 hash；三问和六项金额覆盖的分母固定。自动 completed 表示机器核验完成；人工验收由认证用户显式确认数字和解释，绑定不可变 revision/hash 并另存表，不改写报告，也不注册为模型工具。旧参考答案的人工确认不等于新生成报告已被用户验收。
+
+source API 从所选报告 revision 或公开草稿（0）的 fact/claim 引用解析原文，不接受任意路径、用户或“最新版本”替换。先授权，再按文档版本/hash 取解析产物并重新核对 quote。阅读器按 React 文本和表格呈现，仅逐字匹配高亮；无坐标提示使用文本定位，OCR needs_review 和未知披露状态保留。外部链接仅展示不含凭据的 http/https URL，原件下载仍走授权接口。
 
 S04 行为测试覆盖旧合同读取、未知版本、完整请求摘要、非法证券/期间、不可比较、披露精度、0/缺失、引用版本/hash/页/原文、partial 门和不同版本计数。模型质量、OCR、检索和 UI 不在本步验证范围。

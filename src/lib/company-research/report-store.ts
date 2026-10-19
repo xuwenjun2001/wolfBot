@@ -6,6 +6,7 @@ import { parsedPageReceiptSchema } from './document-store';
 import { locatedCitationText } from './citation-locator';
 import type { ParsedDocument } from './parsed-document';
 import { factCitations } from './financial-evidence';
+import { numericFactErrors, semanticPublicationErrors, semanticReviewSchema } from './claim-verification';
 import { assertResearchAttempt, type ResearchAttemptToken } from './attempt-store';
 import { defaultResearchContext, lockResearchTask, taskSpec, emitResearchEvent, ResearchPersistenceError } from './repository-core';
 
@@ -45,6 +46,11 @@ export async function commitResearchReport(actor: string, token: ResearchAttempt
       // Legacy receipts can prove a page quote only; they cannot prove invented block/table IDs.
       return receipt ? locatedCitationText(receipt, citation) : citation.locator.kind === 'page' ? text.get(`${citation.documentId}:${citation.documentVersion}:${citation.locator.filePage}`) : undefined;
     });
+    for (const fact of allFacts) errors.push(...numericFactErrors(fact, documents, c => c.locator.kind === 'html'
+      ? rich.get(`${c.documentId}:${c.documentVersion}`)?.pages.map(p => p.text).join('\n')
+      : text.get(`${c.documentId}:${c.documentVersion}:${c.locator.filePage}`)));
+    const reviews = await tx.$queryRaw<{review: unknown}[]>`SELECT review FROM company_research_claim_reviews WHERE task_id=${task.id}`;
+    errors.push(...semanticPublicationErrors(report, reviews.map(r => semanticReviewSchema.parse(r.review))));
     if (errors.length) throw new ResearchPersistenceError('INVALID_RESEARCH', errors.join('; '));
     // Artifact I/O can outlive a nearly expired lease. Fence again at publication.
     await assertResearchAttempt(tx, task, token);

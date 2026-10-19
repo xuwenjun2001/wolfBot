@@ -27,6 +27,8 @@
 
 S10 的 `prisma/migrations/20261019020000_research_evidence_indexes/` 追加不可变证据索引表，外键绑定文档版本及解析 hash；同样经 migrate deploy，不在 bootstrap 重复执行。演练覆盖旧库升级、重复 deploy、旧代码兼容和索引权限/不可变性；显式原生 PostgreSQL 备用模式见公司研究专题。本轮只在专用临时库验证，没有对应用/生产库部署该迁移。
 
+S11—S15 的 `20261019130000_research_execution` 追加 tasks.checkpoint、不可变 claim 审查回执和显式报告人工验收表。执行恢复沿用原累计预算与截止时间。仍通过独立 PG 演练；建立迁移文件不表示应用或生产库已经迁移。
+
 | 组件 | 表 |
 | --- | --- |
 | 项目与对话 | `projects`、`messages`、`sessions`、`tool_usages`、`user_requests` |

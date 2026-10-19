@@ -334,12 +334,16 @@ running -> failed
 | `company_research_attempts` | 独立 execution id，引用 request/plan；task 内 generation 唯一、running 部分唯一索引；worker、租约、终态与时间 |
 | `company_research_report_versions` | task + revision 主键；同时约束 plan/request 与 attempt/generation 关系；事实、引用、缺口的不可变 JSON 快照 |
 | `company_research_version_events` | task + sequence 主键；版本化公开 envelope，可用于有序重放，不保存隐藏推理 |
+| `company_research_claim_reviews` | task + claim_hash 主键；不可变逐条语义回执，绑定结论、引用及依赖事实、模型/prompt 校准依据与独立性 |
+| `company_research_report_acceptances` | task + report_revision 主键、外键指向不可变报告；认证用户显式确认的 report_hash 和 reviewed_at，不由模型写入 |
 
 需求、计划、文档、报告和事件表有禁止 UPDATE 的数据库触发器。取消只失效执行权并保留原件/报告。资料正文在 `data/company-research/artifacts/` 按 actor 摘要分区，每次授权读取后再验 hash；未引用对象不自动清理。token 未知用 NULL，不能当作零成本。详情与边界见 [公司研究](company-research.md)、[合同](plans/research-agent-upgrade/contracts.md)。
 
 索引也禁止 UPDATE，版本为 zh-context-bm25-v4；对象保存块词频、长度、财务字段、章节特征及来源/解析 hash。表格行使用各自正文及公共表头，旧 v3 对象保留但不复用。改解析或索引算法需新版本，不原地覆盖。缓存命中仍核对任务归属和完整文档元数据；公司、期间、asOf 过滤在原文/索引读取前完成。外键级联删除只处理元数据，文件没有自动 GC；研究资料备份与保留见 [数据生命周期](data-lifecycle.md)。
 
 报告 JSON 可选 supportingFacts 保存累计转单季的原始输入；最终事实的 derivedFrom 按当前/前期顺序引用其 ID。FinancialFact 可选 periodEvidence 保存后续报告中前期重述值的列头/年份原文引用，文档报告期仍记录真实报告期间。这些为应用 JSON 合同扩展，不新增 SQL 列；存量报告仍可读取，发布重新核对输入范围、派生算术、来源质量与时点。
+
+S11—S15 的追加迁移 `20261019130000_research_execution` 在 tasks 增加有界公开 checkpoint，并建立上述审查/验收表及队列索引。checkpoint 仅含计划进度、事实、结论、来源观察和停止原因，不保存模型隐藏推理。报告可选 method 记录模型/Skill/工具/合同与资料 hash；自动 completed 与人工验收相互独立。请求前预留 unknown_model_requests，收到可用 usage 后结算；中断请求保持未知，不能把恢复后的计数当作完整账单。
 
 ## 维护规则
 

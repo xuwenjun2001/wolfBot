@@ -6,7 +6,7 @@
 
 ## 服务边界
 
-公司研究的旧 `/api/company-research/runs` 保持原有单公司合同。财报变化 v1 基础层新增 `POST /api/company-research/tasks`（创建私有 draft）、`GET /tasks/{id}`、`POST /tasks/{id}/cancel`、`GET /tasks/{id}/reports/{revision}` 和 `GET /tasks/{id}/documents/{documentId}/{version}`（可通过 content=original/parsed 下载）。这些路径均在 `/api/company-research` 下，按 `research.report.run/read` 与可信 actor 过滤；S05 只建立版本持久化，不调度新研究。参数、版本和错误边界见 [公司研究](company-research.md) 与 [合同](plans/research-agent-upgrade/contracts.md)。
+公司研究的旧 `/api/company-research/runs` 保持原有单公司合同。财报变化 v1 使用 `/api/company-research/tasks`：POST 创建私有 draft、GET 列出当前用户任务；`POST /tasks/{id}/start` 入队，`GET /tasks/{id}` 读取权威快照，`GET /tasks/{id}/events` 通过 SSE 恢复；cancel、reports/{revision}、documents/{documentId}/{version} 分别取消和读取历史版本，原件下载使用 content=original。`GET /tasks/{id}/source` 从指定报告的 fact/claim 引用定位原文，`POST /tasks/{id}/accept` 只记录用户显式人工验收。全部路径按 `research.report.run/read` 和认证 actor 过滤，参数、版本与错误边界见 [公司研究](company-research.md) 与 [合同](plans/research-agent-upgrade/contracts.md)。
 
 资料入口另有 `GET/POST /tasks/{id}/documents`（发现/导入）、`POST /tasks/{id}/documents/{documentId}/{version}/parse`（追加解析版本），以及 `POST /tasks/{id}/evidence`。evidence 接收 operation=search/read 和各自严格 input：先检查权限、公司/完整期间/asOf，再做词法检索或按 locator 分段读原文；query、fields、topK 和输出均有界，不能传入 actor/asOf 改变作用域。返回私有 no-store，工具接入 Agent 循环留在 S11。实际参数与资源限制见公司研究 S06—S10。
 

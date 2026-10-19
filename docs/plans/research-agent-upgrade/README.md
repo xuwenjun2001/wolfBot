@@ -31,6 +31,7 @@
 | [human-annotation.md](human-annotation.md) | 人工标注的数据范围、原文核对流程、判定标签与结果保存方式 |
 | [human-annotation-worksheet.md](human-annotation-worksheet.md) | 四家公司待审核数值、32 条引文、逐题答案与人工填写模板 |
 | [contracts.md](contracts.md) | S04 版本、引用和执行权语义 |
+| [s11-s15-validation.md](s11-s15-validation.md) | 双期 Agent/工作台交付、G0 实跑、失败实验与界面验证证据 |
 
 会话历史直接追加在 `progress.md`，避免再维护一份不同步的日志。详细测试原件保存在受控证据目录，进度文件保留脱敏摘要、位置、版本和 hash。
 

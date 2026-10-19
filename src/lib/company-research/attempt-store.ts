@@ -13,12 +13,19 @@ export async function assertResearchAttempt(tx: ResearchTransaction, task: Resea
 export async function startResearchAttempt(actor: string, id: string, expectedPlanRevision: number, worker: string, ctx = defaultResearchContext) {
   z.number().int().min(1).parse(expectedPlanRevision); z.string().min(1).max(200).parse(worker);
   return ctx.db.$transaction(async tx => {
-    const task = await lockResearchTask(tx, actor, id), spec = await taskSpec(tx, task);
+    const task = await lockResearchTask(tx, actor, id);
+    return startResearchAttemptInTransaction(tx, task, expectedPlanRevision, worker);
+  });
+}
+export async function startResearchAttemptInTransaction(tx: ResearchTransaction, task: ResearchTaskRow, expectedPlanRevision: number, worker: string, allowExhausted = false) {
+    z.string().min(1).max(200).parse(worker);
+    const id = task.id, spec = await taskSpec(tx, task);
     if (task.cancel_requested || ['completed','cancelled'].includes(task.status)) throw new ResearchPersistenceError('LEASE_LOST');
     if (task.plan_revision !== expectedPlanRevision) throw new ResearchPersistenceError('REVISION_CONFLICT');
     const [{ now }] = await tx.$queryRaw<{now: Date}[]>`SELECT clock_timestamp() AS now`;
     const started = task.started_at || now, deadline = task.deadline || new Date(started.getTime() + spec.budget.timeoutMs);
-    if (task.tool_calls >= spec.budget.maxToolCalls || deadline <= now) throw new ResearchPersistenceError('BUDGET_EXHAUSTED');
+    // Dispatch may take an exhausted stale attempt only to seal an honest partial report.
+    if (!allowExhausted && (task.tool_calls >= spec.budget.maxToolCalls || deadline <= now)) throw new ResearchPersistenceError('BUDGET_EXHAUSTED');
     if (task.active_attempt_id) {
       const [prior] = await tx.$queryRaw<{lease_until: Date; status: string}[]>`SELECT lease_until,status FROM company_research_attempts WHERE id=${task.active_attempt_id} AND task_id=${id}`;
       if (prior?.status === 'running' && prior.lease_until > now) throw new ResearchPersistenceError('TASK_ACTIVE');
@@ -35,7 +42,6 @@ export async function startResearchAttempt(actor: string, id: string, expectedPl
     await emitResearchEvent(tx, task, { type: 'attempt.started' }, attemptId);
     return executionAttemptSchema.parse({ schemaVersion: 1, id: attemptId, taskId: id, requestRevision: task.request_revision, planRevision: task.plan_revision,
       generation, worker, status: 'running', leaseUntil: until.toISOString(), startedAt: now.toISOString(), finishedAt: null });
-  });
 }
 export async function heartbeatResearchAttempt(actor: string, token: ResearchAttemptToken, ctx = defaultResearchContext) {
   return ctx.db.$transaction(async tx => {

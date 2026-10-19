@@ -123,3 +123,9 @@ OCR 原生环境、模型准备与实际服务验证见 [parser README](../../..
 改变 API、配置、数据、页面或运行行为时更新对应专题；本目录只保存计划/实施证据，不复制整套现有使用手册。开发文档使用仓库相对路径便于迁移，面向用户回复使用可点击绝对文件路径。
 
 演示与简历只采用实际实现和可复核结果。保留失败原因、样本量、配置和局限。生产部署或数据同步需遵守对应 release/data 规范；S20 的开发验收不自动触发生产操作。
+
+## S11—S15 开发验证入口
+
+新财报执行器为 `src/lib/company-research/financial-runtime.ts`；工具、公开检查点、核验、确定性组装、阅读器各自独立文件。UI 位于 `src/app/company-research/financial/`，旧报告入口独立保留。不要把业务规则回填 PI 内核。
+
+普通定向回归使用 `npm run test:unit -- src/lib/company-research src/app/api/company-research/tasks src/app/company-research/financial`；真实 PG 使用 `npm run test:research:postgres`。真实模型校准与固定 PDF E2E 的额外条件、命令和局限见公司研究专题。模型、提示词或观察摘要改变后重跑相关验收，并保留失败实验与每个逻辑任务原始预算，不能覆写首轮结果或把人工参考答案当作新报告人工签字。

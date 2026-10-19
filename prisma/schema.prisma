@@ -1550,6 +1550,7 @@ model CompanyResearchTask {
   inputTokens Int? @map("input_tokens")
   outputTokens Int? @map("output_tokens")
   unknownModelRequests Int @default(0) @map("unknown_model_requests")
+  checkpoint Json?
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   startedAt DateTime? @map("started_at") @db.Timestamptz
   deadline DateTime? @db.Timestamptz
@@ -1559,9 +1560,31 @@ model CompanyResearchTask {
   attempts CompanyResearchAttempt[]
   reports CompanyResearchReportVersion[]
   versionEvents CompanyResearchVersionEvent[]
+  claimReviews CompanyResearchClaimReview[]
+  reportAcceptances CompanyResearchReportAcceptance[]
   @@unique([actorId, requestKey])
   @@index([actorId, createdAt], map: "company_research_task_owner")
+  @@index([status, createdAt], map: "company_research_tasks_dispatch")
   @@map("company_research_tasks")
+}
+model CompanyResearchClaimReview {
+  taskId String @map("task_id")
+  claimHash String @map("claim_hash")
+  review Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  task CompanyResearchTask @relation(fields: [taskId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  @@id([taskId, claimHash])
+  @@map("company_research_claim_reviews")
+}
+model CompanyResearchReportAcceptance {
+  taskId String @map("task_id")
+  reportRevision Int @map("report_revision")
+  reportHash String @map("report_hash")
+  reviewedAt DateTime @default(now()) @map("reviewed_at") @db.Timestamptz
+  task CompanyResearchTask @relation(fields: [taskId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  report CompanyResearchReportVersion @relation(fields: [taskId, reportRevision], references: [taskId, revision], onDelete: Cascade, onUpdate: NoAction)
+  @@id([taskId, reportRevision])
+  @@map("company_research_report_acceptances")
 }
 model CompanyResearchRequest {
   taskId String @map("task_id")
@@ -1650,6 +1673,7 @@ model CompanyResearchReportVersion {
   task CompanyResearchTask @relation(fields: [taskId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   plan CompanyResearchPlan @relation(fields: [taskId, planRevision, requestRevision], references: [taskId, revision, requestRevision], onDelete: Cascade, onUpdate: NoAction)
   attempt CompanyResearchAttempt @relation(fields: [taskId, attemptId, generation], references: [taskId, id, generation], onDelete: Cascade, onUpdate: NoAction)
+  acceptance CompanyResearchReportAcceptance?
   @@id([taskId, revision])
   @@map("company_research_report_versions")
 }

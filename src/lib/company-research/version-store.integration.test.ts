@@ -36,6 +36,9 @@ async function attachDocument(taskId: string) {
 }
 function reportFor(taskId: string, revision = 1) {
   const report = { ...reportFixture(taskId), revision };
+  // Persistence fixtures have no real amount/semantic evidence; S12 must not label them known/supported.
+  report.facts[0].value = { status: 'missing', reason: 'synthetic persistence fixture' };
+  report.claims[0].status = 'evidence_gap'; report.claims[0].reason = 'synthetic persistence fixture';
   report.facts.forEach(f => f.citations.forEach(c => { c.bytesSha256 = artifactDigest(original); }));
   report.claims.forEach(f => f.citations.forEach(c => { c.bytesSha256 = artifactDigest(original); }));
   return report;
@@ -113,6 +116,7 @@ describe.skipIf(!enabled)('versioned research PostgreSQL and controlled artifact
     await registerResearchDocument(actor, { ...base, state: 'partial', pageCount: 1, parser: { ...receipt.parser, failedPages: [], warnings: [] }, original: ref(original), bytesSha256: artifactDigest(original), parsed: ref(bytes) }, original, bytes, ctx);
     const report = reportFor(task.id);
     for (const c of [...report.facts.flatMap(f => f.citations), ...report.claims.flatMap(f => f.citations)]) Object.assign(c, { locator: receipt.pages[0].blocks[0].locator });
+    report.facts[0].value = { status: 'known', raw: '0', unit: 'yuan', currency: 'CNY', decimals: 2 };
     const attempt = await startResearchAttempt(actor, task.id, 1, 'ocr-verifier', ctx);
     await expect(commitResearchReport(actor, attempt, 0, report, ctx)).rejects.toThrow('FACT_SOURCE_NEEDS_REVIEW');
   });
