@@ -6,6 +6,7 @@ import { getResearchTask } from './version-store';
 import { registerResearchDocument } from './document-store';
 import { defaultResearchContext, assertActor, ResearchPersistenceError } from './repository-core';
 import { canonicalResearchJson } from './task-contracts';
+import type { ResearchAttemptToken } from './attempt-store';
 
 export async function listResearchDocuments(actor: string, taskId: string, ctx = defaultResearchContext) {
   assertActor(actor);
@@ -22,7 +23,7 @@ export async function discoverTaskFilings(actor: string, taskId: string, page: n
   const result = await discoverResearchFilings(task.spec, AbortSignal.any([signal, AbortSignal.timeout(60000)]), page);
   return { ...result, candidates: result.candidates.map(({ evidence, ...candidate }) => ({ ...candidate, evidenceSha256: artifactDigest(evidence), eligibility: documentEligibility(candidate, task.spec.asOf) })) };
 }
-export async function importTaskFiling(actor: string, taskId: string, input: unknown, signal: AbortSignal, ctx = defaultResearchContext) {
+export async function importTaskFiling(actor: string, taskId: string, input: unknown, signal: AbortSignal, ctx = defaultResearchContext, attempt?: ResearchAttemptToken) {
   const request = filingImportSchema.parse(input), task = await getResearchTask(actor, taskId, ctx);
   if (!task) throw new ResearchPersistenceError('NOT_FOUND');
   let candidate: FilingCandidate;
@@ -52,7 +53,7 @@ export async function importTaskFiling(actor: string, taskId: string, input: unk
     return { document: existing, eligibility: documentEligibility(existing, task.spec.asOf), reused: true };
   }
   await ctx.artifacts.put(actor, acquired.evidence);
-  try { await registerResearchDocument(actor, acquired.document, acquired.original, undefined, ctx); }
+  try { await registerResearchDocument(actor, acquired.document, acquired.original, undefined, ctx, attempt); }
   catch (error) {
     if (!(error instanceof ResearchPersistenceError) || error.code !== 'REVISION_CONFLICT') throw error;
     const latest = (await listResearchDocuments(actor, taskId, ctx)).filter(d => d.id === candidate.id).at(-1);

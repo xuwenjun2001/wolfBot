@@ -7,13 +7,14 @@ import { artifactDigest } from './artifact-store';
 import { parsedDocumentV2Schema, type ParsedDocument } from './parsed-document';
 import { NativePdfParser, HtmlTextParser, type ResearchParserPort } from './text-parser';
 import { configuredPdfParser } from './ocr-parser';
+import type { ResearchAttemptToken } from './attempt-store';
 
 export const parseRequestSchema = z.object({ engine: z.enum(['native', 'auto', 'docling', 'ocr']).default('auto'), maxPages: z.number().int().min(1).max(1000).default(500), maxCharacters: z.number().int().min(100).max(5_000_000).default(2_000_000) }).strict();
 /** Transient interruption/fallback is evidence, but must not suppress a later retry. */
 export function reusableParserResult(warnings: string[], failedPages: number[]) {
   return failedPages.length === 0 && !warnings.some(w => /^(?:cancelled_partial|timeout_partial|worker_stopped_partial|ocr_.*native_fallback)/.test(w));
 }
-export async function parseResearchDocument(actor: string, taskId: string, id: string, version: number, input: unknown, signal: AbortSignal, ctx = defaultResearchContext, adapter?: ResearchParserPort) {
+export async function parseResearchDocument(actor: string, taskId: string, id: string, version: number, input: unknown, signal: AbortSignal, ctx = defaultResearchContext, adapter?: ResearchParserPort, attempt?: ResearchAttemptToken) {
   const options = parseRequestSchema.parse(input), task = await getResearchTask(actor, taskId, ctx);
   if (!task) throw new ResearchPersistenceError('NOT_FOUND');
   const { document, bytes } = await readResearchDocumentArtifact(actor, taskId, id, version, 'original', ctx);
@@ -35,6 +36,6 @@ export async function parseResearchDocument(actor: string, taskId: string, id: s
   const next = { ...document, version: version + 1, state: output.status, pageCount: output.pageCount,
     parser: { ...output.parser, failedPages: output.failedPages, warnings: [...output.warnings, ...(output.truncatedPages.length ? [`truncated_pages:${output.truncatedPages.join(',')}`.slice(0, 500)] : [])] },
     parsed: { store: 'local' as const, key: digest, sha256: digest, byteLength: parsed.length } };
-  await registerResearchDocument(actor, next, bytes, parsed, ctx);
+  await registerResearchDocument(actor, next, bytes, parsed, ctx, attempt);
   return { document: next, reused: false };
 }

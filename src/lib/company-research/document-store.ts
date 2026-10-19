@@ -4,11 +4,12 @@ import { artifactDigest } from './artifact-store';
 import { researchDocumentSchema, type ResearchDocument } from './document-contracts';
 import { canonicalResearchJson } from './task-contracts';
 import { isResearchEvidencePeriod } from './evidence-periods';
+import { assertResearchAttempt, type ResearchAttemptToken } from './attempt-store';
 import { defaultResearchContext, lockResearchTask, taskSpec, emitResearchEvent, assertActor, ResearchPersistenceError } from './repository-core';
 
 // v1 stays readable. v2 binds page/block/table output to original bytes and parser configuration.
 export const parsedPageReceiptSchema = parsedReceiptSchema;
-export async function registerResearchDocument(actor: string, input: unknown, original: Buffer, parsed?: Buffer, ctx = defaultResearchContext) {
+export async function registerResearchDocument(actor: string, input: unknown, original: Buffer, parsed?: Buffer, ctx = defaultResearchContext, attempt?: ResearchAttemptToken) {
   const document = researchDocumentSchema.parse(input);
   if (artifactDigest(original) !== document.original.sha256 || original.length !== document.original.byteLength || (document.mediaType === 'application/pdf' && original.subarray(0, 5).toString() !== '%PDF-')) throw new ResearchPersistenceError('INVALID_RESEARCH', 'Original content mismatch');
   if (!!document.parsed !== !!parsed || (parsed && (artifactDigest(parsed) !== document.parsed!.sha256 || parsed.length !== document.parsed!.byteLength))) throw new ResearchPersistenceError('INVALID_RESEARCH', 'Parsed content mismatch');
@@ -19,6 +20,7 @@ export async function registerResearchDocument(actor: string, input: unknown, or
   }
   return ctx.db.$transaction(async tx => {
     const task = await lockResearchTask(tx, actor, document.taskId), spec = await taskSpec(tx, task);
+    if (attempt) await assertResearchAttempt(tx, task, attempt);
     if (document.provenance?.evidence) {
       await ctx.artifacts.read(actor, document.provenance.evidence);
       if (document.disclosure.status === 'verified' && document.disclosure.evidenceSha256 !== document.provenance.evidence.sha256) throw new ResearchPersistenceError('INVALID_RESEARCH', 'Disclosure evidence hash mismatch');
@@ -34,6 +36,8 @@ export async function registerResearchDocument(actor: string, input: unknown, or
     const [latest] = await tx.$queryRaw<{version: number}[]>`SELECT version FROM company_research_documents WHERE task_id=${task.id} AND id=${document.id} ORDER BY version DESC LIMIT 1`;
     if (document.version !== (latest?.version || 0) + 1) throw new ResearchPersistenceError('REVISION_CONFLICT');
     await ctx.artifacts.put(actor, original); if (parsed) await ctx.artifacts.put(actor, parsed);
+    // The lease can expire during artifact I/O; recheck inside the same locked transaction.
+    if (attempt) await assertResearchAttempt(tx, task, attempt);
     await tx.$executeRaw`INSERT INTO company_research_documents(task_id,id,version,bytes_sha256,original_key,parsed_key,state,metadata)
       VALUES (${task.id},${document.id},${document.version},${document.bytesSha256},${document.original.key},${document.parsed?.key || null},${document.state},${JSON.stringify(document)}::jsonb)`;
     await emitResearchEvent(tx, task, { type: 'document.registered', documentId: document.id, version: document.version });

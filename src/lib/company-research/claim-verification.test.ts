@@ -17,6 +17,30 @@ describe('layered publication and local repair', () => {
     expect(numericFactErrors(fact, [doc], () => page)).toContain('FACT_PERIOD_COLUMN_MISMATCH');
     fact.value.unit = 'ten_thousand_yuan'; expect(numericFactErrors(fact, [doc], () => page)).toContain('FACT_UNIT_UNVERIFIED');
   });
+  it('binds amounts to reversed year columns and rejects absent or ambiguous column headers', () => {
+    const { fact, doc } = fixture();
+    const check = (text: string, raw = '250.00') => {
+      fact.value = { status: 'known', raw, unit: 'yuan', currency: 'CNY', decimals: 2 };
+      fact.citations[0].quote = text;
+      return numericFactErrors(fact, [doc], () => text);
+    };
+    const reverse = '单位：元 2023年 2024年 经营活动产生的现金流量净额 100.00 250.00';
+    expect(check(reverse)).toEqual([]);
+    expect(check(reverse, '100.00')).toContain('FACT_PERIOD_COLUMN_MISMATCH');
+    for (const header of ['单位：元', '2024年年度报告 单位：元', '单位：元 2024年 2024年', '单位：元 2023年 2024年 调整前 调整后']) {
+      expect(check(`${header} 经营活动产生的现金流量净额 250.00 100.00`)).toContain('FACT_PERIOD_COLUMN_MISMATCH');
+    }
+    expect(check('单位：元 2023年 2024年 经营活动产生的现金流量净额 100.00 营业收入 250.00')).toContain('FACT_PERIOD_COLUMN_MISMATCH');
+  });
+  it.each(['(250.00)', '（２５０．００）', '-250.00', '−250.00'])('preserves the sign in %s and compares complete amount tokens', amount => {
+    const { fact, doc } = fixture(), text = `单位：元 2024年 2023年 经营活动产生的现金流量净额 ${amount} 100.00`;
+    fact.citations[0].quote = text;
+    fact.value = { status: 'known', raw: '-250.00', unit: 'yuan', currency: 'CNY', decimals: 2 };
+    expect(numericFactErrors(fact, [doc], () => text)).toEqual([]);
+    fact.value.raw = '250.00';
+    expect(numericFactErrors(fact, [doc], () => text)).toContain('FACT_PERIOD_COLUMN_MISMATCH');
+    expect(numericFactErrors(fact, [doc], () => text)).toContain('FACT_QUOTED_NUMBER_MISMATCH');
+  });
   it.each(['company', 'period', 'quote', 'future'] as const)('rejects %s binding errors before semantics', kind => {
     const { report, doc } = fixture();
     if (kind === 'company') doc.company = { ...doc.company, symbol: '600036.SH' };

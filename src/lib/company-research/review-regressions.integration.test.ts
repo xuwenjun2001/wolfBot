@@ -66,8 +66,8 @@ describe.skipIf(process.env.COMPANY_RESEARCH_TEST_POSTGRES !== '1')('review regr
     const spec = researchTaskSpecSchema.parse({ ...specFixture(), periods: [2023, 2024].map(y => ({ id: `${y}Q2`, start: `${y}-04-01`, end: `${y}-06-30`, kind: 'quarter', basis: 'single_quarter' })) });
     const task = await create(spec), periods = researchEvidencePeriods(spec);
     const h1Period = periods.find(p => p.id === 'ytd_2024_06')!, q1Period = periods.find(p => p.id === 'ytd_2024_03')!;
-    const h1 = await attach(task.id, spec, 'half-year', h1Period, '<p>经营活动产生的现金流量净额 250.00 元</p>');
-    const q1 = await attach(task.id, spec, 'first-quarter', q1Period, '<p>经营活动产生的现金流量净额 100.00 元</p>');
+    const h1 = await attach(task.id, spec, 'half-year', h1Period, '<p>2024年1—6月 经营活动产生的现金流量净额 250.00 元</p>');
+    const q1 = await attach(task.id, spec, 'first-quarter', q1Period, '<p>2024年1—3月 经营活动产生的现金流量净额 100.00 元</p>');
     await expect(attach(task.id, spec, 'unrelated', { id: 'fy2024', start: '2024-01-01', end: '2024-12-31', kind: 'annual', basis: 'cumulative' }, '<p>不相关资料</p>')).rejects.toThrow('Document task/company/period mismatch');
     const search = await searchResearchEvidence(actor, task.id, { query: '现金流', periodIds: [h1Period.id, q1Period.id] }, ctx);
     expect(search.scopedDocumentCount).toBe(2); expect(new Set(search.hits.map(h => h.periodId))).toEqual(new Set([h1Period.id, q1Period.id]));

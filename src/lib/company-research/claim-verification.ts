@@ -5,6 +5,7 @@ import { canonicalResearchJson } from './task-contracts';
 import { artifactDigest } from './artifact-store';
 import { monetaryUnit } from './financial-normalization';
 import { decimal, decimalText } from './exact-decimal';
+import { evidenceAmounts, financialLabels, numericEvidenceText, yearAmountColumn } from './numeric-evidence';
 
 export const semanticReviewSchema = z.object({
   version: z.literal('claim-review-v1'), claimHash: z.string().length(64),
@@ -20,11 +21,6 @@ export function claimReviewHash(report: Pick<ResearchReportRevision, 'taskId' | 
     asOf: report.asOf, claim, facts: report.facts.filter(f => claim.factIds.includes(f.id)) }));
 }
 export const normalEvidence = (v: string) => v.normalize('NFKC').replace(/\s+/gu, '');
-const labels: Record<FinancialFact['metric'], RegExp> = {
-  revenue: /(?<!总)营业收入/, total_operating_income: /营业总收入/,
-  parent_net_profit: /归属于(?:上市公司|母公司)股东的净利润/,
-  operating_cash_flow: /经营活动(?:产生的)?现金流量净额/,
-};
 /** Conservative native-table check. Ambiguous columns require repair, never guessed approval. */
 export function numericFactErrors(fact: FinancialFact, documents: ResearchDocument[], page: (citation: VersionedCitation) => string | undefined): string[] {
   if (fact.value.status !== 'known' || fact.derivedFrom) return [];
@@ -34,22 +30,23 @@ export function numericFactErrors(fact: FinancialFact, documents: ResearchDocume
     const original = page(citation) || '', quote = normalEvidence(citation.quote);
     if (!document || !original || !normalEvidence(original).includes(quote)) { errors.push('FACT_ORIGINAL_MISSING'); continue; }
     // Join wrapped Chinese labels, but preserve the boundary between two amount columns.
-    const text = original.normalize('NFKC').replace(/(?<=\d)\s+(?=[\d-])/g, '|').replace(/\s+/gu, '');
+    const text = numericEvidenceText(original);
     const units = [...text.matchAll(/单位[:：]?(?:人民币)?(亿元|万元|千元|元)/g)].map(m => monetaryUnit(m[1]));
     const inlineUnit = normalEvidence(citation.quote).match(/\d(?:\.\d+)?(亿元|万元|千元|元)(?![\/／股])/);
     if (!units.length && inlineUnit) units.push(monetaryUnit(inlineUnit[1]));
     if (!units.includes(fact.value.unit) || new Set(units).size > 1) errors.push('FACT_UNIT_UNVERIFIED');
     if (fact.scope === 'consolidated' && /母公司(?:利润表|现金流量表|资产负债表)/.test(text) && !/合并(?:利润表|现金流量表|资产负债表)/.test(text)) errors.push('FACT_SCOPE_MISMATCH');
-    const label = labels[fact.metric].exec(text);
+    const label = financialLabels[fact.metric].exec(text);
     if (!label) { errors.push('FACT_METRIC_UNVERIFIED'); continue; }
-    const row = text.slice(label.index + label[0].length, label.index + label[0].length + 220);
-    const numbers = [...row.matchAll(/-?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?/g)].map(m => m[0].replace(/,/g, ''));
+    const row = text.slice(label.index + label[0].length).replace(/^\((?:人民币)?(?:亿元|万元|千元|元)\)/, '').match(/^[\d.,|()−-]+/)?.[0] || '';
+    const numbers = evidenceAmounts(row);
     const raw = fact.value.raw;
     const equal = (value: string | undefined) => value !== undefined && decimalText(decimal(value)) === decimalText(decimal(raw));
-    if (!normalEvidence(citation.quote).replace(/,/g, '').includes(raw)) errors.push('FACT_QUOTED_NUMBER_MISMATCH');
-    // Current-report first column is supported; prior/restated values must carry located column headers.
+    if (!evidenceAmounts(citation.quote).some(equal)) errors.push('FACT_QUOTED_NUMBER_MISMATCH');
+    // Document period alone cannot prove which numeric column belongs to the fact.
     if (fact.period.start === document.period.start && fact.period.end === document.period.end) {
-      if (!equal(numbers[0])) errors.push('FACT_PERIOD_COLUMN_MISMATCH');
+      const column = yearAmountColumn(text, label.index, fact.period.end.slice(0, 4), numbers.length);
+      if (column === null || !equal(numbers[column])) errors.push('FACT_PERIOD_COLUMN_MISMATCH');
     } else {
       const header = fact.periodEvidence?.filter(c => c.documentId === document.id && c.documentVersion === document.version).map(c => normalEvidence(c.quote)).join('') || '';
       if (!header.includes(fact.period.end.slice(0, 4)) || !numbers.some(equal)) errors.push('FACT_PERIOD_COLUMN_MISMATCH');

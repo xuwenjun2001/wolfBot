@@ -92,7 +92,7 @@ async function main() {
     run('new-client-smoke',process.execPath,['-e', 'const {PrismaClient}=require(process.env.RESEARCH_GENERATED_CLIENT);const db=new PrismaClient();db.companyResearchTask.count().then(n=>console.log("new task model count="+n)).finally(()=>db.$disconnect());'],{...env,RESEARCH_GENERATED_CLIENT:path.join(schemaDirectory,'generated-client')});
     run('legacy-after',process.execPath,['--import','tsx','scripts/research/legacy-compatibility.ts','after'],env);
     const vitestBin = path.join(path.dirname(require.resolve('vitest/package.json')),'vitest.mjs');
-    run('database-tests',process.execPath,[vitestBin,'run','--no-file-parallelism','src/lib/company-research/store.integration.test.ts','src/lib/company-research/version-store.integration.test.ts','src/lib/company-research/evidence-retrieval.integration.test.ts','src/lib/company-research/review-regressions.integration.test.ts','src/lib/company-research/financial-runtime.integration.test.ts'],env);
+    run('database-tests',process.execPath,[vitestBin,'run','--no-file-parallelism','src/lib/company-research/store.integration.test.ts','src/lib/company-research/version-store.integration.test.ts','src/lib/company-research/evidence-retrieval.integration.test.ts','src/lib/company-research/review-regressions.integration.test.ts','src/lib/company-research/financial-runtime.integration.test.ts','src/lib/company-research/execution-review.integration.test.ts'],env);
     if (financialE2e) run('financial-model-e2e',process.execPath,['--import','tsx','scripts/research/run-financial-e2e.ts'],env);
     run('migration-status',process.execPath,[prismaBin,'migrate','status','--schema',schema],env);
     report.outcome = 'passed';

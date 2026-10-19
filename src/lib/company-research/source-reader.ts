@@ -4,6 +4,7 @@ import { getResearchDocument, readResearchDocumentArtifact } from './document-st
 import { parsedReceiptSchema } from './parsed-document';
 import { locatedCitationText } from './citation-locator';
 import { normalEvidence, claimReviewHash } from './claim-verification';
+import { citationTextRange } from './evidence-text';
 import { defaultResearchContext, ResearchPersistenceError } from './repository-core';
 
 export async function readResearchSource(actor: string, taskId: string, input: unknown, ctx = defaultResearchContext) {
@@ -27,7 +28,9 @@ export async function readResearchSource(actor: string, taskId: string, input: u
   const grid = block?.table;
   const cell = loc.kind === 'table' ? grid?.cells.find(c => c.row === loc.row && c.column === loc.column) : undefined;
   const text = loc.kind === 'page' ? page?.text || located : block?.text || located;
-  const index = text.indexOf(citation.quote), start = Math.max(0, (index < 0 ? 0 : index) - 1200), excerpt = text.slice(start, start + 9000);
+  const range = citationTextRange(text, citation.quote);
+  if (!range) throw new ResearchPersistenceError('INVALID_RESEARCH', '引用无法定位到原文范围');
+  const start = Math.max(0, range.start - 1200), excerpt = text.slice(start, start + 9000);
   const exact = excerpt.indexOf(citation.quote);
   const claim = selection.claimId ? state?.claims.find(c => c.id === selection.claimId) : undefined;
   const review = claim && report ? task.reviews.find(r => r.claimHash === claimReviewHash(report, claim)) : null;

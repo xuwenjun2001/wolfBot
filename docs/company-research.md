@@ -164,3 +164,11 @@ query 为 1—300 字符；topK 为 1—20，默认 5；maxOutputCharacters 为 
 执行 `npm run test:research:postgres` 会创建专用临时 PostgreSQL，演练旧库升级、重复迁移、旧代码兼容及新链路测试；不会迁移应用数据库。追加 `-- --financial-e2e` 才调用当前真实模型，对固定茅台双期公开 PDF 运行完整语料/缺后期资料两例，并核对历史 OCR 输出的阅读器。需要受控开发资料与校准回执，费用未知；固定资料运行不等于实时公告发现全链路验收。原始结果在 `data/research-agent-upgrade/evidence/S13/`，开发步骤状态以升级目录 progress 为准。
 
 页面组件验证可运行 `node scripts/research/serve-financial-workbench.js data/research-agent-upgrade/evidence/S13/<运行目录>`。可追加一个 PG 测试生成的 `data/research-agent-upgrade/evidence/S15/<批次>/reader-fixture.json`，检查恶意文本/链接作为数据渲染；追加 `--stream-replay` 会增加明确标注的合成事件任务，主动制造断线、重复、乱序和终态，供真实浏览器验证重连/切换。它只在回环地址启动只读 QA 页面，使用真实工作台组件、Tailwind 和已保存 repository 响应，Next Link 有测试替身；不等于完整 Next/auth/live Worker E2E，不写验收状态或调用模型。关闭该命令结束 QA 服务。当前实跑及限制见 [S11—S15 验收证据](plans/research-agent-upgrade/s11-s15-validation.md)。
+
+### S11—S15 Review 回归加固
+
+发布财务事实时，数值引用必须同时通过完整金额 token、单位、事实期间和明确的年份列归属。报告标题中的年份不能代替表头；倒序列可以在表头一一对应时读取，缺表头、重复年份、调整前后或百分比子列则保守拒绝。括号、ASCII/Unicode 负号和全角数字按披露符号解析，不能把负数的绝对值当成正数。
+
+研究 Worker 传递的 attempt token 会贯穿导入、解析和文档注册。注册在任务锁内入口及原件/解析产物写入后、metadata INSERT 前再次检查任务状态、generation、worker 与 lease；取消、接管或租约过期的旧 attempt 不能留下 ready 文档。没有 Worker token 的人工管理调用保持原有兼容入口。
+
+阅读器对引用先做 NFKC 和空白归一匹配，再映射回原文的 UTF-16 范围，因此换行、组合字符、全角字符或长页不会把上下文固定在前 9000 个字符。只有原文中存在逐字字符串时才生成 highlight；归一匹配只用于定位上下文，不伪造高亮。定向回归和 disposable PostgreSQL 验证记录在 [S11—S15 验收证据](plans/research-agent-upgrade/s11-s15-validation.md) 与 [进度交接](plans/research-agent-upgrade/progress.md)。

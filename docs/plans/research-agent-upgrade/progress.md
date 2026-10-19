@@ -6,23 +6,23 @@
 
 | 字段 | 当前值 |
 | --- | --- |
-| 最后更新 | 2026-10-19（北京时间 21:55 登记新报告人工确认，S11—S15 验收结清） |
+| 最后更新 | 2026-10-19（S11—S15 review 修复完成） |
 | 计划版本 | v1 |
-| 总体状态 | S01—S15 完成。最终真实双期案例 completed（24 次，6/6 金额、三问支持），用户已逐项核查新报告通过；缺后期案例 partial（27 次，3/6），失败实验保留。S14/S15 自身 QA 及依赖结清；业务 OCR needs_review、9 完整/3 partial 参考题不变 |
-| 已完成开发步骤 | 15/20；S13 人工确认见 E-S13-02，S14/S15 依赖已结清 |
-| 当前进行中步骤 | 无；本轮 S11—S15 验收与交接已结清 |
+| 总体状态 | Review 复现的年份列、括号负数、取消后资料写入、空白归一引用定位四项缺陷已修复并通过定向单测、固定报告确定性回放和真实 PostgreSQL 回归；原 G0 运行、人工确认与浏览器证据保留，不反向删除或改写 |
+| 已完成开发步骤 | 15/20；S11—S15 修复后的机器验收证据已补齐，S16 及以后未启动 |
+| 当前进行中步骤 | 无；S11—S15 已恢复 done |
 | 下一步骤 | S16：修改计划与安全重新规划，pending，未启动 |
 | 下一具体动作 | 后续承接 S16 时读取 plan.md 的本步及 S04/S05/S11/S14 依赖，核对当前源码、版本冲突与预算继承边界后登记文件范围。本次仅归档新报告确认，绑定 task a316d272-71e8-4ec2-a793-6d5475b9b8c3 / report v1 / canonical hash 22bc9651bcc672ec227fd1af1205e351525f19342097f2cb77b9546ee88d3be5；确认回执见 E-S13-02，无需重复核查同一报告 |
-| 当前会话登记 | 2026-10-19-s13-human-acceptance：用户对已绑定新报告回复“已逐项核对，通过”；起点 2964ee7598ace01cfa984766a2f1bb49526bbc0f，工作区干净；本会话核对报告/证据 hash、保存独立确认回执，更新 S13—S15 状态与交接后同步，不开展 S16 |
+| 当前会话登记 | 2026-10-19-s11-s15-review-fixes：用户要求修复四项 review 问题；起点 37b693fc3a916cb2ad3bd52c4c3cd8a635d5610c，工作区干净。负责 numeric 核验、资料写入 fencing、引用原文范围映射及相关单测/PG/固定报告回归，完成后更新证据并同步当前分支；不开展 S16 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
-| 当前参考分支 / HEAD | codex/research-agent-s11-s15；实现与验收源码基准 2964ee7598ace01cfa984766a2f1bb49526bbc0f。本次确认仅追加文档提交，精确身份按本文件所在提交、git log、证据 sourceHashes 和远端 SHA 核对 |
+| 当前参考分支 / HEAD | codex/research-agent-s11-s15；修复前 HEAD `37b693fc3a916cb2ad3bd52c4c3cd8a635d5610c`，修复后提交与远端 SHA 以收尾 Git 核对为准；证据 sourceHashes 绑定本轮源码 |
 | 目标仓库 | `https://github.com/xuwenjun2001/wolfBot`，默认分支 `main` |
-| 本轮涉及文件 | 本次确认仅更新 progress.md、s11-s15-validation.md；确认回执及核对日志保存在最终 S13 证据目录的 human-acceptance-01/，不提交原件。2964ee7 已包含 S11—S15 执行器/Worker/迁移/API/工作台/阅读器及专题，源码保持该版本 |
-| 已有改动提醒 | 本次起点干净，仅同步两份相关文档；本文件所在提交及远端 SHA 作为同步身份，最终回复报告具体提交。data 中确认回执、原件、校准、截图/日志和业务数据不纳入 Git；先检查 git status，保留后来新增的无关工作 |
-| 运行环境 / 进程 | 本次只核对文件并保存确认回执，未启动模型、OCR、应用或数据库服务，未向应用/业务库补写验收。实现验收的临时 PG/QA 服务及标签已在前次收尾清理，33 条迁移仅用于 disposable 库；历史快照的 acceptance:null 保留，当前人工结论以独立确认回执为准 |
+| 本轮涉及文件 | claim-verification、financial-normalization/数字定位辅助模块、document-store、acquisition-service、parse-service、financial-tools、source-reader、引用文本映射辅助模块与回归测试；company-research、decisions、s11-s15-validation、progress 文档。证据保留在 data/research-agent-upgrade/evidence/，不提交原件 |
+| 已有改动提醒 | 本轮起点干净；代码、回归测试和三份专题文档属于本轮，data 下原件/日志/回执不纳入 Git。提交前只暂存明确相关路径，保留任何后来出现的无关改动 |
+| 运行环境 / 进程 | 定向单测、临时 PostgreSQL 演练、types、ESLint、文档检查已完成；测试容器由 runner 清理，未迁移应用/生产库，未调用模型、OCR 或启动共享服务 |
 | 模型与数据费用 | 沿用 gpt-6.1-sol/high 的 8 例 reviewer 校准及 7 轮×2 场景实跑；每轮实现不同，不当作同算法重复试验。费用 unknown，含失败，每个逻辑任务仍为 40 次工具/20 分钟。本次无新模型、搜索、OCR 调用或预算变更 |
-| 阻塞 | S11—S15 无待结清验收项；原三个模块尺寸门及暂缓 Quality 依赖问题不变。未部署、未做完整构建/CI；真实进程中断、完整用户旅程和保留集/质量对照留后续步骤 |
-| 最近验证 | 本次新报告 canonical hash、78 个原收尾未变文件、116 个源码、24 个浏览器材料及 2 份 PDF 一致，确认回执另存；文档/差异检查见 E-S13-02。沿用 113 单测、29 真实 PG、33 迁移/兼容、types/lint、reviewer 8/8 及模型/浏览器验收，不把本次确认记作重跑 |
+| 阻塞 | S11—S15 无待结清验收项；原三个模块尺寸门及暂缓 Quality 依赖问题不变。未部署、未做完整构建/CI；真实进程中断矩阵、完整用户旅程和保留集/质量对照留后续步骤 |
+| 最近验证 | 本轮 121 项定向单测通过、36 项 PostgreSQL 测试通过、types/定向 ESLint 和文档检查通过；固定报告回放为完整 6 facts/14 citations 与资料不足 3 facts/7 citations，均无错误。模块门仍为原三项失败 |
 | 受控资料恢复 | 开发资料在 `data/research-agent-upgrade/`；本机 `RESEARCH_HOLDOUT_ROOT=D:/QuantPilot-private-evals/research-v1`，换机须经受控归档恢复并核对登记 hash；这里不记录保留题/答案 |
 | 范围提醒 | 本次实现 S11—S15；保留集、S16 后续能力、生产部署和既有 Quality 修复不在本轮范围；所有完成状态须绑定真实验证 |
 
@@ -42,11 +42,11 @@
 | S08 | OCR 与表格结构解析 | S07 | done | E-S08-01/02/03/04；样本人工确认、当前 CPU 镜像、禁网 OCR、HTTP 健康/取消/超时保留页及恢复、资源与质量门通过；保留“合井口径”误字与业务 needs_review |
 | S09 | 财务口径与变化计算 | S07、S08 | done | E-S09-01；decimal-v1、16 项边界测试、24 金额+12 变化复算通过；限模块验收，S08 待复核 OCR 拒绝成为 known；E-REVIEW-01 回归通过 |
 | S10 | 证据检索与按需上下文 | S07、S08、S09 | done | E-S10-01；版本化索引/asOf/字段过滤与有界读取；23/24 页、11/12 题；E-REVIEW-01 回归，S11 接线见 E-S11-01；OCR 质量门保持 |
-| S11 | 研究计划与 Agent 循环 | S04、S05、S09、S10 | done | E-S11-01；同一 PI/Worker、公开计划/checkpoint、预算继承/停止/取消及真实三问路径通过 |
-| S12 | 结论与证据分层核验 | S09、S11 | done | E-S12-01；数值/原文/身份/时间/语义发布硬门、局部修复和真实 reviewer 8/8 校准通过；同模型独立调用 |
-| S13 | 报告与变化表完整交付 | S11、S12 | done | E-S13-01/02；最终 completed 24 次/6 数值/3 问、partial 27 次/3 数值；用户已逐项核查绑定新报告通过 |
-| S14 | 工作台与事件流 | S04、S13 | done | E-S14-01、E-S13-02；桌面/手机、状态/路由、刷新/切换、浏览器 EventSource 断线/重复/乱序/终态通过，S13 人工依赖结清 |
-| S15 | 原文定位与证据阅读器 | S07、S08、S12、S14 | done | E-S15-01、E-S13-02；原生 PDF/真实 OCR 派生扫描、版本/hash/坐标/逐字高亮、权限与恶意文本通过，S13/S14 依赖结清 |
+| S11 | 研究计划与 Agent 循环 | S04、S05、S09、S10 | done | E-S11-01、E-REVIEW-02；同一 PI/Worker、公开计划/checkpoint、预算继承/停止/取消及取消/接管/租约过期写入 fencing 回归通过 |
+| S12 | 结论与证据分层核验 | S09、S11 | done | E-S12-01、E-REVIEW-02；数值/原文/身份/时间/语义发布硬门、局部修复和真实 reviewer 8/8 校准通过；年份列、括号负数反例已拒绝 |
+| S13 | 报告与变化表完整交付 | S11、S12 | done | E-S13-01/02、E-REVIEW-02；完整/partial 固定报告确定性回放无错误，原人工确认绑定报告 hash 保留 |
+| S14 | 工作台与事件流 | S04、S13 | done | E-S14-01、E-S13-02；桌面/手机、状态/路由、刷新/切换、浏览器 EventSource 断线/重复/乱序/终态通过 |
+| S15 | 原文定位与证据阅读器 | S07、S08、S12、S14 | done | E-S15-01、E-S13-02、E-REVIEW-02；原生 PDF/真实 OCR 派生扫描、版本/hash/坐标/逐字高亮、权限与恶意文本通过，长文本归一化引用范围回归通过 |
 | S16 | 修改计划与安全重新规划 | S04、S05、S11、S14 | pending | — |
 | S17 | 新财报更新与报告差异 | S06、S09、S13、S15、S16 | pending | — |
 | S18 | 恢复、隔离与运行观测 | S05、S11、S14、S16、S17 | pending | — |
@@ -118,6 +118,16 @@
 - 固定开发资料回归：verify-financials.ts 退出 0，24/24 金额、12/12 变化；S09/2026-10-19T04-45-53-068Z/report.json SHA-256 d21bf98f3d47223fe526ac417b364a2da94adb39ef9a9948bccad947e4487f15。verify-retrieval.ts 使用 S07/2026-10-18T17-44-58-299Z 解析语料，退出 0，v4 仍为 k=5、23/24 来源页、完整 11/12 题，21005 ms；S10/2026-10-19T04-43-38-302Z/report.json SHA-256 0de8e3874b797517fb38eced9c4f50ec651422212877eff33702e0afc3e4819f。未修改题目、评分、原件或保留集；这些不是模型质量或性能提升成绩。
 - types、定向 ESLint、docs（70 Markdown/435 本地链接）均退出 0。module 门退出 1，仅既有 chat 4161/4100、data-prefetch 2211/2040、market-data API 1541/1540；这些文件本轮未改，未放宽门禁。完整构建/CI/研究 LLM E2E 未运行，依赖未改，暂缓的 Quality 工作未展开。
 - 本轮日志与汇总位于 data/research-agent-upgrade/evidence/review-fixes-20261019/，acceptance.json SHA-256 为 23c7e569b0d29042af14bbef39efc8a272037b8eb620e1d0758de5943bf28db6，源码 hash 收尾复核无漂移，git diff --check 通过；归本升级任务保留至 S20/受控归档。两次自建 PG 均清理，业务库及共享服务未改。S08 Python/模型/人工材料未变，TS 发布质量门由本轮 PG 再验。原业务 needs_review、参考答案 3 题 partial、S11/S12 后续验收边界保持。
+
+### E-REVIEW-02：S11—S15 review 修复与回归
+
+- 日期 / 会话：2026-10-19 / `2026-10-19-s11-s15-review-fixes`。修复前 HEAD `37b693fc3a916cb2ad3bd52c4c3cd8a635d5610c`，本轮只改研究执行、核验、阅读器、回归测试及本升级文档；未启动 S16，未修改固定资料、历史报告、人工回执或依赖。
+- 数值核验：新增共享 `numeric-evidence.ts`，按明确的表头年份选择金额列，拒绝标题年份、缺失/重复/调整列等歧义；金额引用按完整 token 校验，保留括号负数、ASCII/Unicode minus 和全角数字。倒序年份、正负号、缺表头、跨行泄漏等反例均有单测和 PG 发布回归。
+- 执行 fencing：import/parse/register 接收受信 attempt token，在任务锁内入口和 artifact I/O 后、元数据 INSERT 前再次核验。取消、接管、下载中取消和写入期间租约过期均不产生晚到文档 metadata；替代 attempt 可正常完成解析。
+- 阅读器：新增 NFKC/空白归一引用到 UTF-16 原文坐标的映射，长文本引用不再从首 9000 字符开始截断；归一匹配只提供上下文，不伪造逐字 highlight。覆盖换行、组合字符、兼容字符、代理对、精确/缺失/空引用。
+- 实际验证：`npm run test:unit -- src/lib/company-research src/app/api/company-research/tasks src/app/company-research/financial` 退出 0，121 passed、36 DB skipped；`npm run test:research:postgres` 退出 0，6 个测试文件、36 passed，含 7 个本轮真实 DB 回归；type-check 与定向 ESLint 退出 0。固定报告确定性 replay：完整案例 6 known facts/14 citations、资料不足案例 3 known facts/7 citations，均无错误；没有新模型调用或人工验收。
+- 证据目录：`data/research-agent-upgrade/evidence/review-s11-s15-fixes/20261019-01/`，保留 `unit.log`、`postgres.log`、`types.log`、`lint.log`、`module.log`、`retained-report-replay.json`、`review-manifest.json` 和脚本。PG manifest 为 `S05/rehearsal-4dd1a779-f1b4-4317-be4b-b91129d1cb13/manifest.json`；36 项测试及 33 条迁移/重复 deploy/旧兼容均成功，containerRemoved=true。
+- 限制：module boundary 仍只有原有 chat 4161/4100、data-prefetch 2211/2040、market-data API 1541/1540 三项失败；未运行完整构建/CI、真实模型重跑、浏览器新截图、保留集或生产部署。旧模型报告和人工验收继续作为历史证据，不被本次确定性回放替代。
 
 ### E-S08-04：当前 CPU 镜像与隔离容器验收
 
@@ -276,6 +286,12 @@ E-Sxx-01 / 日期 / 会话标识：
 ```
 
 ## 会话历史
+
+### 2026-10-19-s11-s15-review-fixes / E-REVIEW-02
+
+- 用户要求修复 S11—S15 review 发现的四项缺陷。本轮完成数值列/符号核验、attempt 写入 fencing、长引用偏移映射，加入单测和真实 PostgreSQL 回归；未进入 S16，未重跑模型或修改历史验收材料。
+- 121 项定向单测、36 项真实 PostgreSQL 测试、types、定向 ESLint 通过；固定报告确定性回放保持完整 6 facts/14 citations、资料不足 3 facts/7 citations 且无错误。模块门保留原三项失败，完整构建/CI 未运行。
+- 更新 E-REVIEW-02、D27、公司研究专题和当前交接；本轮代码与文档待按明确路径提交、推送并核对远端 SHA。临时测试 PG 已由 runner 清理，应用/生产库和共享服务未动。
 
 ### 2026-10-19-s11-s15 / 实现与机器验收交接
 

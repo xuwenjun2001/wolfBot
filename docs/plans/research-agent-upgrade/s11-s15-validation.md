@@ -4,6 +4,14 @@
 
 ## 本轮交付
 
+## Review 修复回归（E-REVIEW-02）
+
+本轮针对 S11—S15 review 复现的四项缺陷完成修复。`numeric-evidence.ts` 统一处理财务标签、完整金额 token、括号/Unicode 负号及全角数字，并要求金额与明确年份列绑定；`document-store`、导入和解析服务在 artifact 写入后、metadata INSERT 前复核受信 attempt，取消/接管/租约过期的旧执行不能发表文档；`evidence-text.ts` 将 NFKC/空白归一引用映射回原始 UTF-16 偏移，长文本上下文正确，只有逐字命中才高亮。
+
+定向命令 `npm run test:unit -- src/lib/company-research src/app/api/company-research/tasks src/app/company-research/financial` 退出 0：121 passed、36 DB skipped。`npm run test:research:postgres` 退出 0：6 个测试文件、36 passed；其中包含倒序年份/负数发布拒绝、取消与接管 fencing、下载中取消、artifact 写入后租约过期和长引用阅读器的 7 个真实数据库回归。`npm run type-check` 与定向 ESLint 退出 0。固定 G0 报告确定性回放保持完整案例 6 known facts/14 citations、资料不足案例 3 known facts/7 citations，均无错误；没有重跑模型或改变人工验收。
+
+证据原件保留在 `data/research-agent-upgrade/evidence/review-s11-s15-fixes/20261019-01/`，包括单测、PG、types、lint、module 和 replay 日志；PG 演练 manifest 为 `S05/rehearsal-4dd1a779-f1b4-4317-be4b-b91129d1cb13/manifest.json`，测试容器已清理。模块边界检查仍只报告原有三个超限文件；本轮未运行完整构建/CI、真实模型重跑、新浏览器截图、保留集或生产部署。
+
 | 步骤 | 实现 | 验证边界 |
 | --- | --- | --- |
 | S11 | 三问公开计划、受信工具、持久检查点、预算/截止时间继承、取消/fencing、无进展停止；复用同一 PI loop/Worker | 真实数据库恢复与预算反例、真实模型三问路径通过；真实进程中断矩阵留 S18 |
