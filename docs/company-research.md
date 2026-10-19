@@ -98,11 +98,11 @@ HTML 的 locator 是 `source-range:开始:结束`，指向保留 UTF-8 原文中
 
 同一 parse API 增加 `engine`：`native` 只取原生文本；默认 `auto` 对空页、乱码或失败页尝试 OCR，单纯达到页数/字符上限不会触发；`docling` 强制走版面与表格服务，`ocr` 另外强制整页 OCR。服务故障保留原生文本并明确返回回退 warning。取消、超时、失败回退和失败页的最终回执允许重试；正常结果与解析设置绑定缓存。
 
-服务是独立的 Python 3.12 CPU 进程，Docker 开发编排另提供 2 CPU/4 GB/单槽配置。`DOCUMENT_PARSER_URL` 默认 `http://127.0.0.1:7821`，token 只在服务端使用，单任务超时默认 180 秒；平台 parse 请求总期限为 240 秒。模型预置、离线运行、缓存与启动办法见 [OCR 服务](../services/document-parser/README.md)。本机原生环境已实跑；容器构建遇到 Docker 引擎故障，启动和资源测量仍待补，详见进度。
+服务是独立的 Python 3.12 CPU 进程，Docker 开发编排另提供 2 CPU/4 GiB/单槽配置。`DOCUMENT_PARSER_URL` 默认 `http://127.0.0.1:7821`，token 只在服务端使用，单任务超时默认 180 秒；平台 parse 请求总期限为 240 秒。模型预置、离线运行、缓存与启动办法见 [OCR 服务](../services/document-parser/README.md)。当前配方已完成 Linux CPU 容器验收，禁网 probe / HTTP 峰值分别约 2.14 / 1.70 GiB、无 OOM；实际取消、超时保留完成页和冷进程恢复通过，见进度 E-S08-04。既有引擎故障和失败证据保留。
 
 输出包含真实页框、表格行列与合并跨度，保留原生 `nativeText`；不猜坐标，不自动合并跨页表。OCR 和重建表格均为 `needs_review`，报告入库会拒绝从这些块直接发布 known 财务事实。样本通过不等于任意新上传资料已经核实，业务审查工作流在后续步骤接入。
 
-本地开发验收有三份真实/派生财报样本（18 项行、年列与金额核对）和一份明确标记的两页合成扫描压力样本；人工抽查与机器结果分别记录。`verify-ocr.ts` 核对前者，运行中的服务可用 `verify-parser-service.ts` 验证取消、超时、跨页和缓存。使用 `prepare-ocr-review.ts <服务证据目录>` 生成原图与实际单元格对照，再由真人核对。2026-10-19 用户已逐项核对并确认本批通过，见 [E-S08-02 人工确认](plans/research-agent-upgrade/progress.md)；确认另存 acceptance.json，原对照材料保留。合成表头“合并”识别为“合井”的已知误字未改，容器验收仍待补。
+本地开发验收有三份真实/派生财报样本（18 项行、年列与金额核对）和一份明确标记的两页合成扫描压力样本；人工抽查与机器结果分别记录。`verify-ocr.ts <probe目录>` 核对前者，运行中的服务可用 `verify-parser-service.ts` 验证取消、超时、跨页和缓存；取消验收还须核实实际保留页与 cancelled_partial，不能把抢先完成算作停止成功。新人工批次可用 `prepare-ocr-review.ts <新服务证据目录>` 生成原图与实际单元格对照，保留已有抽查材料。2026-10-19 用户已逐项核对并确认本批通过，见 [E-S08-02 人工确认](plans/research-agent-upgrade/progress.md)；确认另存 acceptance.json，原对照材料保留。E-S08-04 补齐容器验收，新表格字段/坐标与已确认批次机器对照一致；合成表头“合并”识别为“合井”的已知误字未改。
 
 ### 财务口径与精确计算（S09）
 
@@ -112,7 +112,7 @@ HTML 的 locator 是 `source-range:开始:结束`，指向保留 UTF-8 原文中
 
 `deriveSingleQuarter` 只用同年、同口径、相邻的完整累计值：Q1 本身是单季，H1−Q1、前三季−H1、全年−前三季才得到后续季度。前期缺失不能补零，来源待复核、口径不一致或期间不相邻都会拒绝。引用和 derivedFrom 保留两个输入。
 
-复验：`node --import tsx scripts/research/verify-financials.ts`。四家公司 24 项金额与 12 项变化复算通过，原始报告及源码/fixture hash 留在 `data/research-agent-upgrade/evidence/S09/`。这是已给定参考输入的确定性计算验收，不是模型自动抽取事实、查明会计政策或解释现金流原因的质量成绩。S08 的容器验收仍待补，样本人工确认不自动核实其他业务资料。
+复验：`node --import tsx scripts/research/verify-financials.ts`。四家公司 24 项金额与 12 项变化复算通过，原始报告及源码/fixture hash 留在 `data/research-agent-upgrade/evidence/S09/`。这是已给定参考输入的确定性计算验收，不是模型自动抽取事实、查明会计政策或解释现金流原因的质量成绩。S08 的样本人工确认和容器验收不自动核实其他业务资料。
 
 ### 任务证据检索与分段读取（S10）
 

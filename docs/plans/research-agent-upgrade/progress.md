@@ -6,25 +6,25 @@
 
 | 字段 | 当前值 |
 | --- | --- |
-| 最后更新 | 2026-10-19 11:46（北京时间，Docker 恢复与 S08 环境交接） |
+| 最后更新 | 2026-10-19 12:18（北京时间，S08 验收通过） |
 | 计划版本 | v1 |
-| 总体状态 | S01—S07、S09—S10 完成；S08 代码、机器验收与样本人工抽查通过，容器复验待补。S09/S10 是确定性计算与检索模块自身验收，不解除业务 OCR 质量门。既有人工作业仍为 9 完整/3 partial、完整参考公司 1 家，真实模型质量未验收 |
-| 已完成开发步骤 | 9/20 |
-| 当前进行中步骤 | S08；本会话用户授权范围 S05—S10 |
-| 下一步骤 | 完成 S08 容器验证；人工抽查已确认通过，无需重复询问；原授权范围止于 S10，S11 未开始 |
-| 下一具体动作 | Docker 引擎已恢复，先释放 C 盘空间或另行安排受支持的 Docker 数据盘迁移，再按 parser README 重建当前 no-cache 镜像并补健康/资源验证；本机旧 dev 镜像不符合当前配方。S08 人工确认见 E-S08-02，无需重复询问；业务资料 needs_review 保持 |
-| 当前会话登记 | 2026-10-19-docker-recovery：起点 c75af7e，工作区干净，分支 codex/research-foundation-s01-s05；响应用户 knowledge-hub 停止报错，保存日志、恢复本地 Docker、停止该项目，已归档 E-S08-03 并更新本文件/parser README/troubleshooting；未开始新开发步骤 |
+| 总体状态 | S01—S10 完成；S08 当前 CPU 镜像、禁网解析、HTTP 健康/停止/恢复/资源验证通过，样本人工确认见 E-S08-02。业务 OCR 仍需逐份复核；S09/S10 仅完成确定性计算与检索模块自身验收。既有人工作业仍为 9 完整/3 partial、完整参考公司 1 家，研究 LLM 端到端质量未验收 |
+| 已完成开发步骤 | 10/20 |
+| 当前进行中步骤 | 无；本次 S08 验收已结束 |
+| 下一步骤 | S11（未开始）；本次只完成 S08 验收，原开发范围止于 S10 |
+| 下一具体动作 | 下次继续开发时读 S11 及依赖，核对任务版本、现有研究 Worker、工具权限、预算和索引接线；不要把本次 OCR 验收当作研究 LLM 或完整报告质量验收。样本人工确认无需重复，业务资料 needs_review 保持 |
+| 当前会话登记 | 2026-10-19-s08-container-acceptance：起点 77d3ce3，工作区干净；按用户要求完成 S08 验收。精确回收本任务失败构建缓存后重建当前镜像，补齐禁网 OCR、HTTP 取消/超时保留页与恢复、协议、资源和真实 PG 验证；未修改解析源码，详见 E-S08-04 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
-| 当前参考分支 / HEAD | `codex/research-foundation-s01-s05`；S06 `6f6d48d`、S07 `45d70bc`、S08 `d3b7311`、S09 `e7707a9`、S10 `4cd24e5`、人工确认 `c75af7e` 已推送；本次仅环境恢复交接，精确身份按本文件所在提交、`git log` 与远端 SHA 核对 |
+| 当前参考分支 / HEAD | `codex/research-foundation-s01-s05`；本轮起点 77d3ce3，收尾发现并行 NGA 提交 de56c27 已在本地/远端。本次解析源码仍与 77d3ce3 一致，未回退并行提交；验收交接的精确身份按本文件所在提交、`git log` 与远端 SHA 核对 |
 | 目标仓库 | `https://github.com/xuwenjun2001/wolfBot`，默认分支 `main` |
-| 本轮涉及文件 | progress.md、docs/troubleshooting.md、services/document-parser/README.md；本地证据位于 S08/docker-repair-20261019/。源码、样本、人工确认和既有测试未修改 |
-| 已有改动提醒 | 本轮起点干净，无来源不明改动；源码按步骤暂存/提交，原始证据在忽略目录保留；最终以 git status/远端 SHA 为准。冻结资料、旧人工确认和保留集未改 |
-| 运行环境 / 进程 | Windows/Python 3.12.14，Docling 2.140.0、RapidOCR 3.10.0、ONNX 1.31.0、Torch 2.14.1+cpu；独立原生 parser/测试 PG 已停止。本次恢复 Docker Desktop 4.89.0 / Engine 29.7.2，客户端与服务端 API 均为 1.55；knowledge-hub 七个容器已停止，quantpilot-timescaledb/redis 健康。运行时 socket 目录改名留作本地备份，数据盘未迁移，业务库未执行迁移或内容核验 |
+| 本轮涉及文件 | 本目录 progress.md/decisions.md、services/document-parser/README.md、docs/company-research.md；源码和冻结输入未改。本地新脚本与证据位于 S08/container-acceptance-20261019/，历史证据和人工确认保留 |
+| 已有改动提醒 | 起点干净；收尾出现 apps/nga-watcher/ 下 README、monitor_state、watcher 及两份测试的并行未提交改动，全部保留，不纳入本次四份文档提交。原始证据在忽略目录保留，冻结资料、旧人工确认和保留集未改；最终以 git status/远端 SHA 为准 |
+| 运行环境 / 进程 | Windows 主机，Linux/Python 3.12 CPU 镜像；Docling 2.140.0、RapidOCR 3.10.0、ONNX 1.31.0、Torch 2.14.1+cpu。Desktop 4.89.0 / Engine 29.7.2 / API 1.55。自己的 probe、HTTP 验收容器/网络与独立 PG 已清理，镜像/模型/证据/缓存保留；knowledge-hub 七个容器仍停止，quantpilot-timescaledb/redis healthy。数据盘未迁移，业务库未执行迁移 |
 | 模型与数据费用 | S06 有公开公告查询/原件下载，后续 OCR、计算和词法检索无 LLM/搜索调用；本地 CPU 费用未计量。历史模型 401 与四次校准的 unknown 费用记录保留，不并入本轮质量成绩 |
-| 阻塞 | Docker 连接故障已恢复；C 盘在收尾快照仅 2.19 GB，Docker 数据盘仍在 C 盘，本次未再次尝试镜像解包。现存 parser:dev 的 history 仍为旧 uv sync，不能代替当前 no-cache 镜像验收；容器构建/健康/资源实测待补。样本人工抽查已通过，已知误字和业务 needs_review 保留；既有三题 partial、人工版本接入 runner 与真实模型验收仍未解决 |
-| 最近验证 | 本次 docker version 与 knowledge-hub compose stop 退出 0，七个服务全为 exited；停止前后 10 个容器 ID/名称/本地卷数量一致，wolfbot 两个依赖健康，详见 E-S08-03。此前 E-S08-02 人工确认、94 TS/API、18 真实 PG、types/lint、parser pytest 3/ruff/lock、OCR 18/18 与合成 12/12、S10 定位 23/24 均保留，本次未重跑代码验收；旧模块三项尺寸门失败保持 |
+| 阻塞 | S08 无剩余验收阻塞。C 盘收尾约 1.89 GiB，后续大构建仍需安排存储余量；未证明历史 SIGBUS 的根因。已知“合井口径”误字、业务 needs_review、既有三题 partial、人工版本接入 runner 与研究 LLM 验收仍保留 |
+| 最近验证 | E-S08-04：当前镜像构建退出 0；禁网公开样本 18/18、HTTP 合成 12/12、六项协议、实际取消保留第一页、超时 1382 ms 保留第一页及冷进程恢复通过；峰值离线 2293723136 / HTTP 1827225600 bytes，均无 OOM。pytest 3、parser TS 4、真实 PG 18 及旧库兼容通过，ruff/lock 通过；文档与差异检查见本证据。此前模块三项尺寸门失败和暂缓的 Quality 问题不变；未运行完整 CI/研究 LLM E2E |
 | 受控资料恢复 | 开发资料在 `data/research-agent-upgrade/`；本机 `RESEARCH_HOLDOUT_ROOT=D:/QuantPilot-private-evals/research-v1`，换机须经受控归档恢复并核对登记 hash；这里不记录保留题/答案 |
-| 范围提醒 | 本轮授权 S05—S10；不展开 S11 执行器、保留集、生产部署或既有 Quality 修复。人工确认和旧 partial 结论保持 |
+| 范围提醒 | 本次仅 S08 验收；不展开 S11 执行器、保留集、生产部署或既有 Quality 修复。人工确认和旧 partial 结论保持 |
 
 ## 步骤状态
 
@@ -39,7 +39,7 @@
 | S05 | 持久化、隔离与迁移 | S04 | done | E-S05-01；七张版本表、actor repository/原件存储/API；13 项 PG 测试和旧库升级/旧代码兼容通过 |
 | S06 | 财报发现、导入与时间证据 | S05 | done | E-S06-01/02；公网原件/hash、八份日期修正；追加修订原件不能回溯旧披露日的隔离/重试实跑 |
 | S07 | 文本 PDF / HTML 定位解析 | S06 | done | E-S07-01；八份原件/32 引用定位，v1/v2 兼容、HTML/截断/跨页与 PG 发布校验 |
-| S08 | OCR 与表格结构解析 | S07 | in_progress | E-S08-01/02/03；CPU 与样本人工核对通过；Docker 已恢复，主机磁盘空间不足时未重建当前镜像，容器验收待补；保留“合井口径”误字与业务 needs_review |
+| S08 | OCR 与表格结构解析 | S07 | done | E-S08-01/02/03/04；样本人工确认、当前 CPU 镜像、禁网 OCR、HTTP 健康/取消/超时保留页及恢复、资源与质量门通过；保留“合井口径”误字与业务 needs_review |
 | S09 | 财务口径与变化计算 | S07、S08 | done | E-S09-01；decimal-v1、16 项边界测试、24 金额+12 变化复算通过；限模块验收，S08 待复核 OCR 拒绝成为 known |
 | S10 | 证据检索与按需上下文 | S07、S08、S09 | done | E-S10-01；版本化索引、前置作用域/asOf/字段过滤、词法排序及有界读取；18 PG 与 k=5 的 23/24 页命中；S11 未接线、S08 质量门保持 |
 | S11 | 研究计划与 Agent 循环 | S04、S05、S09、S10 | pending | — |
@@ -65,6 +65,21 @@
 - 原 S03 网关基线全部在鉴权时失败；用户指定新模型后另存校准，4 次请求均 200，但提前收尾且无财报来源，不是质量提升证据。后续人工确认按 E-ANNOT-02 单独归档，不能反向把旧模型运行变为通过。
 
 ## 验收证据
+
+### E-S08-04：当前 CPU 镜像与隔离容器验收
+
+- 日期 / 会话：2026-10-19 / `2026-10-19-s08-container-acceptance`。用户要求验收 S08；起点 `77d3ce34989ac9db3b3d238cbd16b6e9d2d4768b`，工作区干净。解析源码、锁文件、评测输入和既有人工作业未改；本次只更新四份状态/专题文档，原件归本升级任务所有，在 `data/research-agent-upgrade/evidence/S08/container-acceptance-20261019/` 保留至 S20/受控归档。
+- 构建前按 history/父链/时间和旧日志核实任务归属，只回收本次失败解析器构建的三个精确 cache ID，Docker 报告释放 12.6 GB；没有全局 prune、删除卷或迁移数据盘。释放的是 VHDX 内部空间，Windows C 盘未因此缩小 VHDX。当前 `docker build --progress=plain --tag wolfbot-document-parser:dev services/document-parser` 退出 0，导出与解包全部完成；Dockerfile SHA-256 `abb87a691a53d863d41fa059628215f9c95c13d09f4f763c72c1b2da8215148b`，实际执行 `uv sync --frozen --no-dev --no-cache`。
+- 镜像 `sha256:b3d37ad1d460b9784aa2de70137c3aefc20ea79d6afb7193b5f7b8d21aacf376`；`docker inspect .Size` 为 511862681 bytes，这不是完整磁盘占用或解压空间估计。镜像内七个 Python/依赖文件 hash 与当前源码逐项匹配。实际 Docling 2.140.0、RapidOCR 3.10.0、ONNX 1.31.0、Torch 2.14.1+cpu、torchvision 0.29.1+cpu，CUDA build=null / available=false、Torch 2 线程、UID 10001。
+- 禁网 probe 使用 `--network none`、2 CPU/4 GiB/128 pids、只读根、只读模型和独立证据挂载；三个公开样本退出 0。`verify-ocr.ts <本批>/probe-container` 退出 0，**18/18 指标行/年份列/金额**匹配，实际框与 needs_review 保留；单页 73659/29232/13149 ms，不是受控性能对照。cgroup 内存峰值 2293723136 bytes（约 2.14 GiB），oom/oom_kill 均为 0。
+- HTTP 使用独立 Compose 项目 `wolfbot-parser-s08-20261019` 和空缓存，沿用当前编排的资源/非 root/只读模型约束，仅映射 `127.0.0.1:7821`。最初 internal 网络的容器已 healthy，但本机 Docker 未发布宿主端口，协议探测 ECONNREFUSED；保留该失败，改验收专用普通 bridge 后通过，不把 HTTP 运行宣称为禁网验证。六项真实协议检查通过：缺失/错误鉴权 401、健康 200、非 PDF 415、页数越界 422、未知任务 404。
+- `verify-parser-service.ts` 退出 0，原件 `S08/service-2026-10-19T04-06-33-475Z/`：两页合成表 **12/12 指标行/年份列/值**通过，万元、真实单元格框和三列合并表头可定位。实际取消为 cancelled_partial，8049 ms、保留第一页、第二页截断；本次独立断言排除了脚本允许的“抢先完成两页”分支。超时 warning 明确，扫描页重放与首次回执 deepEqual，命中耗时 792 ms，不称冷启动。
+- 本地 `partial-recovery.mjs` 进一步用新 bytes 先完成/缓存第一页，再在第二页解析中触发 1 秒预算：实际 1382 ms 停止自己的模型进程，第一页完整保留、第二页显式截断；随后重新启动模型进程，55695 ms 完成两页，第一页与先前完全一致，warnings/failedPages/truncatedPages 清空。并发提交正确返回 429；`partial-recovery-report.json` 保存逐阶段结果。HTTP cgroup 峰值 1827225600 bytes（约 1.70 GiB），无 OOM，最终 healthy。
+- 沿用 E-S08-02 的用户确认，acceptance.json 与其绑定的 18 个原始材料 hash 重新核对一致。新 Linux 三组真实样本与已确认版本的表格单元格字段/坐标一致，两页合成表也一致；不要求整份 JSON/PNG 字节相同，美的页渲染存在细微像素差异，原件 PDF bytes 相同。新输出是机器复核，不冒充新一次真人签字。已知“合并口径”→“合井口径”误字保留，所有业务 needs_review 和 known 事实拒绝门保持。
+- 常规复验：uv lock、ruff、pytest **3 项**退出 0，parser TS **4 项**通过。最初 TS 命令还指定了不存在的 API 测试文件，实际只匹配 parser，未把 API 计为执行。`npm run test:research:postgres` 退出 0，**18 项真实 PG**通过（含未复核 OCR 拒绝发布 known）；旧库升级至 32 迁移、重复 deploy、独立 Prisma、旧 reader/Worker 兼容均通过。原件 `S05/rehearsal-a74617af-df81-4ddd-adfa-7ceb9fa40ff0/manifest.json` SHA-256 `088f7f187a87df97090c29b7d9d3b33e512893108651805fe4a0b1c2e18b3b66`，containerRemoved=true，应用库未改。
+- 本批不可变汇总 `container-acceptance-20261019/acceptance.json` SHA-256 `cd79e5f706427aca400db299deb927ba7909f3d8d77189228c737d8c78443d63`，绑定 78 个日志/配置/结果原件、源码身份、镜像、资源和旧人工确认；生成前独立强断言全部通过。自己的 probe、HTTP 容器/网络及测试 PG 均已清理，镜像/模型/缓存/证据保留；knowledge-hub 七服务仍停止，wolfbot 两个依赖 healthy。C 盘收尾 2030854144 bytes（约 1.89 GiB），未证明历史 SIGBUS 根因。
+- 收尾独立 hash 复验退出 0：78 个原件、14 个源码/配置文件全部匹配，closure-check.json 留存；`npm run check:docs` 退出 0（70 个 Markdown、435 条本地链接），`git diff --check` 退出 0。同步前发现 HEAD/远端并行推进到 de56c27，仅修改 NGA watcher，与 S08 源码无交集；保留该提交和其后的五个 NGA 未提交文件，本次仅提交四份相关文档。
+- 结论：S08 必需验收通过，标记 done、总数 **10/20**；S11 未开始。有限开发样本不代表任意财报准确率，不解除业务审核，不算研究 LLM E2E/完整报告/生产发布验收。旧三项模块超限、暂缓的 Quality 依赖问题和三题 partial 未改，完整 CI 未运行。
 
 ### E-S08-03：Docker 引擎恢复与容器验收前提复查
 
@@ -208,6 +223,13 @@ E-Sxx-01 / 日期 / 会话标识：
 ```
 
 ## 会话历史
+
+### 2026-10-19-s08-container-acceptance / E-S08-04
+
+- 按用户要求验收 S08，核实起点/任务缓存归属，精确回收失败构建缓存后完成当前 no-cache 镜像构建；解析源码及冻结输入未改。禁网 18/18、HTTP 合成 12/12、协议、实际取消、超时保留第一页、冷进程恢复和单槽并发全部通过，资源峰值未超过 4 GiB，无 OOM；3 Python/4 parser TS/18 真实 PG 通过。
+- 保留 internal 网络端口探测失败和旧引擎/构建失败；沿用用户已确认人工批次，重新绑定原材料与新表格单元格/坐标，不要求重复签字、不解除业务 needs_review。“合井口径”误字和既有 partial/研究 LLM 验收缺口不变。
+- 更新 progress/decisions、parser README 和公司研究专题；本批汇总及恢复脚本位于忽略证据目录。S08 标记 done，10/20；下一开发步 S11，本轮未执行。自己的验收容器/网络和测试 PG 已清理，已有 knowledge-hub 停止状态和 wolfbot 健康依赖保持，镜像/模型/缓存/证据保留。
+- 文档 70 文件/435 链接、差异与 78 原件/14 源码 hash 校验通过；同步前核对并保留并行 NGA 提交 de56c27 及其未提交改动，只归档本轮四份文档。完整 CI 与既有 Quality 暂缓事项分别报告，不因推送成功宣称 CI 通过。
 
 ### 2026-10-19-docker-recovery / E-S08-03
 

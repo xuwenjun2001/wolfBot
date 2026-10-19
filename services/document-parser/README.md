@@ -31,9 +31,11 @@ docker compose -f docker-compose.parser.yml up -d
 docker compose -f docker-compose.parser.yml ps
 ```
 
-编排只发布 `127.0.0.1:7821`，模型只读挂载、缓存单独挂载；容器使用非 root、只读根文件系统、2 CPU、4 GB 内存和单个模型 Worker。`uv sync --frozen --no-dev --no-cache` 不把下载缓存留进镜像。以上是配置上限，实际峰值内存和镜像体积要以目标机器验收为准。开发默认 token 仅用于回环地址联调，其他部署由运行方配置独立凭据。
+编排只发布 `127.0.0.1:7821`，模型只读挂载、缓存单独挂载；容器使用非 root、只读根文件系统、2 CPU、4 GiB 内存和单个模型 Worker。`uv sync --frozen --no-dev --no-cache` 不把下载缓存留进镜像。以上是配置上限，实际峰值内存和镜像体积要以目标机器验收为准。开发默认 token 仅用于回环地址联调，其他部署由运行方配置独立凭据。
 
-2026-10-19 本机原生 CPU 服务实跑通过，Docker 构建停在镜像解包，随后引擎返回 500、containerd 日志出现 SIGBUS。当天排障后引擎已恢复，客户端/服务端均为 API 1.55，但 C 盘仍只剩约 2 GB；现存 dev 镜像 history 还是没有 `--no-cache` 的旧配方，不能据此验收当前版本。先解决主机存储余量，再执行本节构建、健康和资源实测；原生验证不替代容器验证。失败与恢复记录见[进度 E-S08-01/03](../../docs/plans/research-agent-upgrade/progress.md)。不要用全局 prune 或反复重启共享 Docker 代替定位。
+2026-10-19 当前配方已完成构建和 Linux CPU 容器验收，见[进度 E-S08-04](../../docs/plans/research-agent-upgrade/progress.md)。验收镜像为 `sha256:b3d37ad1d460b9784aa2de70137c3aefc20ea79d6afb7193b5f7b8d21aacf376`，镜像内源码/依赖文件 hash 与工作区一致；`docker inspect .Size` 为 511862681 bytes，不能当作完整磁盘占用。禁网 probe 和 HTTP 服务的 cgroup 内存峰值分别约 2.14 / 1.70 GiB，均低于 4 GiB 上限、无 OOM；这是本机有限样本实测，不是任意资料的资源保证。
+
+此前解包失败、引擎 500 和 SIGBUS 记录保留，根因未证明。恢复引擎后，只回收归属本任务的三个失败构建 cache ID，释放 VHDX 内部 12.6 GB 后完成重建；未做全局 prune、删卷或迁移数据盘。收尾 C 盘仍约 1.89 GiB，后续大构建需安排存储余量。HTTP 验收使用普通 bridge 和回环端口；本机 internal 网络未发布宿主端口，禁网能力由单独的 `--network none` probe 验证。
 
 ## 协议和限制
 
@@ -61,14 +63,16 @@ uv lock --check --project services/document-parser
 uv run --no-sync --project services/document-parser ruff check services/document-parser
 uv run --no-sync --project services/document-parser pytest services/document-parser/tests -q
 uv run --no-sync --project services/document-parser pip-audit --format json --output data/research-agent-upgrade/evidence/S08/audit.json
-node --import tsx scripts/research/verify-ocr.ts
+node --import tsx scripts/research/verify-ocr.ts data/research-agent-upgrade/evidence/S08/container-acceptance-20261019/probe-container
 node --import tsx scripts/research/verify-parser-service.ts
 ```
 
-最后两个脚本分别核对公开开发样本的行/年份/金额，以及运行中的 HTTP 服务。服务验证需要上述 token 环境变量及本地合成压力样本；实际输入、准备办法、失败和人工抽查状态统一登记在[进度](../../docs/plans/research-agent-upgrade/progress.md)。`probe.py` 只读取冻结开发资料；`make_probe_samples.py` 用明确标签生成合成扫描表，不代表真实公司数据。单测使用替身验证协议和停止行为，不能代替真实 OCR 或人工核对。
+最后两个脚本分别核对指定批次公开开发样本的行/年份/金额，以及运行中的 HTTP 服务。上例使用本批受控归档路径，重新生成结果时改为新批次目录；不要把复核旧结果当成重新解析。服务验证需要上述 token 环境变量及本地合成压力样本；实际输入、准备办法、失败和人工抽查状态统一登记在[进度](../../docs/plans/research-agent-upgrade/progress.md)。`probe.py` 只读取冻结开发资料；`make_probe_samples.py` 用明确标签生成合成扫描表，不代表真实公司数据。单测使用替身验证协议和停止行为，不能代替真实 OCR 或人工核对。
 
-本轮 pip-audit 检查了 130 个可查询包，未发现已知漏洞；`torch/torchvision` 的 `+cpu` 版本被 PyPI 数据源跳过，另外按相应上游版本查过漏洞记录，结果也为零。上游记录不证明 CPU 二进制的完整审计。合成样本第二页的“合并口径”实际识别为“合井口径”，已保留该错误，不能由金额命中推导整表完全正确。
+当前容器公开样本 18/18、两页合成表 12/12 行/年份/值检查通过；实际取消保留第一页，1 秒预算实测约 1.38 秒停止并保留第一页，随后冷进程恢复完成两页，并发提交返回 429。旧服务验证脚本允许“取消前两页已完成”的竞争分支，本批另作严格断言，只把实际 cancelled_partial 算作取消通过；本地 `partial-recovery.mjs`、逐阶段回执、资源和不可变汇总保存在 E-S08-04 的证据目录，换机须先受控恢复。
 
-2026-10-19 用户对本批原图与表格的单位、年份列、括号负数、负号、小数/零和合并表头逐项核对并确认通过，登记为 E-S08-02。原抽查材料保留确认前快照，最新确认在 `data/research-agent-upgrade/evidence/S08/human-review-01/acceptance.json`。这是样本人工抽查通过，业务资料仍保留 needs_review，Docker 镜像/容器/资源验收仍待补。
+前次依赖验收的 pip-audit 检查了 130 个可查询包，未发现已知漏洞；`torch/torchvision` 的 `+cpu` 版本被 PyPI 数据源跳过，另外按相应上游版本查过漏洞记录，结果也为零。本次未改依赖或重跑审计，上游记录不证明 CPU 二进制的完整审计。合成样本第二页的“合并口径”实际识别为“合井口径”，已保留该错误，不能由金额命中推导整表完全正确。
+
+2026-10-19 用户对本批原图与表格的单位、年份列、括号负数、负号、小数/零和合并表头逐项核对并确认通过，登记为 E-S08-02。原抽查材料保留确认前快照，最新确认在 `data/research-agent-upgrade/evidence/S08/human-review-01/acceptance.json`；后续容器验收见 E-S08-04。新 Linux 表格单元格字段和坐标与该批一致，属于机器复核，未新增真人签字。S08 已验收，业务资料仍保留 needs_review。
 
 平台的 `native/auto/docling/ocr` 路由、检索及后续 Agent 接线见[公司研究](../../docs/company-research.md)。
