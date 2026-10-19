@@ -71,7 +71,9 @@ export const researchEventSchema = z.object({
   requestRevision: revisionSchema, planRevision: revisionSchema.nullable(), reportRevision: revisionSchema.nullable(),
   attemptId: z.uuid().nullable(), generation: z.number().int().min(0),
   event: z.discriminatedUnion('type', [
-    z.object({ type: z.literal('task.created') }).strict(), z.object({ type: z.literal('plan.created') }).strict(),
+    z.object({ type: z.literal('task.created') }).strict(),
+    z.object({ type: z.literal('task.revised'), fromRequestRevision: revisionSchema, changedFields: z.array(z.enum(['questions', 'periods', 'asOf'])).min(1).max(3) }).strict(),
+    z.object({ type: z.literal('plan.created') }).strict(),
     z.object({ type: z.literal('document.registered'), documentId: researchIdSchema, version: revisionSchema }).strict(),
     z.object({ type: z.literal('attempt.started') }).strict(), z.object({ type: z.literal('attempt.finished'), status: z.enum(['completed', 'partial', 'failed', 'cancelled', 'superseded']) }).strict(),
     z.object({ type: z.literal('report.created'), status: z.enum(['completed', 'partial', 'failed', 'cancelled']) }).strict(),

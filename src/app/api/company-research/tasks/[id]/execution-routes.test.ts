@@ -1,11 +1,12 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-const mock = vi.hoisted(() => ({ auth: vi.fn(), queue: vi.fn(), task: vi.fn(), source: vi.fn(), events: vi.fn(), accept: vi.fn() }));
+const mock = vi.hoisted(() => ({ auth: vi.fn(), queue: vi.fn(), revise: vi.fn(), task: vi.fn(), source: vi.fn(), events: vi.fn(), accept: vi.fn() }));
 vi.mock('@/lib/auth/action', () => ({ requireAction: mock.auth }));
 vi.mock('@/lib/company-research/execution-store', () => ({ queueFinancialResearch: mock.queue }));
-vi.mock('@/lib/company-research/version-store', () => ({ getResearchTask: mock.task, researchVersionEventsAfter: mock.events }));
+vi.mock('@/lib/company-research/version-store', () => ({ getResearchTask: mock.task, reviseResearchTask: mock.revise, researchVersionEventsAfter: mock.events }));
 vi.mock('@/lib/company-research/source-reader', () => ({ readResearchSource: mock.source }));
 vi.mock('@/lib/company-research/report-acceptance', () => ({ acceptResearchReport: mock.accept }));
 import { POST } from './start/route';
+import { POST as revisePOST } from './revise/route';
 import { GET as sourceGET } from './source/route';
 import { GET as streamGET } from './events/route';
 import { POST as acceptPOST } from './accept/route';
@@ -18,6 +19,19 @@ it('queues from the authorized identity and rejects cross-origin or malformed ex
   expect(mock.queue).toHaveBeenCalledWith('trusted-user', 'task-private', 0);
   const bad = request(); bad.headers.set('origin', 'https://evil.example'); expect((await POST(bad, context)).status).toBe(403);
   expect(mock.queue).toHaveBeenCalledTimes(1);
+});
+it('revises only through a same-origin authorized request with both expected revisions and an idempotency key', async () => {
+  const body = { expectedRequestRevision: 1, expectedPlanRevision: 2, changes: { questions: [{ id: 'income_profit', text: '检查收入与利润的变化和原因' }, { id: 'cash_flow', text: '检查现金流变化' }, { id: 'risks', text: '检查风险变化' }] } };
+  const request = (origin: string) => new Request('http://localhost/api/company-research/tasks/task-private/revise', {
+    method: 'POST', headers: { origin, host: 'localhost', 'Content-Type': 'application/json', 'Idempotency-Key': 'revision-key-0001' }, body: JSON.stringify(body),
+  });
+  mock.task.mockResolvedValue({ id: 'task-private', status: 'queued', requestRevision: 2, planRevision: 3 });
+  expect((await revisePOST(request('https://evil.example'), context)).status).toBe(403);
+  expect(mock.revise).not.toHaveBeenCalled();
+  const response = await revisePOST(request('http://localhost'), context);
+  expect(response.status).toBe(202);
+  expect(mock.revise).toHaveBeenCalledWith('trusted-user', 'task-private', 1, 2, 'revision-key-0001', body.changes);
+  expect((await response.json()).task).toMatchObject({ requestRevision: 2, planRevision: 3 });
 });
 it('authorizes source reads before invoking the repository and does not accept a query actor', async () => {
   mock.source.mockResolvedValue({ text: '<script>source data</script>' });

@@ -52,11 +52,15 @@ export function useFinancialResearch() {
     setConnected(false);
     void load().then(task => { if (current()) { if (!isFinancialTerminal(task.status)) connect(); else setConnected(true); } }).catch(e => { if (current()) { setError(e.message); reconnect(); } });
     return () => { controller.abort(); stream?.close(); if (timer) clearTimeout(timer); };
-  }, [selectedId, refreshList]);
+  }, [selectedId, refreshList, state.snapshot?.status]);
   const refreshTask = useCallback(async () => {
     const id = selectedRef.current, currentEpoch = epoch.current; if (!id) return;
     const { task } = await researchApi<{task: FinancialTask}>(`tasks/${id}`);
     if (selectedRef.current === id && epoch.current === currentEpoch) setState(s => acceptSnapshot(s, id, task));
   }, []);
+  useEffect(() => {
+    if (!state.needsSnapshot) return;
+    void refreshTask().catch(e => setError(e instanceof Error ? e.message : '恢复研究状态失败'));
+  }, [state.needsSnapshot, refreshTask]);
   return { task: state.snapshot, tasks, selectTask, refreshList, refreshTask, connected, error, setError, selectedId };
 }

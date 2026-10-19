@@ -43,6 +43,12 @@ export const researchTaskSpecSchema = z.object({
   if (v.comparison.status === 'comparable' && (a.kind !== b.kind || a.basis !== b.basis || a.start.slice(5) !== b.start.slice(5) || a.end.slice(5) !== b.end.slice(5))) ctx.addIssue({ code: 'custom', message: 'Incomparable periods require an explicit reason' });
 });
 export type ResearchTaskSpec = z.infer<typeof researchTaskSpecSchema>;
+export const researchTaskRevisionChangesSchema = z.object({
+  questions: z.array(researchQuestionSchema).length(3).optional(),
+  periods: z.tuple([researchPeriodSchema, researchPeriodSchema]).optional(),
+  asOf: timestampSchema.optional(),
+}).strict().refine(value => Object.keys(value).length > 0, 'At least one request field must change');
+export type ResearchTaskRevisionChanges = z.infer<typeof researchTaskRevisionChangesSchema>;
 export const researchPlanSchema = z.object({
   schemaVersion: z.literal(1), taskId: z.uuid(), requestRevision: revisionSchema, revision: revisionSchema,
   createdAt: timestampSchema, steps: z.array(z.object({

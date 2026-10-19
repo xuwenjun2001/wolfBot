@@ -4,7 +4,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { prisma } from '@/lib/db/client';
 import type { PiAgentModelProvider } from '@/lib/agent/types';
-import { createResearchTask, getResearchTask } from './version-store';
+import { createResearchTask, getResearchTask, reviseResearchTask } from './version-store';
 import { queueFinancialResearch, claimFinancialResearch, saveResearchCheckpoint, reserveResearchModelRequest } from './execution-store';
 import { reserveResearchToolCall, cancelResearchTask } from './attempt-store';
 import { ResearchArtifactStore, artifactDigest } from './artifact-store';
@@ -58,6 +58,18 @@ describe.skipIf(process.env.COMPANY_RESEARCH_TEST_POSTGRES !== '1')('financial e
     expect(after.usage.startedAt).toBe(before.usage.startedAt); expect(after.usage.deadline).toBe(before.usage.deadline);
     expect(after.usage.toolCalls).toBe(1); expect(after.usage.unknownModelRequests).toBe(1); expect(after.reportRevision).toBe(1);
     await executeFinancialResearch(actor, next.attempt, undefined, ctx); expect((await getResearchTask(actor, task.id, ctx))!.reportRevision).toBe(1);
+  });
+  it('keeps an exhausted logical budget exhausted after a request revision', async () => {
+    const task = await queued(1), first = (await claimFinancialResearch('revision-budget-first', ctx))!.attempt;
+    await reserveResearchToolCall(actor, first, ctx); await reserveResearchModelRequest(actor, first, ctx);
+    const before = (await getResearchTask(actor, task.id, ctx))!;
+    await reviseResearchTask(actor, task.id, 1, 1, `revision-budget-${randomUUID()}`, { asOf: '2025-07-01T00:00:00Z' }, ctx);
+    const next = (await claimFinancialResearch('revision-budget-next', ctx))!.attempt;
+    const report = await executeFinancialResearch(actor, next, undefined, ctx, { name: 'must-not-run-after-revision', complete() { throw new Error('Revision reset an exhausted budget'); } });
+    const after = (await getResearchTask(actor, task.id, ctx))!;
+    expect(report?.status).toBe('partial'); expect(next.planRevision).toBe(2); expect(next.requestRevision).toBe(2);
+    expect(after.usage).toMatchObject({ toolCalls: 1, unknownModelRequests: 1, startedAt: before.usage.startedAt, deadline: before.usage.deadline });
+    expect(after.reportRevision).toBe(1);
   });
   it('uses the real PI loop and stops repeated no-progress searches with an honest partial', async () => {
     const task = await queued(), token = (await claimFinancialResearch('loop', ctx))!.attempt;

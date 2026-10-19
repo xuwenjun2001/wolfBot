@@ -6,25 +6,25 @@
 
 | 字段 | 当前值 |
 | --- | --- |
-| 最后更新 | 2026-10-19（S11—S15 review 修复完成） |
+| 最后更新 | 2026-10-20（S16 实现与验证完成） |
 | 计划版本 | v1 |
-| 总体状态 | Review 复现的年份列、括号负数、取消后资料写入、空白归一引用定位四项缺陷已修复并通过定向单测、固定报告确定性回放和真实 PostgreSQL 回归；原 G0 运行、人工确认与浏览器证据保留，不反向删除或改写 |
-| 已完成开发步骤 | 15/20；S11—S15 修复后的机器验收证据已补齐，S16 及以后未启动 |
-| 当前进行中步骤 | 无；S11—S15 已恢复 done |
-| 下一步骤 | S16：修改计划与安全重新规划，pending，未启动 |
-| 下一具体动作 | 后续承接 S16 时读取 plan.md 的本步及 S04/S05/S11/S14 依赖，核对当前源码、版本冲突与预算继承边界后登记文件范围；不重复核查已由 E-S13-02 绑定确认的 report v1 |
-| 当前会话登记 | 2026-10-19-s11-s15-review-fixes：用户要求修复四项 review 问题；起点 37b693fc3a916cb2ad3bd52c4c3cd8a635d5610c，工作区干净。负责 numeric 核验、资料写入 fencing、引用原文范围映射及相关单测/PG/固定报告回归，完成后更新证据并同步当前分支；不开展 S16 |
+| 总体状态 | S01—S16 已验收；本会话按用户要求继续 S17—S20，按依赖顺序推进。生产部署不在授权范围内 |
+| 已完成开发步骤 | 16/20；S16 计划修订与安全重新规划已通过隔离 PostgreSQL、定向测试、类型/ESLint 和只读工作台窄屏检查 |
+| 当前进行中步骤 | 无；S16 已 done，S17 尚未登记开始 |
+| 下一步骤 | S17：新财报触发研究更新和报告差异，pending |
+| 下一具体动作 | 核对公告发现/文档导入、报告历史 API 与 claim/citation 依赖，设计主动检查、来源去重、asOf 更新及支持/修订/撤回差异的实现边界 |
+| 当前会话登记 | 2026-10-20-s16-s20：用户要求开始实现 S16—S20。起点 HEAD `ac70c7e3a53e89511c1c37aa979a8212d19118fc`，分支 `codex/research-agent-s11-s15`，当时工作区干净且与 origin 同步。S16 已完成，E-S16-01；后续按依赖推进 S17—S20，逐步登记文件和证据 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
-| 当前参考分支 / HEAD | codex/research-agent-s11-s15；修复前 HEAD `37b693fc3a916cb2ad3bd52c4c3cd8a635d5610c`，当前提交与远端 SHA 以本轮收尾 Git 核对为准；证据 sourceHashes 绑定本轮源码 |
+| 当前参考分支 / HEAD | codex/research-agent-s11-s15；本轮起点 `ac70c7e3a53e89511c1c37aa979a8212d19118fc`；本步提交/远端 SHA 以本节同步记录与最终 Git 核对为准 |
 | 目标仓库 | `https://github.com/xuwenjun2001/wolfBot`，默认分支 `main` |
-| 本轮涉及文件 | claim-verification、financial-normalization/数字定位辅助模块、document-store、acquisition-service、parse-service、financial-tools、source-reader、引用文本映射辅助模块与回归测试；company-research、decisions、s11-s15-validation、progress 文档。证据保留在 data/research-agent-upgrade/evidence/，不提交原件 |
-| 已有改动提醒 | 本轮起点干净；代码、回归测试和三份专题文档属于本轮，data 下原件/日志/回执不纳入 Git。提交前只暂存明确相关路径，保留任何后来出现的无关改动 |
-| 运行环境 / 进程 | 定向单测、临时 PostgreSQL 演练、types、ESLint、文档检查已完成；测试容器由 runner 清理，未迁移应用/生产库，未调用模型、OCR 或启动共享服务 |
-| 模型与数据费用 | 沿用 gpt-6.1-sol/high 的 8 例 reviewer 校准及 7 轮×2 场景实跑；每轮实现不同，不当作同算法重复试验。费用 unknown，含失败，每个逻辑任务仍为 40 次工具/20 分钟。本次无新模型、搜索、OCR 调用或预算变更 |
-| 阻塞 | S11—S15 无待结清验收项；原三个模块尺寸门及暂缓 Quality 依赖问题不变。未部署、未做完整构建/CI；真实进程中断矩阵、完整用户旅程和保留集/质量对照留后续步骤 |
-| 最近验证 | 本轮 121 项定向单测通过、36 项 PostgreSQL 测试通过、types/定向 ESLint 和文档检查通过；固定报告回放为完整 6 facts/14 citations 与资料不足 3 facts/7 citations，均无错误。模块门仍为原三项失败 |
+| 本轮涉及文件 | S16 已改 company-research 版本合同/store、任务 revise API、工作台修订表单/旧报告上下文/SSE 快照恢复及相应 API、PostgreSQL、合同测试；同步公司研究专题、版本合同和本交接。S17—S20 文件按实际边界追加。运行证据留在 `data/research-agent-upgrade/evidence/`，不提交私有资料 |
+| 已有改动提醒 | S16 起点干净；每步仅暂存本步相关代码、测试和文档。后续出现的无关改动保留，不纳入本步提交 |
+| 运行环境 / 进程 | S16 定向单测、隔离 PostgreSQL、类型检查、定向 ESLint、文档检查及窄屏只读工作台检查通过；PG runner 自建容器已移除。未迁移应用/生产数据库。QA HTTP 服务已关闭 |
+| 模型与数据费用 | S16 未调用模型、搜索或 OCR，未变更预算。修订保留逻辑任务累计调用数、token、开始时间和 deadline。S19 模型/样本调用和费用逐次登记，unknown 保持 unknown；保留集仅在候选冻结后验收 |
+| 阻塞 | S16 无待结验收项。`npm run check:module-boundaries` 因既有 chat/page、quant/data-prefetch、market-data/api 三个超限文件失败，新改文件未触发该检查；Quality 依赖问题按用户要求暂缓。S17—S20 按前置验收判断 |
+| 最近验证 | S16：研究/API/UI 定向 `vitest` 123 passed、40 DB-only skipped；`npm run test:research:postgres` 40 passed，旧库升级/旧 reader 兼容通过且容器已移除；`npm run type-check`、定向 ESLint、`npm run check:docs`（71 Markdown/443 本地链接）、`git diff --check` 通过。只读 UI QA 展开计划表单并检查窄屏，无数据库/API 写入。详情见 E-S16-01 |
 | 受控资料恢复 | 开发资料在 `data/research-agent-upgrade/`；本机 `RESEARCH_HOLDOUT_ROOT=D:/QuantPilot-private-evals/research-v1`，换机须经受控归档恢复并核对登记 hash；这里不记录保留题/答案 |
-| 范围提醒 | 本次实现 S11—S15；保留集、S16 后续能力、生产部署和既有 Quality 修复不在本轮范围；所有完成状态须绑定真实验证 |
+| 范围提醒 | 本次目标 S16—S20；生产部署不在范围。每步完成状态须绑定本会话真实验证；保留题/答案不得进入 Git 或交接文档 |
 
 ## 步骤状态
 
@@ -47,7 +47,7 @@
 | S13 | 报告与变化表完整交付 | S11、S12 | done | E-S13-01/02、E-REVIEW-02；完整/partial 固定报告确定性回放无错误，原人工确认绑定报告 hash 保留 |
 | S14 | 工作台与事件流 | S04、S13 | done | E-S14-01、E-S13-02；桌面/手机、状态/路由、刷新/切换、浏览器 EventSource 断线/重复/乱序/终态通过 |
 | S15 | 原文定位与证据阅读器 | S07、S08、S12、S14 | done | E-S15-01、E-S13-02、E-REVIEW-02；原生 PDF/真实 OCR 派生扫描、版本/hash/坐标/逐字高亮、权限与恶意文本通过，长文本归一化引用范围回归通过 |
-| S16 | 修改计划与安全重新规划 | S04、S05、S11、S14 | pending | — |
+| S16 | 修改计划与安全重新规划 | S04、S05、S11、S14 | done | E-S16-01；request/plan expectedRevision 与幂等、取消优先、旧 attempt fencing、同逻辑预算继承、旧报告上下文和窄屏工作台检查通过 |
 | S17 | 新财报更新与报告差异 | S06、S09、S13、S15、S16 | pending | — |
 | S18 | 恢复、隔离与运行观测 | S05、S11、S14、S16、S17 | pending | — |
 | S19 | 评测对照与 Skill 改进实验 | S02、S03、S13、S18 | pending | — |
@@ -447,3 +447,18 @@ E-Sxx-01 / 日期 / 会话标识：
 - 起点 2964ee7598ace01cfa984766a2f1bb49526bbc0f，分支 codex/research-agent-s11-s15，工作区干净；本次仅修改 progress.md 与 s11-s15-validation.md。E-S13-02 记录报告、原资料、源码和浏览器证据 hash 核对，原人工待核查材料及 closure 作为历史保留，未向应用/业务库补写验收。
 - S13 人工要求满足，S14/S15 已通过的自身验证与依赖结清；S01—S15 共 15/20 完成。没有新模型/OCR/DB/浏览器执行或源码变更，既有模块尺寸债务、暂缓 Quality 和完整 E2E/CI 的边界保留。
 - 文档检查 71 Markdown / 441 本地链接、差异与回执绑定复核通过，见 E-S13-02；确认材料与日志留在忽略目录，未新增服务进程。本次止于验收归档，下一工作包为尚未启动的 S16。
+
+### E-S16-01：请求修订与安全重新规划
+
+- 日期 / 会话：2026-10-20 / `2026-10-20-s16-s20`。起点 HEAD `ac70c7e3a53e89511c1c37aa979a8212d19118fc`，分支 `codex/research-agent-s11-s15`，起点干净；本轮只提交明确相关文件。
+- 实现：新增同源 `POST /api/company-research/tasks/{id}/revise`，要求认证的 `research.report.run`、`Idempotency-Key`、`expectedRequestRevision` 与 `expectedPlanRevision`。严格允许修改三问、两期和 `asOf`；不接受公司或预算字段，变更期间边界必须换 ID。事务内追加不可变 request/plan、使活跃 attempt superseded 并推进 generation、重置为新版本 checkpoint 后排队。取消优先；晚到 worker 写入受 fencing 拒绝。任务预算、工具数、tokens、开始时间和 deadline 不变；耗尽预算时新 attempt 只封存 partial。已导入文档保留；旧报告与其原 request spec/asOf 继续可读。工作台展示修订状态、编辑表单和旧报告提示；SSE 事件后重新拉取权威快照。
+- 单测：`npm run test:unit -- src/lib/company-research src/app/api/company-research/tasks src/app/company-research/financial` 退出 0，18 files passed / 6 skipped，123 tests passed / 40 DB-only skipped。定向 API 合同/同源测试包含在通过数中。
+- PostgreSQL：`npm run test:research:postgres` 退出 0；40 项数据库测试通过，包含新旧 revision 并发、同键重试、取消与修订竞争、过期 worker fencing、耗尽预算修订、旧报告及 asOf 保留、旧库升级与旧 reader 兼容。runner 专用 Docker 容器已移除，未迁移应用/生产库。原始 manifest：`data/research-agent-upgrade/evidence/S05/rehearsal-aed7d5c5-55bb-4c83-bd36-a563236aa609/manifest.json`，SHA-256 `2f72e082cea2e8c3567421f6d61c8dcef6050acfc4507e6307dc4c507e326d23`；共享 runner 当前将证据目录固定写入 S05。
+- 其他验证：`npm run type-check`、本步 TS/TSX 定向 ESLint、`npm run check:docs`（71 Markdown / 443 本地链接）和 `git diff --check` 退出 0。`npm run check:module-boundaries` 退出 1，报告既有 `src/app/[project_id]/chat/page.tsx`、`src/lib/quant/data-prefetch.ts`、`services/market-data/src/quantpilot_market_data/api.py` 三个与本步无关的尺寸超限；没有本步新增路径错误。
+- UI 检查：用保留 S13 报告启动只读 `serve-financial-workbench.js`，打开报告并展开修订表单；窄屏可见三问、年度区间、截止日和提交按钮，无布局重叠。QA 服务已关闭；未提交表单、未写 API/数据库。QA 文件在 `data/research-agent-upgrade/evidence/S13/2026-10-19T05-19-41-904Z/workbench-qa/`。
+- 限制：未调用真实模型、OCR 或实时公告；本步验证的是 fixture/PG/API 合同和只读 UI，不冒充真实模型更新验收。下一步 S17 核查新公告检查、来源去重、报告历史及 claim/evidence 差异。
+
+### 2026-10-20-s16-s20 / S16
+
+- 用户要求开始实现 S16—S20；本会话先完成 S16 并按每步顺序推进。S16 代码、测试、文档、交接按仓库规则完成提交和远端核对后，再登记 S17。
+- 当前 S16 状态为 done；S17—S20 仍为 pending，未预先计入完成数。生产部署、真实模型运行和保留集优化不包含在 S16。

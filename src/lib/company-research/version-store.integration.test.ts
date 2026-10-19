@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { prisma } from '@/lib/db/client';
 import { ResearchArtifactStore, artifactDigest } from './artifact-store';
 import type { ResearchRepositoryContext } from './repository-core';
-import { createResearchTask, getResearchTask, appendResearchPlan, getResearchReportRevision, researchVersionEventsAfter } from './version-store';
+import { createResearchTask, getResearchTask, appendResearchPlan, reviseResearchTask, getResearchReportRevision, researchVersionEventsAfter } from './version-store';
 import { registerResearchDocument, getResearchDocument, readResearchDocumentArtifact } from './document-store';
 import { startResearchAttempt, heartbeatResearchAttempt, reserveResearchToolCall, cancelResearchTask } from './attempt-store';
 import { commitResearchReport } from './report-store';
@@ -139,6 +139,53 @@ describe.skipIf(!enabled)('versioned research PostgreSQL and controlled artifact
     expect((await appendResearchPlan(actor, task.id, 0, keys[winner], plans[winner], ctx)).revision).toBe(1);
     await expect(appendResearchPlan(actor, task.id, 0, keys[winner], { ...plans[winner], steps: [{ ...plan.steps[0], title: '变化' }] }, ctx)).rejects.toMatchObject({ code: 'IDEMPOTENCY_CONFLICT' });
     await expect(prisma.$executeRaw`UPDATE company_research_plans SET plan='{}'::jsonb WHERE task_id=${task.id}`).rejects.toThrow('RESEARCH_IMMUTABLE_VERSION');
+  });
+  it('revises the request and plan atomically, fences the old worker, and preserves the logical budget', async () => {
+    const task = await taskWithPlan(), first = await startResearchAttempt(actor, task.id, 1, 'revision-worker-1', ctx);
+    await reserveResearchToolCall(actor, first, ctx);
+    const before = (await getResearchTask(actor, task.id, ctx))!, key = `revise-${randomUUID()}`;
+    const changes = { questions: before.spec.questions.map(q => q.id === 'income_profit' ? { ...q, text: '重点检查收入和利润变化的证据' } : q) };
+    await reviseResearchTask(actor, task.id, 1, 1, key, changes, ctx);
+    const revised = (await getResearchTask(actor, task.id, ctx))!;
+    expect(revised).toMatchObject({ status: 'queued', requestRevision: 2, planRevision: 2, generation: first.generation + 1, reportRevision: 0 });
+    expect(revised.spec.questions[0].text).toBe('重点检查收入和利润变化的证据');
+    expect(revised.plan).toMatchObject({ requestRevision: 2, revision: 2 });
+    expect(revised.checkpoint).toMatchObject({ requestRevision: 2, planRevision: 2, facts: [], claims: [] });
+    expect(revised.usage).toMatchObject({ toolCalls: 1, startedAt: before.usage.startedAt, deadline: before.usage.deadline });
+    await expect(heartbeatResearchAttempt(actor, first, ctx)).rejects.toMatchObject({ code: 'LEASE_LOST' });
+    const sequence = revised.sequence;
+    await reviseResearchTask(actor, task.id, 1, 1, key, changes, ctx);
+    expect((await getResearchTask(actor, task.id, ctx))!.sequence).toBe(sequence);
+    await expect(reviseResearchTask(actor, task.id, 1, 1, key, { asOf: '2025-07-01T00:00:00Z' }, ctx)).rejects.toMatchObject({ code: 'IDEMPOTENCY_CONFLICT' });
+    const second = await startResearchAttempt(actor, task.id, 2, 'revision-worker-2', ctx);
+    expect(second.requestRevision).toBe(2); expect(second.planRevision).toBe(2);
+    expect((await getResearchTask(actor, task.id, ctx))!.usage.deadline).toBe(before.usage.deadline);
+    await cancelResearchTask(actor, task.id, ctx);
+    await expect(reviseResearchTask(actor, task.id, 2, 2, `revise-${randomUUID()}`, { asOf: '2025-07-01T00:00:00Z' }, ctx)).rejects.toMatchObject({ code: 'LEASE_LOST' });
+  });
+  it('allows only one concurrent request revision and requires new period IDs for changed boundaries', async () => {
+    const task = await taskWithPlan(), current = (await getResearchTask(actor, task.id, ctx))!;
+    const periods = [{ ...current.spec.periods[0], id: 'fy2022', start: '2022-01-01', end: '2022-12-31' }, current.spec.periods[1]] as const;
+    await expect(reviseResearchTask(actor, task.id, 1, 1, `bad-period-${randomUUID()}`, { periods: [{ ...periods[0], id: current.spec.periods[0].id }, periods[1]] }, ctx)).rejects.toMatchObject({ code: 'INVALID_RESEARCH' });
+    const changes = { periods };
+    const results = await Promise.allSettled([
+      reviseResearchTask(actor, task.id, 1, 1, `period-a-${randomUUID()}`, changes, ctx),
+      reviseResearchTask(actor, task.id, 1, 1, `period-b-${randomUUID()}`, { asOf: '2025-07-01T00:00:00Z' }, ctx),
+    ]);
+    expect(results.filter(result => result.status === 'fulfilled')).toHaveLength(1);
+    expect(results.find(result => result.status === 'rejected')).toMatchObject({ reason: { code: 'REVISION_CONFLICT' } });
+    expect((await getResearchTask(actor, task.id, ctx))!.requestRevision).toBe(2);
+  });
+  it('retains the previous report and its as-of request after a plan revision', async () => {
+    const task = await taskWithPlan(); await attachDocument(task.id);
+    const attempt = await startResearchAttempt(actor, task.id, 1, 'report-before-revision', ctx);
+    const previous = await commitResearchReport(actor, attempt, 0, reportFor(task.id), ctx);
+    await reviseResearchTask(actor, task.id, 1, 1, `report-revision-${randomUUID()}`, { asOf: '2025-07-01T00:00:00Z' }, ctx);
+    const current = (await getResearchTask(actor, task.id, ctx))!;
+    expect(current.spec.asOf).toBe('2025-07-01T00:00:00Z');
+    expect(current.reportSpec?.asOf).toBe(previous.asOf);
+    expect(await getResearchReportRevision(actor, task.id, 1, ctx)).toEqual(previous);
+    expect(current.reportRevision).toBe(1);
   });
   it('isolates metadata, original/parsed content, reports, events and cancellation for other actors', async () => {
     const task = await taskWithPlan(), doc = await attachDocument(task.id), attempt = await startResearchAttempt(actor, task.id, 1, 'worker', ctx);

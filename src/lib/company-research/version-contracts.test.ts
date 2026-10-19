@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { researchTaskSpecSchema, researchRequestHash, researchPlanSchema, assertPlanForSpec } from './task-contracts';
+import { researchTaskSpecSchema, researchTaskRevisionChangesSchema, researchRequestHash, researchPlanSchema, assertPlanForSpec } from './task-contracts';
 import { researchDocumentSchema, documentAvailableAt, financialFactSchema } from './document-contracts';
 import { researchReportRevisionSchema, reportBindingErrors, researchEventSchema } from './revision-contracts';
 import { readResearchReport, readResearchRequest } from './compatibility';
@@ -22,6 +22,15 @@ describe('financial change version contracts', () => {
       { ...spec, requestRevision: 2 }, { ...spec, budget: { ...spec.budget, maxToolCalls: 39 } },
       { ...spec, questions: spec.questions.map(q => ({ ...q, text: q.text + '重点' })) }]) expect(researchRequestHash(changed)).not.toBe(first);
     expect(() => researchRequestHash({ ...spec, actorId: 'attacker' })).toThrow();
+  });
+  it('limits revisions to research questions, periods and as-of without changing the company or budget', () => {
+    const spec = specFixture();
+    expect(researchTaskRevisionChangesSchema.safeParse({ questions: spec.questions }).success).toBe(true);
+    expect(researchTaskRevisionChangesSchema.safeParse({ periods: spec.periods }).success).toBe(true);
+    expect(researchTaskRevisionChangesSchema.safeParse({ asOf: '2025-07-01T00:00:00Z' }).success).toBe(true);
+    expect(researchTaskRevisionChangesSchema.safeParse({}).success).toBe(false);
+    expect(researchTaskRevisionChangesSchema.safeParse({ budget: { maxToolCalls: 100, timeoutMs: 3600000 } }).success).toBe(false);
+    expect(researchTaskRevisionChangesSchema.safeParse({ company: { ...spec.company, symbol: '000333.SZ' } }).success).toBe(false);
   });
   it('rejects invalid identities, periods and duplicate questions; represents incomparability explicitly', () => {
     const spec = specFixture();

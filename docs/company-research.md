@@ -154,12 +154,15 @@ query 为 1—300 字符；topK 为 1—20，默认 5；maxOutputCharacters 为 
 | --- | --- |
 | `GET /api/company-research/tasks` | 当前用户最近 30 个版本化任务 |
 | `POST /api/company-research/tasks/{id}/start` | `expectedPlanRevision`；重复入队复用已有计划 |
+| `POST /api/company-research/tasks/{id}/revise` | `expectedRequestRevision`、`expectedPlanRevision`、修订字段和 `Idempotency-Key`；追加请求/计划版本并重新排队 |
 | `GET /api/company-research/tasks/{id}` | 权威快照，含计划、公开检查点、资料、报告、变化表和核验信息 |
 | `GET /api/company-research/tasks/{id}/events` | SSE；每次连接先发送 snapshot，research 事件使快照失效，后续快照恢复完整状态 |
 | `GET /api/company-research/tasks/{id}/source` | `reportRevision`（0 为公开草稿）、`claimId` 或 `factId`、`citationIndex`；读取原引用的明确版本/hash |
 | `POST /api/company-research/tasks/{id}/accept` | 用户人工验收；传 `reportRevision`、`reportHash`、`checkedNumbersAndExplanations:true` |
 
 所有接口从认证 actor 派生归属。source 不接受任意 actor 或任意磁盘路径；历史原文不跟随最新索引切换。阅读器只渲染文本和结构化表格，外链过滤协议；逐字匹配才标黄，没有坐标时明确使用页/块/文本定位。派生扫描验收样本的 needs_review、未知披露时间必须保留。当前未采用 AG-UI SDK，也不声称协议兼容。
+
+工作台可修订三问、年度两期和资料截止日。修订需要同时匹配请求与计划 revision；相同幂等键及内容只接受一次，版本冲突返回 409。公司身份、口径和预算不在修订字段中；切换公司请创建新任务。成功修订会追加不可变请求和计划、保留现有报告/原件、使旧 attempt 的 generation 失效并排入新计划。检查点会按新版本重建，已取得的合格文档仍留在任务中供后续检索复用。修订不增加工具额度、token 统计、原始开始时间或截止时间；原额度已耗尽时，新 attempt 仅封存 partial。快照同时提供旧报告对应的 `reportSpec`，避免把上一请求的报告误标成新版本结果。
 
 执行 `npm run test:research:postgres` 会创建专用临时 PostgreSQL，演练旧库升级、重复迁移、旧代码兼容及新链路测试；不会迁移应用数据库。追加 `-- --financial-e2e` 才调用当前真实模型，对固定茅台双期公开 PDF 运行完整语料/缺后期资料两例，并核对历史 OCR 输出的阅读器。需要受控开发资料与校准回执，费用未知；固定资料运行不等于实时公告发现全链路验收。原始结果在 `data/research-agent-upgrade/evidence/S13/`，开发步骤状态以升级目录 progress 为准。
 

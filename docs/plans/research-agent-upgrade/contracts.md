@@ -15,7 +15,7 @@ S04 将新合同放在 `src/lib/company-research/{task,document,revision}-contra
 | generation | 服务端递增执行权 fencing；领取新 attempt 不得重置逻辑任务工具数、tokens、开始时间和 deadline |
 | event.sequence | 同一 task 内持久递增游标，用于补放；不是任何业务 revision |
 
-S16 才开放修改需求和安全重规划：使用 expectedRevision 和幂等键创建新快照，到工具边界令旧 attempt 失效，合格证据可复用；不重置逻辑预算。S17 更新资料形成新报告 revision，保留旧报告。S05 先落地不可变关系、冲突检查和执行权基础设施，不宣称完整交互修订已经可用。
+S16 修订入口为 `POST /api/company-research/tasks/{id}/revise`，使用 `expectedRequestRevision`、`expectedPlanRevision` 与 `Idempotency-Key`。允许改三问、两期和 `asOf`；公司身份变化需创建独立任务。变化后的 period 必须使用新 ID。请求与计划在同一事务追加，冲突或已取消任务拒绝；旧 attempt 被 superseded、generation 前进，检查点按新版本重建，已导入文档保留并继续受新 `asOf`/期间过滤。报告仍绑定旧 request/plan revision，快照以其 `reportSpec` 保留旧期间和截止日。修订不重置工具数、tokens、开始时间或 deadline；额度耗尽时只允许封存 partial。事件增加 `task.revised`，客户端收到事件后重新读取权威快照。S17 再在该不可变基础上生成更新报告并展示报告/证据差异。
 
 ## 任务与财务口径
 
@@ -49,7 +49,7 @@ partial 明确缺口，不冒充 completed。completed 不能有未解缺口，�
 
 首版新 task 从 draft 创建；start API 建立初始三问计划并入队，现有研究 Worker 在旧 run 和新 task 间交替领取。合法路径为 draft → queued → running → completed/partial/failed/cancelled。取消保留原件和已有交付；过期接管使用新 attempt 与递增 generation。恢复继承逻辑 usage，不复播隐藏推理；已耗尽预算的接管只封存 partial，不能再调用模型。
 
-事件 envelope 固定 taskId、sequence、request/plan/report revision、attemptId、generation、时间和公开业务 payload。task.created、task.queued、plan.created、document.registered、research.progress、attempt.started/finished、report.created、task.cancelled 是当前子集；没有隐藏 reasoning 字段。SSE 每次连接首先发送权威 snapshot，事件仅使状态失效，后续快照恢复完整数据。客户端拒绝旧任务、旧 generation 和倒退序号；切换任务撤销请求并关闭旧连接。当前采用原生 SSE，不声明 AG-UI 协议兼容。
+事件 envelope 固定 taskId、sequence、request/plan/report revision、attemptId、generation、时间和公开业务 payload。task.created、task.revised、task.queued、plan.created、document.registered、research.progress、attempt.started/finished、report.created、task.cancelled 是当前子集；没有隐藏 reasoning 字段。SSE 每次连接首先发送权威 snapshot，事件仅使状态失效，客户端随即重新读取快照以恢复完整数据。客户端拒绝旧任务、旧 generation 和倒退序号；切换任务撤销请求并关闭旧连接。当前采用原生 SSE，不声明 AG-UI 协议兼容。
 
 ## 执行、审查与人工验收
 
