@@ -1,6 +1,6 @@
 # S20 完整发布门：35 个失败用例清单
 
-本表逐项对应 Windows 独立 checkout 的 `s20-release-03.log`：21 个测试文件、35 个用例失败，1418 passed / 71 skipped；发布门前 17 项通过。原日志 SHA-256 为 `c32ed342f47e627197157fcb7eaa4f9025204d33ebab4b5cc448619fd9c5e84b`，源码身份见 `S20/validation-snapshot-v3.json`。这是历史实跑结果，本次只核对日志、源码和字符串副本，没有重跑完整发布门。
+本表逐项对应 Windows 独立 checkout 的 `s20-release-03.log`：21 个测试文件、35 个用例失败，1418 passed / 71 skipped；发布门前 17 项通过。原日志 SHA-256 为 `c32ed342f47e627197157fcb7eaa4f9025204d33ebab4b5cc448619fd9c5e84b`，源码身份见 `S20/validation-snapshot-v3.json`。这是历史实跑结果；整理本表时仅核对日志、源码和字符串副本，后续修复及整门重验见本文末尾，不改写原失败数量。
 
 本次清单与无模型字节核对保存于 `data/research-agent-upgrade/evidence/S20/failure-inventory-20261020-01/inventory.json`，SHA-256 `4a18962fd8df63e8432107e9b5b3da29699db79b3c6c8c988e4ce053de1392e0`。原失败日志及验证快照保持不变。
 
@@ -178,6 +178,20 @@ Skill 读取现在与 source lock 使用相同的 LF 语义；源码目录和已
 
 Windows 完整 release 的 17 个前置检查通过，单测为 1445 passed / 19 failed / 55 skipped，19 项均在创建真实符号链接时得到 EPERM。完整命令因此失败；后续独立 type-check、后端 lint、308 passed / 22 skipped 的后端测试与生产构建通过。首次 types 发生内存分配失败，保留原日志；限制验证进程的堆与新生代内存后重验通过，没有增加单测超时。
 
-Linux 首轮完整单测为 250 文件、1463 passed / 2 failed / 75 skipped。原 19 项 symlink 用例全部实际执行通过；PI loop 与完整 Skill 镜像分别为 1822 / 323 ms，通过原 5000 ms 限制。两个新失败来自夹具：sandbox 测试假定 data/projects 已存在；atomic workspace 测试在 POSIX 期待 Windows 的 EPERM 重试策略。已改为独立临时目录，以及分别检验 Windows 重试和 POSIX 错误传播、原目标保留、临时文件清理。修复后的 Linux 定向 6 passed / 2 平台 skipped，Windows 过滤定向 3 passed，其余未执行项不计通过；完整 Linux release 尚待执行。
+Linux 首轮完整单测为 250 文件、1463 passed / 2 failed / 75 skipped。原 19 项 symlink 用例全部实际执行通过；PI loop 与完整 Skill 镜像分别为 1822 / 323 ms，通过原 5000 ms 限制。两个新失败来自夹具：sandbox 测试假定 data/projects 已存在；atomic workspace 测试在 POSIX 期待 Windows 的 EPERM 重试策略。已改为独立临时目录，以及分别检验 Windows 重试和 POSIX 错误传播、原目标保留、临时文件清理。修复后的 Linux 定向 6 passed / 2 平台 skipped，Windows 过滤定向 3 passed，其余未执行项不计通过；该阶段完整 Linux release 尚待执行，最终结果见下一节。
 
 本阶段源码与测试修复不改变沙箱策略、来源完整性或财报质量门。财报四案例回归的独立质量门仍失败：36/36 数值、9/12 问题、9/12 支持结论；详见 [evaluation-results.md](evaluation-results.md#修复后的四案例开发回归)。
+
+## 2026-10-21 最终重验与剩余限制
+
+干净提交 `a4b5a64699ad185c052612ec6dea6e7acf88a771` 在隔离 Linux 上运行 `npm run release:check` 退出 0，默认 22 项全部通过（591.8 秒）。前端 240 文件通过/10 跳过，1465 项通过/76 跳过；后端 308 项通过/22 跳过；类型、全量 lint、四模板构建、生产构建均通过。原 19 个符号链接反例已在真实 Linux 文件系统执行通过，不需要用户为本轮验收额外开启 Windows 链接权限。历史两项超时在原 5000ms 限制内通过，但没有足够 CPU/I/O 证据把历史原因归为唯一底层故障。
+
+第一次 Linux 整门在 Backend lint 等待 uv 缓存锁时失败：我将依赖准备与检查并行启动，导致验证环境资源冲突。该日志 `release-linux.log` 保留；完成 frozen/offline Python 依赖准备后，顺序重新执行整个命令通过，没有改锁等待阈值或放松门禁。最终日志 `release-linux-final.log` SHA-256 为 `34da8447ce0bb076a5011f99b3911b331ef8894b6a8441585397c69ed2580c6e`。
+
+最终源码清单覆盖 1335 个运行源码/测试/fixture/锁文件，目标与实际 checkout 都为 a4b5a64，工作树干净、全部一致；`runtime-source-comparison-final.json` SHA-256 为 `ef1168577ee0b2cc7ff38402542f42dc44c60e4c036cbafba02fad9085fd5817`。独立汇总 `data/research-agent-upgrade/evidence/release-repair-01/repair-checks-final.json` SHA-256 为 `ed94d97b8e9f0f46e478e56bd94161e91f9028c479a3ffdc6c0e69ad547fd6bd`，保留 Windows 原失败、独立后续检查、46 PG/34 迁移、两公司真实 HTTP 入口、财报门及清理状态；旧汇总和原失败日志不覆盖。
+
+**安装门仍未通过。** 原锁文件的 Linux `npm ci` 实测因 @emnapi 版本/嵌套项不一致失败。为隔离验证代码，仅在临时环境准备依赖并保留四处差异，见 `linux-dependency-differences.json`；仓库 package.json/package-lock.json 未改。Python 按 frozen uv.lock 安装，依赖安全审计仍暂缓。默认 release 的 22 项不包含可选 security/runtime/production/live-evidence 检查，不能写成原锁可复现安装、完整 CI 或生产发布验收全部通过。
+
+**财报门仍未通过。** 本批四个开发任务数值 36/36，问题与支持结论均 9/12（75%），低于 80%/90% 门槛；两家原因证据不足，另有一项风险语义核验在预算耗尽前未完成。保留诚实缺口、全部工具消耗和原人工确认，不以代码检查通过替代业务质量。S19/S20 仍 blocked、总计 18/20；这批已见资料不能替代新的盲验收。
+
+本轮所属 Linux 容器已在导出证据后停止/移除，临时 PG 与 QA 服务均已停；未重启日常服务、迁移应用库或部署生产。没有当前必须由用户提供的凭据或重复人工确认；后续质量优化和未见样本验收应单独登记，不能重开本批预算或复用旧保留题作为新盲测。
