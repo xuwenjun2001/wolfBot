@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -70,13 +71,14 @@ describe('PI Agent framework identity', () => {
 
   it('binds untracked paths and contents deterministically within a hard budget', () => {
     const contents = new Map([
-      ['/repo/src/new-agent.ts', Buffer.from('version one')],
-      ['/repo/docs/new.md', Buffer.from('documentation')],
+      [path.resolve('/repo/src/new-agent.ts'), Buffer.from('version one')],
+      [path.resolve('/repo/docs/new.md'), Buffer.from('documentation')],
     ]);
-    const readEntry = vi.fn((absolutePath: string) => ({
-      kind: 'file' as const,
-      content: contents.get(absolutePath) ?? Buffer.alloc(0),
-    }));
+    const readEntry = vi.fn((absolutePath: string) => {
+      const content = contents.get(absolutePath);
+      if (!content) throw new Error(`Unexpected fixture read: ${absolutePath}`);
+      return { kind: 'file' as const, content };
+    });
     const original = fingerprintUntrackedFiles(
       ['src/new-agent.ts', 'docs/new.md'],
       { cwd: '/repo', maxContentBytes: 64, readEntry },
@@ -87,7 +89,7 @@ describe('PI Agent framework identity', () => {
       { cwd: '/repo', maxContentBytes: 64, readEntry },
     )).toBe(original);
 
-    contents.set('/repo/src/new-agent.ts', Buffer.from('version two'));
+    contents.set(path.resolve('/repo/src/new-agent.ts'), Buffer.from('version two'));
     expect(fingerprintUntrackedFiles(
       ['src/new-agent.ts', 'docs/new.md'],
       { cwd: '/repo', maxContentBytes: 64, readEntry },

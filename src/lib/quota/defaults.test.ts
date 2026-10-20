@@ -10,15 +10,15 @@ const MIGRATION_PATH = path.join(
   process.cwd(),
   'prisma/migrations/20260716000400_add_permissions_and_usage_quotas/migration.sql',
 );
-const migrationSql = readFileSync(MIGRATION_PATH, 'utf8');
+const migrationSql = readFileSync(MIGRATION_PATH, 'utf8').replace(/\r\n?/g, '\n');
 const hardeningMigrationSql = readFileSync(path.join(
   process.cwd(),
   'prisma/migrations/20260717000100_harden_default_member_quotas/migration.sql',
-), 'utf8');
+), 'utf8').replace(/\r\n?/g, '\n');
 const structuralQuotaMigrationSql = readFileSync(path.join(
   process.cwd(),
   'prisma/migrations/20260723000300_worker_capacity_and_structural_quotas/migration.sql',
-), 'utf8');
+), 'utf8').replace(/\r\n?/g, '\n');
 const hardeningBlock = hardeningMigrationSql.match(
   /SET\s+"enforcement" = 'hard'[\s\S]+?;/,
 )?.[0] ?? '';

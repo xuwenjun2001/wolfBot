@@ -27,7 +27,7 @@ describe('generated project sandbox', () => {
       QUANTPILOT_SANDBOX_MARKET_SOCKET: '/tmp/project/.next/market.sock',
       QUANTPILOT_SANDBOX_MARKET_PORT: '8000',
       NEXT_TELEMETRY_DISABLED: '1',
-      QUANTPILOT_WORKSPACE_ROOT: '/tmp/project',
+      QUANTPILOT_WORKSPACE_ROOT: path.resolve('/tmp/project'),
     });
     expect(env).not.toHaveProperty('DEEPSEEK_API_KEY');
     expect(env).not.toHaveProperty('DATABASE_URL');
@@ -50,7 +50,7 @@ describe('generated project sandbox', () => {
     ]));
   });
 
-  it('requires the paired explicit override before running a trusted command directly', async () => {
+  it.runIf(process.platform === 'linux')('requires the paired explicit override before running a trusted command directly', async () => {
     const projectPath = path.resolve('data/projects');
     process.env.QUANTPILOT_GENERATED_SANDBOX = '0';
 
@@ -62,5 +62,13 @@ describe('generated project sandbox', () => {
     await expect(
       wrapGeneratedProjectCommand(projectPath, 'npm', ['run', 'build']),
     ).resolves.toEqual({ command: 'npm', args: ['run', 'build'] });
+  });
+
+  it.runIf(process.platform !== 'linux')('rejects execution without the explicit development override on non-Linux hosts', async () => {
+    const projectPath = path.resolve('data/projects');
+    process.env.QUANTPILOT_GENERATED_SANDBOX = '0';
+    await expect(wrapGeneratedProjectCommand(projectPath, 'npm', ['run', 'build'])).rejects.toThrow('requires the Linux namespace sandbox');
+    process.env.QUANTPILOT_ALLOW_UNSANDBOXED_GENERATED_CODE = '1';
+    await expect(wrapGeneratedProjectCommand(projectPath, 'npm', ['run', 'build'])).resolves.toEqual({ command: 'npm', args: ['run', 'build'] });
   });
 });

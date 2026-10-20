@@ -20,7 +20,7 @@ describe('interactive chart data', () => {
     expect((points.at(-1)?.averages as number[])[5]).toBe(204);
     expect((output.exports.dailyPoints(bars.slice(0,232), [233]).at(-1)?.averages as unknown[])[0]).toBeNull();
     const shared = await fs.readFile('src/components/quant/PriceVolumeChart.tsx','utf8');
-    expect(shared).toBe('// Generated from scaffold-chart-panel.ts by sync-chart-panel.ts; edit the source template.\n' + chartPanelClientSource);
+    expect(shared.replace(/\r\n?/g, '\n')).toBe('// Generated from scaffold-chart-panel.ts by sync-chart-panel.ts; edit the source template.\n' + chartPanelClientSource.replace(/\r\n?/g, '\n'));
   });
   it('uses full history for MA60 and the first visible daily comparison', () => {
     const bars = Array.from({ length: 65 }, (_, i) => ({ date: new Date(Date.UTC(2026, 0, i + 1)).toISOString().slice(0, 10), close: i + 1, amount: (i + 1) * 100, metadata: { previousTradeDate: new Date(Date.UTC(2026, 0, i)).toISOString().slice(0, 10) } }));

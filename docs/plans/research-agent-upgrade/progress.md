@@ -589,3 +589,9 @@ E-Sxx-01 / 日期 / 会话标识：
 ### 2026-10-20-review-fixes / R2-R3
 
 - 更新预算、来源检查/重试、追加迁移和工作台本轮/累计用量显示已完成；46 项 PG 回归通过后恢复 S17 done。D32 取代首次 deadline 限制，保留旧模型实验约束。接下来修原发布失败中的平台/fixture 适配。
+
+### 2026-10-20-review-fixes / 发布测试适配
+
+- 修复路径夹具、CRLF 文本比较、wolfbot 截断文案断言和恶意 tar 夹具原始权限；preview 的 Linux 监听接管与非 Linux 安全回退分别断言，不修改生产沙箱策略。
+- Windows 定向验证：6 文件 28 passed / 4 平台分支 skipped；图片路径定向 1 passed；恶意包 source lock 漂移定向 1 passed，均退出 0。定向名称过滤未执行的用例不算通过；19 个符号链接权限用例仍等待 Linux 真实文件系统验证。
+- 正在准备隔离 Linux 测试环境；随后修 Skill 读取规范化与测量并发。原 release-failures.md 的历史结果保持不变，S20 继续 blocked。

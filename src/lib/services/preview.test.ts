@@ -206,12 +206,13 @@ describe('PreviewManager start concurrency', () => {
       url: `http://localhost:${previewTestPort}`,
     });
     const previewEnv = mocks.spawn.mock.calls[0]?.[2]?.env as NodeJS.ProcessEnv;
-    expect(previewEnv.QUANTPILOT_SANDBOX_PREVIEW_SOCKET).toMatch(
-      /^\/tmp\/qp-preview\/[a-f0-9]{20}\/p\.sock$/,
-    );
-    expect(previewEnv.QUANTPILOT_SANDBOX_MARKET_SOCKET).toMatch(
-      /^\/tmp\/qp-preview\/[a-f0-9]{20}\/m\.sock$/,
-    );
+    if (process.platform === 'linux') {
+      expect(previewEnv.QUANTPILOT_SANDBOX_PREVIEW_SOCKET).toMatch(/^\/tmp\/qp-preview\/[a-f0-9]{20}\/p\.sock$/);
+      expect(previewEnv.QUANTPILOT_SANDBOX_MARKET_SOCKET).toMatch(/^\/tmp\/qp-preview\/[a-f0-9]{20}\/m\.sock$/);
+    } else {
+      expect(previewEnv.QUANTPILOT_SANDBOX_PREVIEW_SOCKET).toBeUndefined();
+      expect(previewEnv.QUANTPILOT_SANDBOX_MARKET_SOCKET).toBeUndefined();
+    }
     expect(mocks.getProjectById).toHaveBeenCalledTimes(1);
     expect(mocks.spawn).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -260,9 +261,9 @@ describe('PreviewManager start concurrency', () => {
     await expect(manager.installDependencies('project-preview')).resolves.toBeDefined();
 
     expect(mocks.spawn).toHaveBeenCalledWith(
-      'npm',
+      process.platform === 'win32' ? 'npm.cmd' : 'npm',
       ['install', '--ignore-scripts', '--no-audit', '--no-fund'],
-      expect.objectContaining({ cwd: '/tmp/quantpilot-preview-test' }),
+      expect.objectContaining({ cwd: '/tmp/quantpilot-preview-test', shell: process.platform === 'win32' }),
     );
   });
 
@@ -391,7 +392,7 @@ describe('PreviewManager start concurrency', () => {
     await manager.stop('project-preview');
   });
 
-  it('discovers an existing project preview with one listener-table snapshot', async () => {
+  it.runIf(process.platform === 'linux')('discovers an existing project preview with one listener-table snapshot', async () => {
     process.env.PREVIEW_PORT_START = '4100';
     process.env.PREVIEW_PORT_END = '4199';
     vi.stubGlobal(
@@ -436,7 +437,7 @@ describe('PreviewManager start concurrency', () => {
     expect(mocks.spawn).not.toHaveBeenCalled();
   });
 
-  it('adopts a project listener whose cwd is inside the generated chroot', async () => {
+  it.runIf(process.platform === 'linux')('adopts a project listener whose cwd is inside the generated chroot', async () => {
     process.env.PREVIEW_PORT_START = '4100';
     process.env.PREVIEW_PORT_END = '4199';
     vi.stubGlobal(
@@ -473,6 +474,16 @@ describe('PreviewManager start concurrency', () => {
 
     expect(mocks.findAvailablePort).not.toHaveBeenCalled();
     expect(mocks.spawn).not.toHaveBeenCalled();
+  });
+
+  it.runIf(process.platform === 'win32')('starts a fresh listener without adopting an unverified Windows process', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200 }));
+    const manager = new PreviewManager();
+    await expect(manager.start('project-preview')).resolves.toMatchObject({ port: previewTestPort, status: 'running' });
+    expect(mocks.execFile).not.toHaveBeenCalled();
+    expect(mocks.findAvailablePort).toHaveBeenCalled();
+    expect(mocks.spawn).toHaveBeenCalledTimes(1);
+    await manager.stop('project-preview');
   });
 
   it.each(['stop', 'cleanup'] as const)(

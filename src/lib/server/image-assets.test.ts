@@ -43,7 +43,7 @@ describe('image asset validation', () => {
     expect(configuredMaxImageBytes('invalid')).toBe(10 * 1024 * 1024);
     expect(configuredMaxImageBytes(String(100 * 1024 * 1024))).toBe(50 * 1024 * 1024);
     expect(() => resolveProjectAssetPath('project-safe', '../secret.png')).toThrow(/Invalid asset filename/);
-    expect(resolveProjectAssetPath('project-safe', 'logo.png')).toContain('project-safe/assets/logo.png');
+    expect(resolveProjectAssetPath('project-safe', 'logo.png')).toContain(path.join('project-safe', 'assets', 'logo.png'));
   });
 
   it('accepts only regular files from the current project assets directory', async () => {

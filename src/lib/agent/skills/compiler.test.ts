@@ -390,6 +390,8 @@ describe('compilePiAgentSkills', () => {
   it('rejects a package-only Skill whose content tree drifts from sourceSha256', async () => {
     const { fixtureRoot, fixtureState, packagePath } = await createPackageOnlyFixture('image-extraction');
     const extractRoot = await temporaryDirectory('pi-agent-drifted-package-');
+    const modes = new Map<string, number>();
+    await tar.t({ file: packagePath, onReadEntry: entry => { modes.set(entry.path.replace(/\/$/, ''), entry.mode); } });
     await tar.x({ file: packagePath, cwd: extractRoot, preserveOwner: false });
     await fs.appendFile(
       path.join(extractRoot, 'image-extraction', 'SKILL.md'),
@@ -401,6 +403,11 @@ describe('compilePiAgentSkills', () => {
       cwd: extractRoot,
       portable: true,
       noMtime: true,
+      onWriteEntry: entry => {
+        const mode = modes.get(entry.path.replace(/\/$/, ''));
+        if (mode === undefined || !entry.stat) throw new Error(`Missing original archive mode for ${entry.path}`);
+        entry.stat.mode = (entry.stat.mode & ~0o7777) | mode;
+      },
     }, ['image-extraction']);
     const lockPath = path.join(fixtureState, 'skills.lock.json');
     const lock = JSON.parse(await fs.readFile(lockPath, 'utf8'));
