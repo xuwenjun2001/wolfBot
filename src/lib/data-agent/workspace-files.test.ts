@@ -38,7 +38,7 @@ describe('atomic workspace files', () => {
     await expect(fs.access(path.join(outside, 'nested'))).rejects.toThrow();
   });
 
-  it('retries transient Windows rename failures and cleans up the temp file', async () => {
+  it.runIf(process.platform === 'win32')('retries transient Windows rename failures and cleans up the temp file', async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), 'data-agent-files-'));
     roots.push(root);
     const realRename = fs.rename;
@@ -49,6 +49,7 @@ describe('atomic workspace files', () => {
 
     try {
       await writeWorkspaceJsonAtomic(root, '.data-agent/retry.json', { ready: true });
+      expect(renameSpy).toHaveBeenCalledTimes(2);
     } finally {
       renameSpy.mockRestore();
     }
@@ -59,5 +60,21 @@ describe('atomic workspace files', () => {
     )).resolves.toBe('{\n  "ready": true\n}\n');
     await expect(fs.readdir(path.join(root, '.data-agent')))
       .resolves.toEqual(['retry.json']);
+  });
+
+  it.runIf(process.platform !== 'win32')('propagates rename permission failures without replacing the target or leaving a temp file', async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'data-agent-files-'));
+    roots.push(root);
+    await writeWorkspaceJsonAtomic(root, '.data-agent/retry.json', { previous: true });
+    const denied = Object.assign(new Error('permission denied'), { code: 'EPERM' });
+    const renameSpy = vi.spyOn(fs, 'rename').mockRejectedValue(denied);
+    try {
+      await expect(writeWorkspaceJsonAtomic(root, '.data-agent/retry.json', { ready: true })).rejects.toBe(denied);
+      expect(renameSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      renameSpy.mockRestore();
+    }
+    await expect(fs.readFile(path.join(root, '.data-agent/retry.json'), 'utf8')).resolves.toBe('{\n  "previous": true\n}\n');
+    await expect(fs.readdir(path.join(root, '.data-agent'))).resolves.toEqual(['retry.json']);
   });
 });

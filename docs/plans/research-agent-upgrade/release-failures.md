@@ -173,3 +173,11 @@ Skill 读取现在与 source lock 使用相同的 LF 语义；源码目录和已
 对完整测试限制为 2 个 worker 后，原 PI loop / 镜像安装用例分别约 2013 / 635 ms，通过原 5000 ms 上限。Vitest 默认并发固定为 2，限制冷导入和文件密集任务争用；历史超时没有完整剖析，不能宣称已证明唯一根因。当前 Windows 整套为 1420 passed / 44 failed / 76 skipped；44 项由 19 个 EPERM 和另外发现的 25 个短路径别名夹具失败组成。后者规范化夹具真实路径后，该文件 27 项通过；整套尚待 Linux 验证，不能将当前结果写成发布通过。
 
 证据在忽略目录 `data/research-agent-upgrade/evidence/release-repair-01/repair-checks.json`。Linux `npm ci` 实测仍拒绝旧的 @emnapi 锁文件不一致；依赖审计/锁文件按用户既定要求暂缓，仓库依赖文件未改。隔离环境准备测试依赖只用于验证代码，不能替代可复现安装通过证明。
+
+## 2026-10-21 独立工程验证
+
+Windows 完整 release 的 17 个前置检查通过，单测为 1445 passed / 19 failed / 55 skipped，19 项均在创建真实符号链接时得到 EPERM。完整命令因此失败；后续独立 type-check、后端 lint、308 passed / 22 skipped 的后端测试与生产构建通过。首次 types 发生内存分配失败，保留原日志；限制验证进程的堆与新生代内存后重验通过，没有增加单测超时。
+
+Linux 首轮完整单测为 250 文件、1463 passed / 2 failed / 75 skipped。原 19 项 symlink 用例全部实际执行通过；PI loop 与完整 Skill 镜像分别为 1822 / 323 ms，通过原 5000 ms 限制。两个新失败来自夹具：sandbox 测试假定 data/projects 已存在；atomic workspace 测试在 POSIX 期待 Windows 的 EPERM 重试策略。已改为独立临时目录，以及分别检验 Windows 重试和 POSIX 错误传播、原目标保留、临时文件清理。修复后的 Linux 定向 6 passed / 2 平台 skipped，Windows 过滤定向 3 passed，其余未执行项不计通过；完整 Linux release 尚待执行。
+
+本阶段源码与测试修复不改变沙箱策略、来源完整性或财报质量门。财报四案例回归的独立质量门仍失败：36/36 数值、9/12 问题、9/12 支持结论；详见 [evaluation-results.md](evaluation-results.md#修复后的四案例开发回归)。

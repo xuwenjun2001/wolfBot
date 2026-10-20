@@ -12,8 +12,8 @@
 | 已验收步骤 | 18/20；S17 重开与修复过程分别保留 E-REVIEW-03 / E-FIX-R2R3 |
 | 当前待处理步骤 | 已完成全部指定代码修复和四案例财报回归；质量门失败如实保留。继续 Linux 安全测试和完整工程门，S19/S20 仍 blocked |
 | 下一步骤 | 完成 Linux 安全测试与完整 release，归档证据并同步交接；本批不再增加模型任务 |
-| 下一具体动作 | Linux npm ci 已重现暂缓锁漂移；隔离容器已通过缓存准备测试依赖，不能当作可复现安装通过。Linux 副本已核对 5659ecf 并验证真实用户命名空间；正在准备 Prisma/编译器和后端运行时，随后实跑完整单测与 release |
-| 当前会话登记 | 2026-10-20-review-fixes：实现和真实入口旅程脚本已同步至 5659ecf；当前更新 progress.md、release-failures.md 等验证交接，使用隔离 checkout release-repair-worktree 和专用 Linux 容器核验。新质量 campaign 已保存独占 registration/phase 标记；只运行冻结开发集 baseline 四次，不调用旧保留集或重开旧任务预算 |
+| 下一具体动作 | Linux 初次全量 1463 passed/2 failed/75 skipped；两个新发现的夹具缺陷已修，Linux 定向 6 passed/2 平台 skipped，Windows 过滤定向 3 passed。原生 Prisma、SWC 和 Python 已准备，接下来运行完整 release；隔离 npm install 不能替代原锁文件 npm ci 通过 |
+| 当前会话登记 | 2026-10-20-review-fixes：代码修复与入口脚本已同步，质量交接同步至 8f7cdf5；Linux 初次单测 1463 passed/2 failed/75 skipped，19 个链接用例已通过。当前修 generated-project-sandbox.test.ts 的临时目录夹具和 workspace-files.test.ts 的 Windows/POSIX 错误分支断言，再重验完整工程门；本批四个模型任务已结束，不追加模型调用 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
 | 分支 / 本轮实现起点 | codex/research-agent-s11-s15；本次修复起点 `33022c451e8474e6e5b4a02dacfefa69f8318f4a`，工作区干净；当前 HEAD 用 git rev-parse HEAD 核实，原根因分析起点另见 E-S20-03 |
 | 目标仓库 | `https://github.com/xuwenjun2001/wolfBot`，默认分支 `main` |
@@ -65,6 +65,12 @@
 - 原 S03 网关基线全部在鉴权时失败；用户指定新模型后另存校准，4 次请求均 200，但提前收尾且无财报来源，不是质量提升证据。后续人工确认按 E-ANNOT-02 单独归档，不能反向把旧模型运行变为通过。
 
 ## 验收证据
+
+### E-FIX-LINUX-01：Linux 首轮与补充夹具修复
+
+- 隔离 Linux/Node 24.12.0 在 5659ecf 完整源码运行 250 文件：1463 passed、2 failed、75 skipped，原 19 个 symlink 安全用例均执行通过。旧两项超时在本轮为 PI loop 1822ms、Skill 镜像 323ms，保留原 5000ms 限制。日志和 JSON：`release-repair-01/release-linux-unit.log`、`release-linux-unit-first.json`。
+- 新失败均为测试合同：sandbox 测试依赖未跟踪的 data/projects 目录；atomic workspace 测试在 POSIX 期待仅 Windows 才启用的 EPERM 重试。前者使用独立临时目录并清理；后者在 Windows 检验两次 rename，POSIX 另验立即传播错误、保留原目标和清除临时文件。安全和写入实现未改。
+- 修复后 Linux 两文件 6 passed/2 平台 skipped；Windows 过滤定向 3 passed/5 未执行，不能当作八项全过。完整 release 仍待执行。Linux 使用真实用户命名空间、与官方校验值一致的 Prisma 引擎/SWC/Python；未连接业务库。
 
 ### E-FIX-QUALITY：四案例开发回归与独立质量门
 
@@ -619,3 +625,7 @@ E-Sxx-01 / 日期 / 会话标识：
 - 已完成四个登记开发案例，保留全部 partial/失败和 136 次工具消耗；全分母数值 36/36、问题与支持结论均 9/12，后两项门槛失败。补写 E-FIX-QUALITY 与逐公司结果/原件 hash；没有重跑旧保留集或扩充模型任务，旧人工确认继续有效。
 - 真实认证入口旅程与第三次 46 PG/34 迁移回归已通过，临时 PG 已停止。Windows 完整 release 的 17 个前置检查通过，单测停在 19 个 symlink EPERM；后续独立 types、后端 lint/308 测试和生产构建通过。首次 types 内存不足保留日志，有界内存重验通过，没有修改测试超时上限。
 - Linux 副本对应 5659ecf，原生用户命名空间已实跑；依赖缓存、Python 3.14 与 Prisma/编译器正在隔离环境准备，安全测试和完整 release 待执行。S19/S20 保持 blocked，生产和业务库未操作。
+
+### 2026-10-21-review-fixes / Linux 测试夹具补充
+
+- 首轮 Linux 完整单测执行了全部 19 个原 symlink 用例，发现两项此前被 Windows 分支遮住的夹具问题。当前只修改 generated-project-sandbox.test.ts、workspace-files.test.ts 与交接；Linux 定向六项和 Windows 过滤定向三项通过，准备重验完整 release。首次完整日志/JSON 保留，不覆盖为绿色结果。

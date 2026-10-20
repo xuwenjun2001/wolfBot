@@ -1,10 +1,15 @@
+import fs from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { buildGeneratedProjectEnv, wrapGeneratedProjectCommand } from './generated-project-sandbox';
 
-afterEach(() => {
+const temporaryProjects: string[] = [];
+
+afterEach(async () => {
   delete process.env.QUANTPILOT_ALLOW_UNSANDBOXED_GENERATED_CODE;
   delete process.env.QUANTPILOT_GENERATED_SANDBOX;
+  await Promise.all(temporaryProjects.splice(0).map(project => fs.rm(project, { recursive: true, force: true })));
 });
 
 describe('generated project sandbox', () => {
@@ -34,7 +39,8 @@ describe('generated project sandbox', () => {
   });
 
   it.runIf(process.platform === 'linux')('wraps commands in user, mount, network, and PID namespaces', async () => {
-    const projectPath = path.resolve('data/projects');
+    const projectPath = await fs.mkdtemp(path.join(os.tmpdir(), 'generated-project-sandbox-'));
+    temporaryProjects.push(projectPath);
     const wrapped = await wrapGeneratedProjectCommand(projectPath, 'npm', ['run', 'build']);
     expect(wrapped.command).toBe('unshare');
     expect(wrapped.args).toEqual(expect.arrayContaining([
