@@ -10,6 +10,8 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],
+    // Bound cold PI imports and filesystem-heavy skill mirrors on shared dev/CI hosts.
+    maxWorkers: 2,
     clearMocks: true,
     restoreMocks: true,
   },

@@ -330,7 +330,7 @@ async function readTextEntryFromPackage(
   });
   if (!found) throw new Error(`${label} 不存在或不是普通文件`);
   if (tooLarge) throw new Error(`${label} 超过 4MB 读取上限`);
-  const content = Buffer.concat(chunks).toString('utf8');
+  const content = canonicalSkillBytes(Buffer.concat(chunks)).toString('utf8');
   if (!content.trim()) throw new Error(`${label} 为空`);
   return content;
 }
@@ -381,7 +381,7 @@ async function readSkillResource(skill: LoadedSkill, relativePath: string): Prom
     if (!stat?.isFile() || stat.isSymbolicLink()) {
       throw new Error(`PI Agent Skill ${skill.registry.id} resource 不可用：${normalized}`);
     }
-    return fs.readFile(candidate, 'utf8');
+    return canonicalSkillBytes(await fs.readFile(candidate)).toString('utf8');
   }
   if (!skill.packagePath) {
     throw new Error(`PI Agent Skill ${skill.registry.id} 缺少可验证 resource 来源。`);

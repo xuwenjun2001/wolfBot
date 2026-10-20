@@ -188,7 +188,7 @@ describe('PI Agent terminal ownership', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'pi-agent-terminal-'));
+    workspace = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'pi-agent-terminal-')));
     process.env.DEEPSEEK_API_KEY = 'test-key';
     mocks.getProjectById.mockResolvedValue({ id: 'project-test', repoPath: workspace });
     mocks.getRecentMessages.mockResolvedValue([]);

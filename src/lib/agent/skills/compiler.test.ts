@@ -27,7 +27,7 @@ function getFinanceSkillCapabilityDescriptor(
 const temporaryDirectories: string[] = [];
 
 async function temporaryDirectory(prefix: string): Promise<string> {
-  const directory = await fs.mkdtemp(path.join(os.tmpdir(), prefix));
+  const directory = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), prefix)));
   temporaryDirectories.push(directory);
   return directory;
 }
@@ -177,6 +177,7 @@ describe('compilePiAgentSkills', () => {
     });
     expect(result.selectedSkillIds).toContain('image-extraction');
     expect(result.selectedSkillIds).toContain('data-quality');
+    expect(result.totalCharacters).toBeLessThanOrEqual(5_000);
 
     await expect(compilePiAgentSkills({
       capabilityId: 'stock_diagnosis',
@@ -185,6 +186,48 @@ describe('compilePiAgentSkills', () => {
       phase: 'data-preparation',
       availableToolNames: ['quant_api_get'],
     })).rejects.toThrow('quant_extract_uploaded_image');
+  });
+
+  it.each(['source', 'package'] as const)('compiles identical runtime context from LF and CRLF %s resources', async source => {
+    const { fixtureRoot, fixtureState, packagePath } = await createPackageOnlyFixture('dashboard-visualization');
+    const contentRoot = source === 'source' ? path.join(fixtureState, 'skills') : await temporaryDirectory('pi-agent-eol-package-');
+    const modes = new Map<string, number>();
+    if (source === 'source') {
+      await fs.mkdir(contentRoot, { recursive: true });
+      await fs.cp(path.join(process.cwd(), '.pi', 'skills', 'dashboard-visualization'), path.join(contentRoot, 'dashboard-visualization'), { recursive: true });
+    } else {
+      await tar.t({ file: packagePath, onReadEntry: entry => {
+        if (entry.mode === undefined) throw new Error(`Missing mode for ${entry.path}`);
+        modes.set(entry.path.replace(/\/$/, ''), entry.mode);
+      } });
+      await tar.x({ file: packagePath, cwd: contentRoot, preserveOwner: false });
+    }
+    const compile = () => compilePiAgentSkills({ repositoryRoot: fixtureRoot, requiredSkillIds: ['dashboard-visualization'],
+      phase: 'workspace-generation', templateId: 'stock-selection', variantId: 'selection-ranking-matrix', maxSystemContextChars: 4_000 });
+    const rewrite = async (directory: string, eol: string): Promise<void> => {
+      for (const entry of await fs.readdir(directory, { withFileTypes: true })) {
+        const file = path.join(directory, entry.name);
+        if (entry.isDirectory()) await rewrite(file, eol);
+        else if (entry.name.endsWith('.md')) await fs.writeFile(file, (await fs.readFile(file, 'utf8')).replace(/\r\n?/g, '\n').replace(/\n/g, eol));
+      }
+    };
+    const results = [];
+    for (const eol of ['\n', '\r\n']) {
+      await rewrite(contentRoot, eol);
+      if (source === 'package') {
+        await tar.c({ gzip: true, file: packagePath, cwd: contentRoot, portable: true, noMtime: true,
+          onWriteEntry: entry => { if (entry.stat) entry.stat.mode = (entry.stat.mode & ~0o7777) | modes.get(entry.path.replace(/\/$/, ''))!; },
+        }, ['dashboard-visualization']);
+        const lockPath = path.join(fixtureState, 'skills.lock.json'), lock = JSON.parse(await fs.readFile(lockPath, 'utf8'));
+        lock.skills['dashboard-visualization'].packageSha256 = createHash('sha256').update(await fs.readFile(packagePath)).digest('hex');
+        await fs.writeFile(lockPath, JSON.stringify(lock));
+      }
+      results.push(await compile());
+    }
+    expect(results[1].systemContext).toBe(results[0].systemContext);
+    expect(results[1].taskContext).toBe(results[0].taskContext);
+    expect(results[1].totalCharacters).toBe(results[0].totalCharacters);
+    expect(results[1].skills.map(skill => skill.includedResources)).toEqual(results[0].skills.map(skill => skill.includedResources));
   });
 
   it('accepts both prepared dashboard surfaces and rejects an incomplete mutation route', async () => {
@@ -391,7 +434,10 @@ describe('compilePiAgentSkills', () => {
     const { fixtureRoot, fixtureState, packagePath } = await createPackageOnlyFixture('image-extraction');
     const extractRoot = await temporaryDirectory('pi-agent-drifted-package-');
     const modes = new Map<string, number>();
-    await tar.t({ file: packagePath, onReadEntry: entry => { modes.set(entry.path.replace(/\/$/, ''), entry.mode); } });
+    await tar.t({ file: packagePath, onReadEntry: entry => {
+      if (entry.mode === undefined) throw new Error(`Missing mode for ${entry.path}`);
+      modes.set(entry.path.replace(/\/$/, ''), entry.mode);
+    } });
     await tar.x({ file: packagePath, cwd: extractRoot, preserveOwner: false });
     await fs.appendFile(
       path.join(extractRoot, 'image-extraction', 'SKILL.md'),
