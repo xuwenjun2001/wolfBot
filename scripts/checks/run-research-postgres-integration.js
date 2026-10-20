@@ -13,7 +13,7 @@ const migration = '20261018140000_research_version_foundation';
 const schemaDirectory = path.join(evidence, 'schema');
 const gitHead = spawnSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim();
 const allPaths = spawnSync('git',['ls-files','--cached','--others','--exclude-standard'],{encoding:'utf8'}).stdout.split('\n').filter(Boolean);
-const relevant = allPaths.filter(p => /^(?:src\/lib\/company-research\/|src\/app\/api\/company-research\/tasks\/|src\/app\/company-research\/financial\/|scripts\/research\/|prisma\/migrations\/202610(?:18140000_research_version_foundation|19020000_research_evidence_indexes|19130000_research_execution)\/)/.test(p) || ['prisma/schema.prisma','scripts/checks/run-research-postgres-integration.js'].includes(p));
+const relevant = allPaths.filter(p => /^(?:src\/lib\/company-research\/|src\/app\/api\/company-research\/tasks\/|src\/app\/company-research\/financial\/|scripts\/research\/|prisma\/migrations\/202610(?:18140000_research_version_foundation|19020000_research_evidence_indexes|19130000_research_execution|20150000_research_update_budgets)\/)/.test(p) || ['prisma/schema.prisma','scripts/checks/run-research-postgres-integration.js'].includes(p));
 const sourceHashes = Object.fromEntries(relevant.filter(p=>fs.statSync(p).isFile()).map(p=>[p,createHash('sha256').update(fs.readFileSync(p)).digest('hex')]));
 const nativeArgument = process.argv.slice(2).find(a => a.startsWith('--native-postgres='));
 const financialE2e = process.argv.includes('--financial-e2e');

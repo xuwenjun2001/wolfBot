@@ -18,6 +18,8 @@ import { safeResearchUrl } from './reader-contracts';
 import { financialResearchTools } from './financial-tools';
 import { acceptResearchReport } from './report-acceptance';
 import { canonicalResearchJson } from './task-contracts';
+import { queueResearchReportUpdate } from './report-update-store';
+import { recordResearchUpdateRead } from './update-run-store';
 
 const actor = `financial-runtime-test-${randomUUID()}`, ctx = { db: prisma, artifacts: new ResearchArtifactStore(path.resolve('data/research-agent-upgrade/evidence/S11', actor)) };
 const ref = (b: Buffer) => ({ store: 'local' as const, key: artifactDigest(b), sha256: artifactDigest(b), byteLength: b.length });
@@ -71,6 +73,57 @@ describe.skipIf(process.env.COMPANY_RESEARCH_TEST_POSTGRES !== '1')('financial e
     expect(after.usage).toMatchObject({ toolCalls: 1, unknownModelRequests: 1, startedAt: before.usage.startedAt, deadline: before.usage.deadline });
     expect(after.reportRevision).toBe(1);
   });
+  it('gives a later evidence update its own bounded budget while retaining all historical costs', async () => {
+    const task = await queued(3), first = (await claimFinancialResearch('update-expired-baseline', ctx))!.attempt;
+    await executeFinancialResearch(actor, first, undefined, ctx, sequenceProvider([{ name: 'check_coverage', input: {} }, { name: 'submit_report', input: {} }]), true);
+    await prisma.$executeRaw`UPDATE company_research_tasks SET started_at=NOW()-INTERVAL '1 day',deadline=NOW()-INTERVAL '23 hours' WHERE id=${task.id}`;
+    const before = (await getResearchTask(actor, task.id, ctx))!;
+    const bytes = Buffer.from('%PDF-later-update'), parsed = Buffer.from(JSON.stringify({ schemaVersion: 1, pages: [{ filePage: 5, text: '新的公告原文' }] }));
+    const document = { ...documentFixture(task.id), bytesSha256: artifactDigest(bytes), original: ref(bytes), parsed: ref(parsed), state: 'ready' as const,
+      fetchedAt: new Date().toISOString(), parser: { name: 'fixture', version: '1', failedPages: [], warnings: [] } };
+    await registerResearchDocument(actor, document, bytes, parsed, ctx);
+    const update = await queueResearchReportUpdate(actor, task.id, randomUUID(), { expectedRequestRevision: 1, expectedPlanRevision: 1, expectedReportRevision: 1, asOf: before.spec.asOf }, ctx);
+    expect(update).toMatchObject({ queued: true, retry: false, budgetRevision: 2 });
+    const token = (await claimFinancialResearch('update-fresh-budget', ctx))!.attempt;
+    const report = await executeFinancialResearch(actor, token, undefined, ctx, sequenceProvider([
+      { name: 'read_evidence', input: { documentId: document.id, documentVersion: 1, locator: { kind: 'page', filePage: 5 } } },
+      { name: 'check_coverage', input: {} }, { name: 'submit_report', input: {} },
+    ]), true);
+    const after = (await getResearchTask(actor, task.id, ctx))!;
+    expect(report?.revision).toBe(2); expect(after.checkpoint?.submitted).toBe(true);
+    expect(after.budget).toEqual({ revision: 2, toolCalls: 3 });
+    expect(after.usage).toMatchObject({ toolCalls: 5, inputTokens: 500, outputTokens: 100, unknownModelRequests: 0 });
+    expect(Date.parse(after.usage.deadline!)).toBeGreaterThan(Date.now());
+    const [history] = await prisma.$queryRaw<{snapshot: unknown}[]>`SELECT snapshot FROM company_research_budget_history WHERE task_id=${task.id} AND revision=1`;
+    expect(history.snapshot).toMatchObject({ toolCalls: 2, cumulative: { toolCalls: 2, inputTokens: 200 }, startedAt: before.usage.startedAt, deadline: before.usage.deadline });
+    await expect(prisma.$executeRaw`UPDATE company_research_budget_history SET snapshot='{}'::jsonb WHERE task_id=${task.id}`).rejects.toThrow('RESEARCH_IMMUTABLE_VERSION');
+    expect(await queueResearchReportUpdate(actor, task.id, randomUUID(), { expectedRequestRevision: 1, expectedPlanRevision: 2, expectedReportRevision: 2, asOf: before.spec.asOf }, ctx)).toEqual({ queued: false, reason: 'no_new_evidence' });
+  }, 30000);
+  it('retries unread queued sources after a first-model failure without renewing that update budget', async () => {
+    const task = await queued(), first = (await claimFinancialResearch('update-retry-baseline', ctx))!.attempt;
+    await executeFinancialResearch(actor, first, undefined, ctx, sequenceProvider([{ name: 'check_coverage', input: {} }, { name: 'submit_report', input: {} }]), true);
+    const bytes = Buffer.from('%PDF-unread-update');
+    await registerResearchDocument(actor, { ...documentFixture(task.id), bytesSha256: artifactDigest(bytes), original: ref(bytes), fetchedAt: new Date().toISOString() }, bytes, undefined, ctx);
+    const input = { expectedRequestRevision: 1, expectedPlanRevision: 1, expectedReportRevision: 1, asOf: specFixture().asOf }, key = randomUUID();
+    await queueResearchReportUpdate(actor, task.id, key, input, ctx);
+    const failed = (await claimFinancialResearch('update-offline', ctx))!.attempt;
+    await executeFinancialResearch(actor, failed, undefined, ctx, { name: 'offline-fixture', async *complete() { throw new Error('Injected offline before any read'); } }, true);
+    const before = (await getResearchTask(actor, task.id, ctx))!;
+    expect(before).toMatchObject({ status: 'partial', reportRevision: 2, budget: { revision: 2, toolCalls: 0 }, usage: { unknownModelRequests: 1 } });
+    expect((await queueResearchReportUpdate(actor, task.id, key, input, ctx))).toMatchObject({ idempotent: true });
+    const retryInput = { ...input, expectedPlanRevision: 2, expectedReportRevision: 2 };
+    const retried = await queueResearchReportUpdate(actor, task.id, randomUUID(), retryInput, ctx);
+    expect(retried).toMatchObject({ queued: true, retry: true, budgetRevision: 2, sourceHashes: [artifactDigest(bytes)] });
+    const token = (await claimFinancialResearch('update-retry', ctx))!.attempt;
+    const after = (await getResearchTask(actor, task.id, ctx))!;
+    expect(after.usage).toEqual(before.usage); expect(after.checkpoint?.stopReason).toBeNull();
+    await expect(recordResearchUpdateRead(actor, failed, artifactDigest(bytes), ctx)).rejects.toMatchObject({ code: 'LEASE_LOST' });
+    await executeFinancialResearch(actor, token, undefined, ctx, sequenceProvider([{ name: 'check_coverage', input: {} }, { name: 'submit_report', input: {} }]), true);
+    // Submission without an actual read still cannot consume the source receipt.
+    await prisma.$executeRaw`UPDATE company_research_tasks SET deadline=NOW()-INTERVAL '1 second' WHERE id=${task.id}`;
+    await expect(queueResearchReportUpdate(actor, task.id, randomUUID(), { ...retryInput, expectedPlanRevision: 3, expectedReportRevision: 3 }, ctx)).rejects.toMatchObject({ code: 'BUDGET_EXHAUSTED' });
+    expect((await getResearchTask(actor, task.id, ctx))!.budget.revision).toBe(2);
+  }, 30000);
   it('uses the real PI loop and stops repeated no-progress searches with an honest partial', async () => {
     const task = await queued(), token = (await claimFinancialResearch('loop', ctx))!.attempt;
     const provider = sequenceProvider(Array.from({ length: 8 }, () => ({ name: 'search_evidence', input: { query: '经营现金流', topK: 5, maxOutputCharacters: 10000 } })));

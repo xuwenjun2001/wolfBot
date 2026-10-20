@@ -30,7 +30,7 @@ export async function executeFinancialResearch(actor: string, token: ResearchAtt
   if (state.requestRevision !== token.requestRevision || state.planRevision !== token.planRevision) throw new Error('Checkpoint version mismatch');
   const controller = new AbortController(), signal = shutdown ? AbortSignal.any([controller.signal, shutdown]) : controller.signal;
   const deadline = Date.parse(task.usage.deadline!), remaining = Math.max(0, deadline - Date.now());
-  let calls = task.usage.toolCalls, heartbeatBusy = false, materializedCallId: string | null = null;
+  let calls = task.budget.toolCalls, heartbeatBusy = false, materializedCallId: string | null = null;
   const save = (tool: string) => saveResearchCheckpoint(actor, token, state, tool, ctx);
   const heartbeatTimer = setInterval(() => {
     if (heartbeatBusy) return;

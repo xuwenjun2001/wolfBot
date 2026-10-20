@@ -25,7 +25,7 @@ export async function startResearchAttemptInTransaction(tx: ResearchTransaction,
     const [{ now }] = await tx.$queryRaw<{now: Date}[]>`SELECT clock_timestamp() AS now`;
     const started = task.started_at || now, deadline = task.deadline || new Date(started.getTime() + spec.budget.timeoutMs);
     // Dispatch may take an exhausted stale attempt only to seal an honest partial report.
-    if (!allowExhausted && (task.tool_calls >= spec.budget.maxToolCalls || deadline <= now)) throw new ResearchPersistenceError('BUDGET_EXHAUSTED');
+    if (!allowExhausted && (task.tool_calls - task.budget_tool_base >= spec.budget.maxToolCalls || deadline <= now)) throw new ResearchPersistenceError('BUDGET_EXHAUSTED');
     if (task.active_attempt_id) {
       const [prior] = await tx.$queryRaw<{lease_until: Date; status: string}[]>`SELECT lease_until,status FROM company_research_attempts WHERE id=${task.active_attempt_id} AND task_id=${id}`;
       if (prior?.status === 'running' && prior.lease_until > now) throw new ResearchPersistenceError('TASK_ACTIVE');
@@ -57,10 +57,10 @@ export async function reserveResearchToolCall(actor: string, token: ResearchAtte
     const task = await lockResearchTask(tx, actor, token.taskId); await assertResearchAttempt(tx, task, token);
     const spec = await taskSpec(tx, task);
     const [row] = await tx.$queryRaw<{tool_calls: number}[]>`UPDATE company_research_tasks SET tool_calls=tool_calls+1
-      WHERE id=${task.id} AND tool_calls<${spec.budget.maxToolCalls} AND deadline>clock_timestamp()
+      WHERE id=${task.id} AND tool_calls-budget_tool_base<${spec.budget.maxToolCalls} AND deadline>clock_timestamp()
         AND EXISTS (SELECT 1 FROM company_research_attempts WHERE id=${token.id} AND status='running' AND lease_until>clock_timestamp()) RETURNING tool_calls`;
     if (!row) throw new ResearchPersistenceError('BUDGET_EXHAUSTED');
-    return row.tool_calls;
+    return row.tool_calls - task.budget_tool_base;
   });
 }
 export async function cancelResearchTask(actor: string, id: string, ctx = defaultResearchContext) {

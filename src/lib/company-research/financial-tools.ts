@@ -16,6 +16,7 @@ import { artifactDigest } from './artifact-store';
 import { defaultResearchContext } from './repository-core';
 import { safeError } from './config';
 import { financialChangeSummary } from './financial-observation';
+import { recordResearchUpdateRead } from './update-run-store';
 
 export const checkpointEvidenceHash = (state: ResearchCheckpoint) => artifactDigest(canonicalResearchJson({ facts: state.facts, supportingFacts: state.supportingFacts, claims: state.claims }));
 export function financialResearchTools(actor: string, token: ResearchAttemptToken, spec: ResearchTaskSpec, state: ResearchCheckpoint, model: string, save: (tool: string) => Promise<void>, ctx = defaultResearchContext, fixedDocuments = false, skill?: FinancialResearchSkill): PiAgentTool[] {
@@ -43,7 +44,11 @@ export function financialResearchTools(actor: string, token: ResearchAttemptToke
     tool('import_filing', 'Import one official candidate. Never choose manual links with an unverified disclosure date.', filingImportSchema, (input, signal) => importTaskFiling(actor, token.taskId, input, signal, ctx, token)),
     tool('parse_document', 'Parse one saved document; native first, OCR preserves needs_review.', z.object({ documentId: z.string().max(100), version: z.number().int().min(1) }).strict(), ({ documentId, version }, signal) => parseResearchDocument(actor, token.taskId, documentId, version, { engine: 'auto' }, signal, ctx, undefined, token)),
     tool('search_evidence', 'Search authorized evidence, two periods by default. Query may target financial metric aliases or risk/causal text. Read full pages for column headers.', evidenceSearchSchema, input => reader.search(input)),
-    tool('read_evidence', 'Read exact page/block/cell. Use page locator for metric/period/unit context; nextOffset continues bounded text.', evidenceReadSchema, input => reader.read(input)),
+    tool('read_evidence', 'Read exact page/block/cell. Use page locator for metric/period/unit context; nextOffset continues bounded text.', evidenceReadSchema, async input => {
+      const result = await reader.read(input);
+      if (result.text.trim()) await recordResearchUpdateRead(actor, token, result.bytesSha256, ctx);
+      return result;
+    }),
     tool('record_fact', 'Save ONE exact current-period financial fact. Stable id is periodId-metric. Copy amount and unit; include citations covering the numeric row (page locator allowed). Tools check first-column and unit; never provide calculated values.', z.object({
       periodId: z.string().max(100), metric: z.enum(['revenue', 'parent_net_profit', 'operating_cash_flow']), rawText: z.string().min(1).max(100), unitLabel: z.string().min(1).max(50), citations: z.array(researchCitationSchema).min(1).max(4),
     }).strict(), async input => {

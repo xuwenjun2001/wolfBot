@@ -41,6 +41,7 @@ export async function getResearchTask(actor: string, id: string, ctx = defaultRe
     const [acceptance] = task.report_revision ? await tx.$queryRaw<{report_hash: string; reviewed_at: Date}[]>`SELECT report_hash,reviewed_at FROM company_research_report_acceptances WHERE task_id=${id} AND report_revision=${task.report_revision}` : [];
     return { id: task.id, status: task.status, requestRevision: task.request_revision, planRevision: task.plan_revision, reportRevision: task.report_revision,
       generation: task.generation, sequence: task.sequence, createdAt: task.created_at.toISOString(),
+      budget: { revision: task.budget_revision, toolCalls: task.tool_calls - task.budget_tool_base },
       usage: { toolCalls: task.tool_calls, inputTokens: task.input_tokens, outputTokens: task.output_tokens, unknownModelRequests: task.unknown_model_requests,
         startedAt: task.started_at?.toISOString() || null, deadline: task.deadline?.toISOString() || null }, spec,
       plan: plan ? researchPlanSchema.parse(plan.plan) : null,

@@ -326,7 +326,7 @@ running -> failed
 
 | 新表 | 关键口径 |
 | --- | --- |
-| `company_research_tasks` | 逻辑请求、可信 actor、actor 内幂等键、完整 payload hash；需求/计划/报告指针；generation 与 sequence 分离；累计工具数、可空 token 计数、首次 started_at/deadline |
+| `company_research_tasks` | 逻辑请求、可信 actor、actor 内幂等键、完整 payload hash；需求/计划/报告指针；generation 与 sequence 分离；累计工具数、可空 token 计数；budget_revision / budget_tool_base 区分本轮工具额度与总消耗，started_at/deadline 为当前预算轮次的时间窗 |
 | `company_research_requests` | task + revision 主键，完整需求 JSON 和 hash，不可变 |
 | `company_research_plans` | task + revision 主键；引用需求版本；expectedRevision 冲突检测、task 内请求键与完整修改摘要 |
 | `company_research_documents` | task + document id + version 主键；原始 bytes SHA-256、原件/解析产物 digest key、披露证据、报告期、parser/定位状态；大原件不进 JSON |
@@ -336,6 +336,8 @@ running -> failed
 | `company_research_version_events` | task + sequence 主键；版本化公开 envelope，可用于有序重放，不保存隐藏推理 |
 | `company_research_claim_reviews` | task + claim_hash 主键；不可变逐条语义回执，绑定结论、引用及依赖事实、模型/prompt 校准依据与独立性 |
 | `company_research_report_acceptances` | task + report_revision 主键、外键指向不可变报告；认证用户显式确认的 report_hash 和 reviewed_at，不由模型写入 |
+| `company_research_budget_history` | task + budget revision 主键；新来源更新前封存上轮版本指针、预算、时间窗、本轮工具数和累计用量，快照不可更新；同轮重试、恢复和计划修订不新开预算 |
+| `company_research_update_sources` | task + budget revision + source hash 主键；排队来源保持 pending，真实读取登记 read_at，正常提交报告才登记 checked_at；失败发布不能消耗未完成检查，旧排队事件迁入 revision 0（无独立更新预算） |
 
 需求、计划、文档、报告和事件表有禁止 UPDATE 的数据库触发器。取消只失效执行权并保留原件/报告。资料正文在 `data/company-research/artifacts/` 按 actor 摘要分区，每次授权读取后再验 hash；未引用对象不自动清理。token 未知用 NULL，不能当作零成本。详情与边界见 [公司研究](company-research.md)、[合同](plans/research-agent-upgrade/contracts.md)。
 

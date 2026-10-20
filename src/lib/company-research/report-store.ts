@@ -8,6 +8,7 @@ import type { ParsedDocument } from './parsed-document';
 import { factCitations } from './financial-evidence';
 import { numericFactErrors, semanticPublicationErrors, semanticReviewSchema } from './claim-verification';
 import { assertResearchAttempt, type ResearchAttemptToken } from './attempt-store';
+import { checkpointSchema } from './execution-contracts';
 import { defaultResearchContext, lockResearchTask, taskSpec, emitResearchEvent, ResearchPersistenceError } from './repository-core';
 
 export async function commitResearchReport(actor: string, token: ResearchAttemptToken, expectedRevision: number, input: unknown, ctx = defaultResearchContext) {
@@ -58,6 +59,13 @@ export async function commitResearchReport(actor: string, token: ResearchAttempt
       VALUES (${task.id},${report.revision},${report.requestRevision},${report.planRevision},${token.id},${token.generation},${JSON.stringify(report)}::jsonb)`;
     await tx.$executeRaw`UPDATE company_research_attempts SET status=${report.status},finished_at=clock_timestamp() WHERE id=${token.id}`;
     await tx.$executeRaw`UPDATE company_research_tasks SET report_revision=${report.revision},status=${report.status},active_attempt_id=NULL WHERE id=${task.id}`;
+    // Normal submission after a real read can finish an irrelevant-source check too.
+    // Failure/timeout publication leaves pending sources retryable within this budget.
+    const checkpoint = task.checkpoint ? checkpointSchema.parse(task.checkpoint) : null;
+    if (checkpoint?.submitted && checkpoint.planRevision === token.planRevision && checkpoint.requestRevision === token.requestRevision) {
+      await tx.$executeRaw`UPDATE company_research_update_sources SET checked_at=clock_timestamp()
+        WHERE task_id=${task.id} AND budget_revision=${task.budget_revision} AND read_at IS NOT NULL AND checked_at IS NULL`;
+    }
     task.report_revision = report.revision;
     await emitResearchEvent(tx, task, { type: 'report.created', status: report.status }, token.id);
     await emitResearchEvent(tx, task, { type: 'attempt.finished', status: report.status }, token.id);

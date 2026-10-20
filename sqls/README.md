@@ -29,6 +29,8 @@ S10 的 `prisma/migrations/20261019020000_research_evidence_indexes/` 追加不�
 
 S11—S15 的 `20261019130000_research_execution` 追加 tasks.checkpoint、不可变 claim 审查回执和显式报告人工验收表。执行恢复沿用原累计预算与截止时间。仍通过独立 PG 演练；建立迁移文件不表示应用或生产库已经迁移。
 
+S17 修复迁移 `20261020150000_research_update_budgets` 追加预算轮次/工具基数、不可变历史用量快照与来源检查回执。新证据更新获得独立有界时间窗，累计用量不清零；同轮失败重试沿用原时间窗。旧排队事件只迁成未完成来源，不推断检查成功。仍使用 migrate deploy；应用与生产库的迁移按实际运行/发布流程另行执行。
+
 | 组件 | 表 |
 | --- | --- |
 | 项目与对话 | `projects`、`messages`、`sessions`、`tool_usages`、`user_requests` |

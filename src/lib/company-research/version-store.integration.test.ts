@@ -16,6 +16,8 @@ import { importTaskFiling, listResearchDocuments } from './acquisition-service';
 import * as network from './network';
 import * as filingAcquisition from './filing-acquisition';
 import { parseResearchDocument } from './parse-service';
+import { financialResearchTools } from './financial-tools';
+import { saveResearchCheckpoint } from './execution-store';
 
 const enabled = process.env.COMPANY_RESEARCH_TEST_POSTGRES === '1';
 const suiteId = randomUUID(), actor = `research-version-test-${suiteId}`, other = `research-version-other-${suiteId}`;
@@ -260,10 +262,10 @@ describe.skipIf(!enabled)('versioned research PostgreSQL and controlled artifact
     const attempt = await startResearchAttempt(actor, task.id, 1, 'update-baseline', ctx);
     await commitResearchReport(actor, attempt, 0, reportFor(task.id), ctx);
     const nextBytes = Buffer.from('%PDF-1.7\nsynthetic restatement fixture\n'), evidence = Buffer.from('synthetic verified restatement notice');
-    const nextDocument = { ...documentFixture(task.id), id: 'annual-2024-restatement', title: '2024 年报更正', bytesSha256: artifactDigest(nextBytes),
+    const nextDocument = { ...oldDocument, id: 'annual-2024-restatement', title: '2024 年报更正', bytesSha256: artifactDigest(nextBytes),
       original: ref(nextBytes), fetchedAt: new Date().toISOString(), disclosure: { status: 'verified' as const, precision: 'date' as const,
       on: '2025-07-01', timezone: 'Asia/Shanghai' as const, evidenceUrl: 'https://www.cninfo.com.cn/notice', evidenceSha256: artifactDigest(evidence) } };
-    await registerResearchDocument(actor, nextDocument, nextBytes, undefined, ctx);
+    await registerResearchDocument(actor, nextDocument, nextBytes, parsed, ctx);
     const input = { expectedRequestRevision: 1, expectedPlanRevision: 1, expectedReportRevision: 1, asOf: '2025-07-01T23:59:59.999+08:00' };
     const key = randomUUID(), result = await queueResearchReportUpdate(actor, task.id, key, input, ctx);
     expect(result).toMatchObject({ queued: true, requestRevision: 2, planRevision: 2, affectedPeriods: ['fy2024'], sourceHashes: [artifactDigest(nextBytes)] });
@@ -271,15 +273,21 @@ describe.skipIf(!enabled)('versioned research PostgreSQL and controlled artifact
     expect(queued).toMatchObject({ status: 'queued', requestRevision: 2, planRevision: 2, reportRevision: 1, spec: { asOf: '2025-07-01T23:59:59.999+08:00' } });
     expect(queued.checkpoint?.facts).toEqual([]);
     expect(queued.checkpoint?.claims).toEqual([]);
-    expect(queued.usage.startedAt).not.toBeNull();
+    expect(queued.usage.startedAt).toBeNull();
+    expect(queued.budget).toEqual({ revision: 2, toolCalls: 0 });
     expect(await getResearchReportRevision(actor, task.id, 1, ctx)).not.toBeNull();
     expect((await queueResearchReportUpdate(actor, task.id, key, input, ctx))).toMatchObject({ queued: true, idempotent: true });
     expect(await researchVersionEventsAfter(actor, task.id, 0, ctx)).toEqual(expect.arrayContaining([expect.objectContaining({ event: expect.objectContaining({ type: 'report.update.queued', fromReportRevision: 1 }) })]));
     expect(oldDocument.bytesSha256).not.toBe(artifactDigest(nextBytes));
     const nextAttempt = await startResearchAttempt(actor, task.id, 2, 'update-next', ctx);
     const nextReport = { ...reportFor(task.id, 2), requestRevision: 2, planRevision: 2, asOf: input.asOf };
-    // A report can honestly reject/ignore the newly checked source. It must still
-    // remember the check and avoid delivering another version for identical bytes.
+    // A genuinely read source can be irrelevant to the submitted report's citations.
+    const state = queued.checkpoint!;
+    const tools = financialResearchTools(actor, nextAttempt, queued.spec, state, 'fixture', tool => saveResearchCheckpoint(actor, nextAttempt, state, tool, ctx), ctx);
+    const call = (name: string, input: unknown) => tools.find(tool => tool.name === name)!.execute(input, { runId: nextAttempt.id, turn: 1, toolCallId: randomUUID(), operationId: randomUUID(), signal: new AbortController().signal });
+    expect((await call('read_evidence', { documentId: nextDocument.id, documentVersion: 1, locator: { kind: 'page', filePage: 5 } })).ok).toBe(true);
+    expect((await call('check_coverage', {})).ok).toBe(true);
+    expect((await call('submit_report', {})).ok).toBe(true);
     await commitResearchReport(actor, nextAttempt, 1, nextReport, ctx);
     expect(await queueResearchReportUpdate(actor, task.id, randomUUID(), { ...input, expectedRequestRevision: 2, expectedPlanRevision: 2, expectedReportRevision: 2 }, ctx))
       .toEqual({ queued: false, reason: 'no_new_evidence' });

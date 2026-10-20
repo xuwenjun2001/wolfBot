@@ -4,7 +4,8 @@ import { documentAvailableAt, researchDocumentSchema } from './document-contract
 import { checkpointSchema, initialFinancialPlan } from './execution-contracts';
 import { retainedUpdateFacts } from './update-dependencies';
 import { buildResearchReportDiff, researchReportEvidenceHashes } from './report-diff';
-import { researchReportDiffSchema, researchReportRevisionSchema, researchEventSchema } from './revision-contracts';
+import { researchReportDiffSchema, researchReportRevisionSchema } from './revision-contracts';
+import { openResearchUpdateBudget } from './update-run-store';
 import { canonicalResearchJson, researchRequestHash, researchTaskSpecSchema, timestampSchema } from './task-contracts';
 import { defaultResearchContext, assertActor, emitResearchEvent, lockResearchTask, taskSpec, ResearchPersistenceError, type ResearchRepositoryContext } from './repository-core';
 
@@ -65,21 +66,25 @@ export async function queueResearchReportUpdate(actor: string, id: string, key: 
     const documentRows = await tx.$queryRaw<{metadata: unknown}[]>`SELECT metadata FROM company_research_documents WHERE task_id=${id}`;
     const documents = documentRows.map(row => researchDocumentSchema.parse(row.metadata));
     const priorHashes = researchReportEvidenceHashes(oldReport);
-    // A checked source may be irrelevant to the final citations. Durable update receipts
-    // still prevent the same bytes from queueing another report on every check.
-    const priorUpdates = await tx.$queryRaw<{payload: unknown}[]>`SELECT payload FROM company_research_version_events
-      WHERE task_id=${id} AND payload->'event'->>'type'='report.update.queued'`;
-    for (const row of priorUpdates) {
-      const event = researchEventSchema.parse(row.payload).event;
-      if (event.type === 'report.update.queued') for (const hash of event.sourceHashes) priorHashes.add(hash);
-    }
+    const receipts = await tx.$queryRaw<{source_hash: string; budget_revision: number; checked_at: Date | null}[]>`SELECT source_hash,budget_revision,checked_at FROM company_research_update_sources WHERE task_id=${id}`;
+    const pending = new Set(receipts.filter(row => !row.checked_at).map(row => row.source_hash));
+    const currentPending = new Set(receipts.filter(row => !row.checked_at && row.budget_revision === task.budget_revision).map(row => row.source_hash));
+    for (const row of receipts) if (row.checked_at) priorHashes.add(row.source_hash);
     const priorAsOf = Date.parse(oldReport.asOf);
     const newDocuments = documents.filter(document => !priorHashes.has(document.bytesSha256)
       && documentAvailableAt(document, parsed.asOf) && ['acquired', 'parse_pending', 'ready', 'partial'].includes(document.state)
-      && (Date.parse(document.fetchedAt) > Date.parse(oldReport.generatedAt)
+      && (pending.has(document.bytesSha256) || Date.parse(document.fetchedAt) > Date.parse(oldReport.generatedAt)
         || document.disclosure.status === 'verified' && document.disclosure.precision === 'date' && Date.parse(`${document.disclosure.on}T23:59:59.999+08:00`) > priorAsOf
         || document.disclosure.status === 'verified' && document.disclosure.precision === 'instant' && Date.parse(document.disclosure.at) > priorAsOf));
     if (!newDocuments.length) return { queued: false as const, reason: 'no_new_evidence' as const };
+    const retry = newDocuments.every(document => currentPending.has(document.bytesSha256));
+    if (retry && (task.tool_calls - task.budget_tool_base >= currentSpec.budget.maxToolCalls || task.deadline && task.deadline.getTime() <= now)) {
+      throw new ResearchPersistenceError('BUDGET_EXHAUSTED');
+    }
+    if (!retry) await openResearchUpdateBudget(tx, task, currentSpec);
+    const sourceHashes = [...new Set(newDocuments.map(document => document.bytesSha256))];
+    for (const hash of sourceHashes) await tx.$executeRaw`INSERT INTO company_research_update_sources(task_id,budget_revision,source_hash)
+      VALUES (${id},${task.budget_revision},${hash}) ON CONFLICT DO NOTHING`;
 
     const requestRevision = requestedAsOf.getTime() === new Date(currentSpec.asOf).getTime() ? currentSpec.requestRevision : currentSpec.requestRevision + 1;
     const spec = researchTaskSpecSchema.parse({ ...currentSpec, asOf: parsed.asOf, requestRevision });
@@ -107,10 +112,13 @@ export async function queueResearchReportUpdate(actor: string, id: string, key: 
       const state = affectedQuestions.has(question.id) ? 'pending' : 'completed';
       return [[`${question.id}-retrieve`, state], [`${question.id}-compare`, state], [`${question.id}-verify`, 'pending'], [`${question.id}-report`, 'pending']];
     }));
-    const checkpoint = checkpointSchema.parse({ schemaVersion: 1, requestRevision, planRevision: plan.revision, phase: 'researching',
+    let checkpoint = checkpointSchema.parse({ schemaVersion: 1, requestRevision, planRevision: plan.revision, phase: 'researching',
       facts: retainedFacts, ...(retained.supportingFacts.length ? { supportingFacts: retained.supportingFacts } : {}), claims: retainedClaims, observations: [{ tool: 'update', key: payloadHash,
         summary: canonicalResearchJson({ sourceHashes: [...new Set(newDocuments.map(document => document.bytesSha256))], affectedPeriods, invalidatedClaimIds: [...affectedClaimIds], asOf: parsed.asOf }) }],
       steps, stalledCalls: 0, stopReason: null, submitted: false, checkedHash: null, lastCallKey: null, lastEvidenceHash: null });
+    if (retry && task.checkpoint) checkpoint = checkpointSchema.parse({ ...checkpointSchema.parse(task.checkpoint),
+      requestRevision, planRevision: plan.revision, phase: 'researching', stalledCalls: 0, stopReason: null, submitted: false,
+      checkedHash: null, lastCallKey: null, lastEvidenceHash: null });
     const generation = task.generation + 1;
     await tx.$executeRaw`UPDATE company_research_tasks SET request_revision=${requestRevision},plan_revision=${plan.revision},status='queued',
       generation=${generation},active_attempt_id=NULL,checkpoint=${JSON.stringify(checkpoint)}::jsonb WHERE id=${id}`;
@@ -120,6 +128,6 @@ export async function queueResearchReportUpdate(actor: string, id: string, key: 
     await emitResearchEvent(tx, task, { type: 'plan.created' });
     await emitResearchEvent(tx, task, { type: 'task.queued' });
     return { queued: true as const, idempotent: false, requestRevision, planRevision: plan.revision,
-      affectedPeriods, sourceHashes: [...new Set(newDocuments.map(document => document.bytesSha256))] };
+      affectedPeriods, sourceHashes, retry, budgetRevision: task.budget_revision };
   }, { timeout: 20000 });
 }

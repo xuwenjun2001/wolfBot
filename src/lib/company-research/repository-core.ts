@@ -12,6 +12,7 @@ export type ResearchTransaction = Prisma.TransactionClient;
 export interface ResearchTaskRow {
   id: string; actor_id: string; payload_hash: string; status: string; request_revision: number; plan_revision: number; report_revision: number;
   generation: number; sequence: number; active_attempt_id: string | null; cancel_requested: boolean; tool_calls: number;
+  budget_revision: number; budget_tool_base: number;
   input_tokens: number | null; output_tokens: number | null; unknown_model_requests: number;
   created_at: Date; started_at: Date | null; deadline: Date | null;
   checkpoint?: unknown;
