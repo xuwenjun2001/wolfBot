@@ -595,3 +595,9 @@ E-Sxx-01 / 日期 / 会话标识：
 - 修复路径夹具、CRLF 文本比较、wolfbot 截断文案断言和恶意 tar 夹具原始权限；preview 的 Linux 监听接管与非 Linux 安全回退分别断言，不修改生产沙箱策略。
 - Windows 定向验证：6 文件 28 passed / 4 平台分支 skipped；图片路径定向 1 passed；恶意包 source lock 漂移定向 1 passed，均退出 0。定向名称过滤未执行的用例不算通过；19 个符号链接权限用例仍等待 Linux 真实文件系统验证。
 - 正在准备隔离 Linux 测试环境；随后修 Skill 读取规范化与测量并发。原 release-failures.md 的历史结果保持不变，S20 继续 blocked。
+
+### 2026-10-20-review-fixes / Skill 换行与超时
+
+- Skill source/package 文本统一 LF，LF/CRLF 上下文和资源 hash 等价回归通过；冻结 5000 字符场景实测 4986。定向 8 项通过，types 和 Skills registry/14 脚本检查通过；源码提交 2867253。
+- Vitest 采用实测的 2 worker 并发，原两项超时在整套中为 2013/635 ms，保留 5000 ms 限制。Windows 新发现 25 项临时短路径夹具失败；规范化路径后 27 项定向通过。19 项链接权限测试等待 Linux，不跳过安全断言。
+- 受控日志/JSON 已从 tmp 转存 release-repair-01，原始全量失败和历史模型成本保留。Linux npm ci 的既有 @emnapi 锁漂移按原用户边界暂缓；隔离依赖验证不等于可复现安装门通过。正在补真实认证、行情解析、create/start HTTP 旅程并准备最终验证。

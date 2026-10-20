@@ -163,3 +163,13 @@ S19 是另外一层业务质量问题：缺答计入全分母后数值 9/18、�
 本轮四项原测试结果为 2 passed / 2 failed：两个历史超时用例通过，Skill 5026/5000 与篡改包前置权限错误仍失败。相关实现、测试、capsule 配置和资源与原隔离副本在 LF 规范化后相同；不把环境变化后的成功归因于源码修复。未重跑全部 35 项、完整发布门或 Linux 安全测试，也没有声称 CI 通过。
 
 证据保存于 `data/research-agent-upgrade/evidence/failure-root-causes/20261020-01/`：`focused-tests.json`、`skill-length.json`、`skill-normalization-probe.json`、`platform-probes.json` 和 `manifest.json`。原 `s20-release-03.log` 的 SHA-256 已重新核对一致，历史失败与新诊断结果分开保存。
+
+## 2026-10-20 修复进展（原 35 项结果保留）
+
+路径夹具、迁移/组件 CRLF 比较、旧品牌断言和 tar 重打包权限已修复。生产沙箱策略和敏感路径断言保持原义；Linux 监听接管与非 Linux 安全回退分别验证。Windows 定向 28+1+1 项通过，未执行分支不计成功。
+
+Skill 读取现在与 source lock 使用相同的 LF 语义；源码目录和已验证安装包的 LF/CRLF 等价回归通过。原 5000 字符用例由 5026 降至 4986（system 837 / task 4149），预算没有提高，原子 capsule 不截断。Skills registry/14 个脚本检查与 type-check 通过。
+
+对完整测试限制为 2 个 worker 后，原 PI loop / 镜像安装用例分别约 2013 / 635 ms，通过原 5000 ms 上限。Vitest 默认并发固定为 2，限制冷导入和文件密集任务争用；历史超时没有完整剖析，不能宣称已证明唯一根因。当前 Windows 整套为 1420 passed / 44 failed / 76 skipped；44 项由 19 个 EPERM 和另外发现的 25 个短路径别名夹具失败组成。后者规范化夹具真实路径后，该文件 27 项通过；整套尚待 Linux 验证，不能将当前结果写成发布通过。
+
+证据在忽略目录 `data/research-agent-upgrade/evidence/release-repair-01/repair-checks.json`。Linux `npm ci` 实测仍拒绝旧的 @emnapi 锁文件不一致；依赖审计/锁文件按用户既定要求暂缓，仓库依赖文件未改。隔离环境准备测试依赖只用于验证代码，不能替代可复现安装通过证明。
