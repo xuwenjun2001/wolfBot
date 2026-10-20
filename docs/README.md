@@ -13,6 +13,7 @@
 | 想看后续持续完善路线 | [持续完善路线图](ROADMAP.md) |
 | 想继续财报研究 Agent 的 20 步升级 | [升级计划与跨会话入口](plans/research-agent-upgrade/README.md) |
 | 想演示财报变化研究并核对质量证据 | [交付与面试脚本](plans/research-agent-upgrade/delivery.md) / [配对评测](plans/research-agent-upgrade/evaluation-results.md) |
+| 想提交 AI 实操能力自评与成果案例 | [L4 自评与 AI 应用案例集](ai-application-casebook.md) |
 | 想人工复核财报研究参考答案 | [标注手册](plans/research-agent-upgrade/human-annotation.md) / [开发集标注表](plans/research-agent-upgrade/human-annotation-worksheet.md) |
 | 想建立全局学习路线 | [教学 00：项目学习地图](learning/00-project-study-map.md) |
 | 想系统学习 Agent，重点掌握评测设计与改进实验 | [教学 08：Agent 与评测学习手册](learning/08-agent-and-evaluation-handbook.md) |
