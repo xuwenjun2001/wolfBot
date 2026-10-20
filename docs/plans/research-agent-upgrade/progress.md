@@ -6,23 +6,23 @@
 
 | 字段 | 当前值 |
 | --- | --- |
-| 最后更新 | 2026-10-20（R1—R3 已修复；46 项真实 PG 回归与 34 次迁移演练通过，继续发布失败修复） |
+| 最后更新 | 2026-10-21（修复与真实入口旅程通过；四案例质量回归结束且未达门槛，继续 Linux 工程门验证） |
 | 计划版本 | v1 |
 | 总体状态 | S01—S18 已验收（S17 按当前反例修复并重验）；S19/S20 仍有必需验收阻塞。生产部署不在授权范围内 |
 | 已验收步骤 | 18/20；S17 重开与修复过程分别保留 E-REVIEW-03 / E-FIX-R2R3 |
-| 当前待处理步骤 | 已完成入口、更新/重试、测试夹具、Skill 换行和并发修复；正在独立重验工程与财报质量门，S19/S20 仍 blocked |
-| 下一步骤 | 完成 Linux 安全测试、完整 release 和真实 resolve→create→start HTTP 旅程；新质量批次限四个开发案例 |
-| 下一具体动作 | Linux npm ci 已重现暂缓锁漂移，测试依赖在隔离容器准备，不能当作可复现安装通过；新质量批次 repair-validation-20261020-01 已登记，最多 4 个新模型任务，每个 40 工具/20 分钟，无候选调优或旧保留集重跑 |
-| 当前会话登记 | 2026-10-20-review-fixes：R1—R3/测试/Skill 修复已同步至 99a355e；当前改 scripts/checks/run-research-delivery.ts 补真实入口旅程，使用新隔离 checkout release-repair-worktree。新质量 campaign 已保存独占 registration/phase 标记；只运行冻结开发集 baseline 四次，不调用旧保留集或重开旧任务预算 |
+| 当前待处理步骤 | 已完成全部指定代码修复和四案例财报回归；质量门失败如实保留。继续 Linux 安全测试和完整工程门，S19/S20 仍 blocked |
+| 下一步骤 | 完成 Linux 安全测试与完整 release，归档证据并同步交接；本批不再增加模型任务 |
+| 下一具体动作 | Linux npm ci 已重现暂缓锁漂移；隔离容器已通过缓存准备测试依赖，不能当作可复现安装通过。Linux 副本已核对 5659ecf 并验证真实用户命名空间；正在准备 Prisma/编译器和后端运行时，随后实跑完整单测与 release |
+| 当前会话登记 | 2026-10-20-review-fixes：实现和真实入口旅程脚本已同步至 5659ecf；当前更新 progress.md、release-failures.md 等验证交接，使用隔离 checkout release-repair-worktree 和专用 Linux 容器核验。新质量 campaign 已保存独占 registration/phase 标记；只运行冻结开发集 baseline 四次，不调用旧保留集或重开旧任务预算 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
-| 分支 / 本轮实现起点 | codex/research-agent-s11-s15；本次分析起点 `ea48ab49e0dc369ce01db4be7ccde9c8d084767c`，工作区干净；当前 HEAD 用 git rev-parse HEAD 核实 |
+| 分支 / 本轮实现起点 | codex/research-agent-s11-s15；本次修复起点 `33022c451e8474e6e5b4a02dacfefa69f8318f4a`，工作区干净；当前 HEAD 用 git rev-parse HEAD 核实，原根因分析起点另见 E-S20-03 |
 | 目标仓库 | `https://github.com/xuwenjun2001/wolfBot`，默认分支 `main` |
-| 本轮涉及文件 | R1：证券连接器、tasks 创建 API 及其回归、progress.md；下一阶段涉及更新/预算/来源检查存储、追加迁移及真实 PG 回归 |
+| 本轮涉及文件 | 证券连接器/tasks API、更新预算与读取回执存储/迁移、工作台计数、平台测试夹具、Skill compiler、Vitest 并发、入口验证脚本及关联交接；具体改动以本轮选择性提交为准 |
 | 已有改动提醒 | 修复起点工作区干净；仅纳入本轮改动，不提交受控原件、凭据和临时日志 |
-| 运行环境 / 进程 | 当前 Windows 无法创建普通文件符号链接（EPERM）；只读检查 Docker 已响应 Linux 后端、WSL 仅 docker-desktop。未启动 PG/Web/模型或重启服务；Linux 安全测试尚未执行 |
-| 模型与数据费用 | S19 合计 14 次真实任务、490 工具/70 拒绝、输入 7353960 / 输出 143926 Token，未知用量请求 0；费用 unknown。两次预检模型数 0，失败和 partial 成本未删除；未调用付费搜索或 OCR。各逻辑任务保持 40 工具/20 分钟 |
-| 阻塞 | S19 人工确认已完成，但一份 partial 没有事实：9 数值缺答、3 问缺答；全分母评分不达标。原结果 referenceMissing=true/summary=null 是确认前不可变产物，当前以 E-S19-02 独立计分为准。S20 原完整 release 为 1418 passed/35 failed/71 skipped，详见 release-failures.md；不能把全部失败归为平台差异。Quality Node 锁文件/Python 审计继续按用户要求暂缓 |
-| 最近验证 | R1 23 测试；R2/R3：46 项真实 PG 全过，34 迁移旧库升级/重复 deploy/旧代码兼容通过，临时集群已停止；types 退出 0。完整发布门与新质量批次尚未执行 |
+| 运行环境 / 进程 | Windows 普通文件符号链接仍受 EPERM 限制；工程发布检查在隔离 checkout 运行。Linux 专用容器正在准备测试依赖；四案例模型验证使用自建临时 PG，不连接业务库。此前入口 QA server/PG 已停止；未操作生产服务 |
+| 模型与数据费用 | 历史 S19 14 次真实任务完整保留；新开发回归四任务/136 工具/12 工具失败、输入 2104212 / 输出 48527 Token。累计 18 任务/626 工具、输入 9458172 / 输出 192453 Token，未知用量请求 0，费用 unknown；未调用付费搜索或 OCR。每任务保持 40 工具/20 分钟 |
+| 阻塞 | S19 旧人工确认与缺答保留；新开发回归数值 36/36，但问题与支持结论均 9/12，质量门未过。S20 Windows release 最近为 1445 passed/19 failed/55 skipped，19 项均为 symlink EPERM，Linux 仍待实跑；原 35 失败不覆盖。Quality Node 锁文件/Python 审计继续按用户要求暂缓 |
+| 最近验证 | R1 23 测试及两个公司输入的认证 HTTP 入口旅程通过；46 PG/34 迁移三次通过。平台/Skill 定向、Skills、Windows 17 个发布前置检查、type-check、后端 lint/308 passed/22 skipped 及生产构建通过。新财报质量 36/36 数值、9/12 问题与支持结论；Linux 安全用例待实跑 |
 | 受控资料恢复 | 开发资料在 `data/research-agent-upgrade/`；本机 `RESEARCH_HOLDOUT_ROOT=D:/QuantPilot-private-evals/research-v1`，换机须经受控归档恢复并核对登记 hash；这里不记录保留题/答案 |
 | 范围提醒 | 本次目标 S16—S20；生产部署不在范围。每步完成状态须绑定本会话真实验证；保留题/答案不得进入 Git 或交接文档 |
 
@@ -50,8 +50,8 @@
 | S16 | 修改计划与安全重新规划 | S04、S05、S11、S14 | done | E-S16-01；request/plan expectedRevision 与幂等、取消优先、旧 attempt fencing、同逻辑预算继承、旧报告上下文和窄屏工作台检查通过 |
 | S17 | 新财报更新与报告差异 | S06、S09、S13、S15、S16 | done | E-FIX-R2R3：独立更新预算、历史累计与不可变快照、失败来源重试/去重及 fencing；46 PG 回归/34 迁移通过。原 E-REVIEW-03 反例与 E-S17-01 固定案例保留 |
 | S18 | 恢复、隔离与运行观测 | S05、S11、S14、S16、S17 | done | E-S18-01；reliability.md；44 项 PG、真实 SIGKILL/自然租约接管、3 项 parser 测试，原预算/未知用量保留 |
-| S19 | 评测对照与 Skill 改进实验 | S02、S03、S13、S18 | blocked | E-S19-01/02；人工核查确认已登记；保留 9/18 数值、3/6 问题与冻结 claim 支持计数，缺答保留，质量门未过 |
-| S20 | 综合验收与面试证据包 | S01—S19 | blocked | E-S20-01/02；完整 release 的 35 失败/21 文件已逐项列于 release-failures.md，S19 质量门仍未通过 |
+| S19 | 评测对照与 Skill 改进实验 | S02、S03、S13、S18 | blocked | E-S19-01/02、E-FIX-QUALITY；旧保留 9/18 数值、3/6 问题与人工确认保留。新四案例开发回归数值 36/36、问题与支持结论均 9/12，质量门仍未过 |
+| S20 | 综合验收与面试证据包 | S01—S19 | blocked | E-S20-01/02 与修复回归；原 35 失败逐项保留，Windows 最近 19 项 symlink EPERM 尚待 Linux 验证；S19 质量门仍未通过 |
 
 `done` 数量与上方完成数一起更新。计划文件不复制状态；一旦状态矛盾，以实际证据核对后修正本文件，不静默选择较乐观的记录。
 
@@ -65,6 +65,12 @@
 - 原 S03 网关基线全部在鉴权时失败；用户指定新模型后另存校准，4 次请求均 200，但提前收尾且无财报来源，不是质量提升证据。后续人工确认按 E-ANNOT-02 单独归档，不能反向把旧模型运行变为通过。
 
 ## 验收证据
+
+### E-FIX-QUALITY：四案例开发回归与独立质量门
+
+- `repair-validation-20261020-01` 独占登记后只运行 baseline 四任务，模型 gpt-6.1-sol/high，每任务 40 工具/20 分钟；没有候选调优、原任务重试或旧保留集重跑。结果为 36/36 数值、9/12 问题、9/12 支持结论、硬错误零，公司 completed 2/4；问题 80% 与支持 90% 两项门槛未达。
+- 两个现金流原因问题缺少直接业务因果证据，另一个风险结论在预算耗尽前未完成语义核验；诚实缺口保留在全分母。原始 `baseline/results.json` 与独立 `full-denominator-gate.json` 分开保存；方法、逐公司结果、hash 和用量见 [evaluation-results.md](evaluation-results.md#修复后的四案例开发回归)。旧人工确认继续有效，不重复核查；本次开发回归不能替代新的盲保留验收。
+- 运行的临时 PG manifest `S05/rehearsal-c5127592-a073-4e59-8bf6-adb64ec8e19c/manifest.json` SHA-256 为 `fc3dec3bbf6b3ca55abb3258541c5ed79faa78c1bc016ffea7e5d9c44f9a0cf7`，46 PG/34 迁移检查通过，nativeClusterStopped=true。命令退出 0 只证明运行执行完成，财报质量 gatePassed=false；S19/S20 保持 blocked。
 
 ### E-FIX-ENTRY-E2E：真实解析到开始研究
 
@@ -607,3 +613,9 @@ E-Sxx-01 / 日期 / 会话标识：
 - Skill source/package 文本统一 LF，LF/CRLF 上下文和资源 hash 等价回归通过；冻结 5000 字符场景实测 4986。定向 8 项通过，types 和 Skills registry/14 脚本检查通过；源码提交 2867253。
 - Vitest 采用实测的 2 worker 并发，原两项超时在整套中为 2013/635 ms，保留 5000 ms 限制。Windows 新发现 25 项临时短路径夹具失败；规范化路径后 27 项定向通过。19 项链接权限测试等待 Linux，不跳过安全断言。
 - 受控日志/JSON 已从 tmp 转存 release-repair-01，原始全量失败和历史模型成本保留。Linux npm ci 的既有 @emnapi 锁漂移按原用户边界暂缓；隔离依赖验证不等于可复现安装门通过。正在补真实认证、行情解析、create/start HTTP 旅程并准备最终验证。
+
+### 2026-10-21-review-fixes / 财报质量门重验
+
+- 已完成四个登记开发案例，保留全部 partial/失败和 136 次工具消耗；全分母数值 36/36、问题与支持结论均 9/12，后两项门槛失败。补写 E-FIX-QUALITY 与逐公司结果/原件 hash；没有重跑旧保留集或扩充模型任务，旧人工确认继续有效。
+- 真实认证入口旅程与第三次 46 PG/34 迁移回归已通过，临时 PG 已停止。Windows 完整 release 的 17 个前置检查通过，单测停在 19 个 symlink EPERM；后续独立 types、后端 lint/308 测试和生产构建通过。首次 types 内存不足保留日志，有界内存重验通过，没有修改测试超时上限。
+- Linux 副本对应 5659ecf，原生用户命名空间已实跑；依赖缓存、Python 3.14 与 Prisma/编译器正在隔离环境准备，安全测试和完整 release 待执行。S19/S20 保持 blocked，生产和业务库未操作。
