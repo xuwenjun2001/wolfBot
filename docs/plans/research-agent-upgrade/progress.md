@@ -6,23 +6,23 @@
 
 | 字段 | 当前值 |
 | --- | --- |
-| 最后更新 | 2026-10-20（14 次真实任务结清；S19 待保留人工核查，S20 发布门未通过） |
+| 最后更新 | 2026-10-20（保留人工核查已确认；S19 缺答导致质量门未过，S20 的 35 个失败已逐项登记） |
 | 计划版本 | v1 |
 | 总体状态 | S01—S18 已验收；S19/S20 实现、实验、交付材料已落地，尚有必需验收阻塞。生产部署不在授权范围内 |
 | 已验收步骤 | 18/20；S19/S20 不因代码实现、部分检查或源码同步完成而自动 done |
-| 当前待处理步骤 | S19 blocked：保留独立人工参考/核查缺失；S20 blocked：依赖 S19，且完整发布检查失败 |
-| 下一步骤 | 先完成 S19 保留人工复核及冻结评分；在可用 Linux 验证环境结清 S20 发布门 |
-| 下一具体动作 | 读取外部 annotations/holdout-continuation-02/review.md 与 inputs.json，实际核查 18 数值、6 问及全部实质 claims，保存独立参考和评分版本；不代签、不重跑已用完 14 次预算的模型实验。若据保留失败继续调优，另备未见集合。S20 保留当前源码，在支持真实 symlink/sandbox 的环境跑原 release:check 并解决实际失败，不跳过反例或扩大处理暂缓审计 |
-| 当前会话登记 | 2026-10-20-s16-s20：已完成 S16/S17/S18 并独立同步；本轮结清 S19 配对/候选拒绝/两次最终保留、零模型预检修复及 S20 实现/交付文档。原版开发门通过，保留 1 completed/1 partial 且未计质量分；审核包已生成。临时服务已清理，最终仅同步本轮 52 文件，不含原始证据或保留题 |
+| 当前待处理步骤 | S19 blocked：人工确认已登记，保留数值 9/18、问题 3/6、冻结 claim 支持计数 3/6，质量门未过；S20 blocked：依赖 S19，且完整发布检查失败 |
+| 下一步骤 | 根据已登记的真实失败安排后续修复；S20 在支持真实符号链接和 Linux sandbox 的环境结清完整发布门 |
+| 下一具体动作 | 先读 release-failures.md 的 35 项清单和本次 E-S19-02，不再重复要求同批人工确认。S19 如需依据已见保留失败改进，应另起登记实验并准备新的未见保留集合；原 14 次任务及缺答不重开预算。S20 保留原失败和门禁逐项定位，不跳过反例或扩大处理暂缓审计 |
+| 当前会话登记 | 2026-10-20-s19-human-review-and-s20-inventory：用户确认核查无误，已绑定原审核包/报告登记独立回执和评分；从原 S20 日志提取 35 项失败、21 文件，补做无模型字符串核对。仅更新 progress/evaluation-results/delivery/本目录 README 和新增 release-failures.md；本次没有修改应用源码或执行模型/完整发布门 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
-| 分支 / 本轮实现起点 | codex/research-agent-s11-s15；S18 `101dfa8fe6caec76ef330cf9b093593f602ebd82`。本轮源文件身份见 S20/validation-snapshot-v6.json；最终 HEAD 由 git rev-parse HEAD 核实 |
+| 分支 / 本轮实现起点 | codex/research-agent-s11-s15；本次登记起点 `0f6e50f`，S19/S20 实现为 `d70257a`，历史原字节身份见 S20/validation-snapshot-v6.json；当前 HEAD 用 git rev-parse HEAD 核实 |
 | 目标仓库 | `https://github.com/xuwenjun2001/wolfBot`，默认分支 `main` |
-| 本轮涉及文件 | S19：评测 runner/评分、可信 Skill 注入及报告指纹、防覆盖/保留适配/审核包 helpers、结果文档；S12 行内单位修复与真实回放。S20：Windows release 启动、尺寸门职责拆分（FileTree、图片证据/JSON I/O、health）、品牌 guardrail、UI key 与类型导入修复、认证演示 helper、五截图及文档。原始证据留在忽略目录 |
-| 已有改动提醒 | 本轮仅纳入明确审查的 52 文件清单，不含 .env、data、tmp、依赖、原始日志及保留资料。后续以 Git 状态核对是否还有其他未提交工作，不覆盖新增改动 |
-| 运行环境 / 进程 | 所有本轮 PG 与模型 runner 已结束，最后 02831abd-994a-46ab-b360-009e7acaab9d manifest 为 passed/nativeClusterStopped=true。认证演示 Next/PG、S17 QA 均已停。仅用户 3000/pid14248 保留。D 盘临时目录与隔离 checkout 保留复验；未部署、未迁移业务库 |
+| 本轮涉及文件 | 本次仅 5 篇计划/交付文档；人工回执在外部受控目录，脱敏计分与 35 项日志清单在忽略的 evidence 目录。上轮实现范围、测试与 Git 同步保持既有记录 |
+| 已有改动提醒 | 本次起点工作区干净；仅提交本次 5 篇文档，不纳入私有核查材料、原始日志及临时脚本。后续以 Git 状态核对新增工作 |
+| 运行环境 / 进程 | 本次只做本地文件及历史材料核对，没有启动 PG/模型/Web 或操作日常服务；原隔离 PG/认证演示/QA 的停止证据见上轮记录。D 盘临时目录及隔离 checkout 保留；业务库未操作 |
 | 模型与数据费用 | S19 合计 14 次真实任务、490 工具/70 拒绝、输入 7353960 / 输出 143926 Token，未知用量请求 0；费用 unknown。两次预检模型数 0，失败和 partial 成本未删除；未调用付费搜索或 OCR。各逻辑任务保持 40 工具/20 分钟 |
-| 阻塞 | S19 保留 referenceMissing=true/summary=null，独立人工参考未核查，不能宣称保留准确率或质量通过。S20 完整 release 失败：前 17 项通过，前端 1418 passed/35 failed/71 skipped，含 symlink EPERM、路径/换行、历史断言/超时等；需可用 Linux 环境验证真实失败。Quality Node 锁文件/Python 审计继续按用户要求暂缓；不关闭、放宽或跳过门禁 |
-| 最近验证 | S12 46 单测、47 原表失败回放；最终隔离 PG 44/44。S19 输入/防覆盖 8/8，真实无模型预检 4 原件完整解析，14 模型任务全部留存。最终全量 lint、types、后端 ruff、模块边界、生产 build 退出 0；后端 308 passed/22 skipped。认证旅程完成读取/原文/修订/刷新/取消并清理。完整 release 的 35 前端失败仍未通过 |
+| 阻塞 | S19 人工确认已完成，但一份 partial 没有事实：9 数值缺答、3 问缺答；全分母评分不达标。原结果 referenceMissing=true/summary=null 是确认前不可变产物，当前以 E-S19-02 独立计分为准。S20 原完整 release 为 1418 passed/35 failed/71 skipped，详见 release-failures.md；不能把全部失败归为平台差异。Quality Node 锁文件/Python 审计继续按用户要求暂缓 |
+| 最近验证 | 本次核对原审核包、freeze/results、两报告/来源 hash、4 原始 PDF 和冻结 rubric；人工确认后按原全分母计分。35 项日志提取及分类校验通过，SQL 与图表副本的 LF 归一化定位证据保留。上轮 build/types/lint、44 PG、后端 308 passed/22 skipped 等通过记录保留，本次未重跑，不改变完整 release 失败结论 |
 | 受控资料恢复 | 开发资料在 `data/research-agent-upgrade/`；本机 `RESEARCH_HOLDOUT_ROOT=D:/QuantPilot-private-evals/research-v1`，换机须经受控归档恢复并核对登记 hash；这里不记录保留题/答案 |
 | 范围提醒 | 本次目标 S16—S20；生产部署不在范围。每步完成状态须绑定本会话真实验证；保留题/答案不得进入 Git 或交接文档 |
 
@@ -50,8 +50,8 @@
 | S16 | 修改计划与安全重新规划 | S04、S05、S11、S14 | done | E-S16-01；request/plan expectedRevision 与幂等、取消优先、旧 attempt fencing、同逻辑预算继承、旧报告上下文和窄屏工作台检查通过 |
 | S17 | 新财报更新与报告差异 | S06、S09、S13、S15、S16 | done | E-S17-01；42 项 PostgreSQL、129 项定向单测；同文件 no-op、重述、支持/撤回、晚披露和旧报告保留通过 |
 | S18 | 恢复、隔离与运行观测 | S05、S11、S14、S16、S17 | done | E-S18-01；reliability.md；44 项 PG、真实 SIGKILL/自然租约接管、3 项 parser 测试，原预算/未知用量保留 |
-| S19 | 评测对照与 Skill 改进实验 | S02、S03、S13、S18 | blocked | E-S19-01；14 次任务结清、拒绝候选并保留原版；保留 1 completed/1 partial，待独立人工参考与评分 |
-| S20 | 综合验收与面试证据包 | S01—S19 | blocked | E-S20-01；交付材料/认证旅程/build/types/lint/后端通过，完整 release 仍有 35 前端测试失败，且 S19 未验收 |
+| S19 | 评测对照与 Skill 改进实验 | S02、S03、S13、S18 | blocked | E-S19-01/02；人工核查确认已登记；保留 9/18 数值、3/6 问题与冻结 claim 支持计数，缺答保留，质量门未过 |
+| S20 | 综合验收与面试证据包 | S01—S19 | blocked | E-S20-01/02；完整 release 的 35 失败/21 文件已逐项列于 release-failures.md，S19 质量门仍未通过 |
 
 `done` 数量与上方完成数一起更新。计划文件不复制状态；一旦状态矛盾，以实际证据核对后修正本文件，不静默选择较乐观的记录。
 
@@ -66,7 +66,22 @@
 
 ## 验收证据
 
+### E-S19-02：用户核查确认与保留缺答计分
+
+- 2026-10-20 / `2026-10-20-s19-human-review-and-s20-inventory`；起点 `0f6e50f`，工作区干净。用户在本会话明确确认“核查过了，都没有问题”，对应前文两份最终保留报告、18 数值、6 问和全部实质结论/来源的核查请求。本次直接登记该确认，不要求重复确认，不虚构实际复核时间或审核人身份。
+- 原审核包 SHA-256 `928ca22a13c49d6893b19d73889153fdd98f3b128e126bae995e7583817c76e7`、inputs、freeze、results、两 task/source 原件与 canonical report hash 均核对；4 原始 PDF 的 bytes 和冻结 rubric 也一致。外部 `annotations/holdout-continuation-02/confirmation-01/acceptance.json` SHA-256 `32999fdd71e25d581ad90233ecdc97038bdfa1bcea9081bed3abad119dd0878f` 保存直接用户确认及逐项呈现状态；原未签署审核包和机器结果保持不变。
+- 脱敏计分 `S19/human-review-20261020-01/acceptance-summary.json` SHA-256 `4ef77c8302b2b51afe505f8658971e32a25570d4fe5b188fed0c39f3ae36e67b`。holdout-1 原报告无 facts、3 条 evidence_gap；确认诚实缺口不等于补齐答案，故数值 0/9、问题 0/3、冻结 claim 支持 0/3。holdout-2 的 9 数值、3 问与 3 supported claims 获确认。合计 9/18、3/6、3/6，均为 50%，硬门无已知错误；冻结评分器 gatePassed=false，S19 仍 blocked，原因改为质量门未过。
+- 计分依据是用户对实际呈现值、解释和缺口分类的确认，不为缺失的 9 个数值编造独立参考；claim 分母沿用原评分器，包含 3 条 evidence_gap，不能表述为发现 3 条虚假断言。机器 completed 仍为 1/2，原 partial 不改写。旧 referenceMissing=true/summary=null 保留为确认前产物，新回执/计分独立版本生效。没有新模型、OCR、数据库或预算重置；若依据已见保留失败优化须另备未见集合。
+
+### E-S20-02：35 个失败逐项清单与字节定位
+
+- 同会话从 `s20-release-03.log` 原字节提取 35 个唯一失败项、21 个测试文件；SHA-256 仍为 `c32ed342f47e627197157fcb7eaa4f9025204d33ebab4b5cc448619fd9c5e84b`。结果为 1418 passed / 35 failed / 71 skipped；发布门前 17 项通过。当前没有重跑完整发布门。
+- [完整失败清单](release-failures.md) 保留原测试名、文件/定位行、日志行与实际错误；分类为 19 符号链接创建 EPERM、9 路径/平台分支、3 CRLF/LF、1 旧品牌断言、1 Skill 5026/5000 超预算、2 用例 5000ms 超时。19 项在准备阶段即失败，不代表安全断言已通过或已经证明越权。
+- 本地 `S20/failure-inventory-20261020-01/inventory.json` SHA-256 `4a18962fd8df63e8432107e9b5b3da29699db79b3c6c8c988e4ce053de1392e0` 绑定全部日志位置及副本核对：迁移 marker/regex 在 CRLF 副本上失败、LF 归一化后命中；图表隔离副本有 232 处 CRLF，归一化后与模板相同。只定位文本差异，不宣称相关完整测试通过；其余预算、超时和平台分支仍需复验。源码、测试、预算和门禁均未修改。
+
 ### E-S19-01：冻结开发配对、候选取舍与保留验收
+
+以下保留人工确认前的运行与收尾记录；当前核查结论和独立计分以 E-S19-02 为准。
 
 - 2026-10-20 / `2026-10-20-s16-s20`。实现可信 Skill 程序参数、报告 method 指纹、精确十进制评分与配对 runner；生成器不接收参考答案，HTTP 不接受 prompt 覆盖，默认研究 Skill 未发布变更。开发分母 36 数值 / 12 问题及全部实质 claims；硬门逐次复验，缺答、partial、失败与未知费用保留。结果和方法见 [配对评测](evaluation-results.md)。
 - 第二批 protocol SHA-256 `b27293733d83c33f301c5275e6de865b621817379f1327002f9bdfa7f27720b1`，基线结果 `6b4bb7eba5b597534ae7abf3db7f45b437afb5a34a92d22bfa0e43a42dcd31ca`：36/36 数值、11/12 问题与支持，整公司 3/4，开发门通过；PG 批 `S05/rehearsal-1eb25cea-3f94-4e60-bba1-49d3a553e3e7` 退出 0 且已停。首批四次失败不作跨批 Skill 增幅，S12 修复见 E-S12-02。
@@ -519,3 +534,9 @@ E-Sxx-01 / 日期 / 会话标识：
 - 完成 S19 精确评分/可信 Skill 实验/报告指纹、四公司配对及唯一候选拒绝、最终两家保留与未签署人工材料；补验 S12 行内单位缺口。14 个真实任务覆盖 6 家公司，完整总账保留；两次零模型输入失败按 D31 另存，不覆写、不重置任务预算。证据 E-S12-02/E-S19-01。
 - S20 交付架构、演示、五张真实或明确标注合成截图、认证存档旅程与专题文档已完成；本轮修复 Windows 检查启动、职责尺寸、品牌 guardrail、UI 重复 key 与 server-only 导入。完整发布门仍失败，独立 build/types/lint/后端等通过，证据 E-S20-01。S19/S20 保持 blocked，总验收 18/20。
 - 下一会话先核对 Git 和已保存证据，读取外部审核包完成实际人工参考/评分；不得再开当前保留任务。S20 在可用 Linux 环境跑原质量门并解决实际失败，暂缓的锁文件/依赖审计不顺带展开。所有本轮测试服务已停，用户 3000/pid14248 保留；未部署、未触碰业务库。本轮只同步已审查的相关源码、测试、规则和文档，原始证据/私有题仍受控保存。
+
+### 2026-10-20-s19-human-review-and-s20-inventory
+
+- 用户已核查并确认两份最终保留报告的呈现内容和缺口；登记 E-S19-02 独立回执，原机器结果/未签署包均不改写。计入缺答后为 9/18 数值、3/6 问题、3/6 冻结 claim 支持；S19 仍因质量门失败 blocked，原“等待人工核查”阻塞已结清，总验收保持 18/20。
+- 依据用户要求整理 S20 全部 35 个失败，21 文件、分类总数与原日志一致；原测试名和位置进入 release-failures.md，副本字符串核对保存本地清单。本次只更新 5 篇文档；不启动新模型、完整发布门、业务数据库或日常服务。后续依据真实失败安排修复，不把清单整理当作测试已经通过。
+- 本次 `npm run check:docs` 退出 0（76 Markdown / 534 本地链接），日志 `S20/failure-inventory-20261020-01/docs-check.log`；`git diff --check` 通过。只检查本轮文档与证据一致性，没有重跑应用测试或发布门；记录原通过项时保留其历史版本和适用范围。
