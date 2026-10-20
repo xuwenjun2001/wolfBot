@@ -6,23 +6,23 @@
 
 | 字段 | 当前值 |
 | --- | --- |
-| 最后更新 | 2026-10-20（S16—S20 Review 确认入口解析与两项报告更新问题；S17 重开，S19/S20 原阻塞保留） |
+| 最后更新 | 2026-10-20（发布失败根因补查：Skill 超预算确定为 CRLF 编译差异，归档权限反例已定位；S17/S19/S20 状态不变） |
 | 计划版本 | v1 |
 | 总体状态 | S01—S16、S18 保留原验收；S17 因当前反例重开；S19/S20 实现、实验、交付材料已落地，仍有必需验收阻塞。生产部署不在授权范围内 |
 | 已验收步骤 | 17/20；原 18/20 历史记录保留，S17 按 E-REVIEW-03 重开 |
 | 当前待处理步骤 | S17 in_progress：新公告更新不能跨原 deadline，失败来源又被排队回执去重；另有入口证券身份解析缺陷。S19/S20 仍 blocked |
 | 下一步骤 | 按 review-s16-s20.md 先修 R1 入口，再修 R2/R3 更新及重试；完成对应回归后重新验收 S17 |
 | 下一具体动作 | 本轮只完成 review，产品修复尚未实施。补 resolve→create→start 旅程与两个 PG 反例；更新预算需保留历史消耗，同次运行重试不重置。S19 原 14 次任务、全分母缺答和 S20 原 35 项发布失败保持登记，不重跑同批保留集或扩大处理暂缓审计 |
-| 当前会话登记 | 2026-10-20-review-s16-s20：review 完成，3 个问题及当前验证见 E-REVIEW-03 / review-s16-s20.md；仅更新文档，未修改产品源码 |
+| 当前会话登记 | 2026-10-20-failure-root-causes：完成三项产品问题和 35 项发布失败的根因分类，详见 E-S20-03 与 release-failures.md 根因补充。仅更新两篇文档，产品/测试代码未修改 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
-| 分支 / 本轮实现起点 | codex/research-agent-s11-s15；本次 review 起点 `8736a9041cf10caaaa5273f52fddadf2f5fcfb8e`，工作区干净；当前 HEAD 用 git rev-parse HEAD 核实 |
+| 分支 / 本轮实现起点 | codex/research-agent-s11-s15；本次分析起点 `ea48ab49e0dc369ce01db4be7ccde9c8d084767c`，工作区干净；当前 HEAD 用 git rev-parse HEAD 核实 |
 | 目标仓库 | `https://github.com/xuwenjun2001/wolfBot`，默认分支 `main` |
-| 本轮涉及文件 | 本次仅本目录 README.md、progress.md、review-s16-s20.md；真实解析响应、合成探针、测试日志与隔离 PG 证据在忽略目录 |
-| 已有改动提醒 | 起点无已有改动；本轮只提交 review 与交接文档，不纳入原始响应、日志、临时脚本和数据库 |
-| 运行环境 / 进程 | 读取现有行情解析服务；新建专用临时 PG16 执行 44 测试及合成反例，已停止 nativeClusterStopped=true。没有付费模型调用、业务库写入或日常服务变更 |
+| 本轮涉及文件 | 本次仅 progress.md、release-failures.md；定向 Vitest 与 Skill/归档/符号链接探针结果在忽略的 failure-root-causes/20261020-01 证据目录 |
+| 已有改动提醒 | 起点无已有改动；只提交两篇分析/交接文档，不纳入原始日志、临时文件或归档探针 |
+| 运行环境 / 进程 | 当前 Windows 无法创建普通文件符号链接（EPERM）；只读检查 Docker 已响应 Linux 后端、WSL 仅 docker-desktop。未启动 PG/Web/模型或重启服务；Linux 安全测试尚未执行 |
 | 模型与数据费用 | S19 合计 14 次真实任务、490 工具/70 拒绝、输入 7353960 / 输出 143926 Token，未知用量请求 0；费用 unknown。两次预检模型数 0，失败和 partial 成本未删除；未调用付费搜索或 OCR。各逻辑任务保持 40 工具/20 分钟 |
 | 阻塞 | S19 人工确认已完成，但一份 partial 没有事实：9 数值缺答、3 问缺答；全分母评分不达标。原结果 referenceMissing=true/summary=null 是确认前不可变产物，当前以 E-S19-02 独立计分为准。S20 原完整 release 为 1418 passed/35 failed/71 skipped，详见 release-failures.md；不能把全部失败归为平台差异。Quality Node 锁文件/Python 审计继续按用户要求暂缓 |
-| 最近验证 | 当前源码定向单测 140 passed，另 44 PG 在独立库全部通过；评测保护测试 8 passed；6 组实时证券查询与 2 个 PG 反例确认缺陷。未重跑完整 release、build/types/lint、后端全量、真实模型或真实中断；详见 E-REVIEW-03 |
+| 最近验证 | 本轮四项原定向测试 2 passed / 2 failed：历史超时约 1.67s/0.66s 通过，Skill 超预算和篡改包权限前置错误仍失败；原 5000 门槛下仅诊断规范换行得到 4986 字符。上轮 140 单测/44 PG/8 保护测试属 E-REVIEW-03，本轮未重跑；完整发布门与真实模型仍未重跑 |
 | 受控资料恢复 | 开发资料在 `data/research-agent-upgrade/`；本机 `RESEARCH_HOLDOUT_ROOT=D:/QuantPilot-private-evals/research-v1`，换机须经受控归档恢复并核对登记 hash；这里不记录保留题/答案 |
 | 范围提醒 | 本次目标 S16—S20；生产部署不在范围。每步完成状态须绑定本会话真实验证；保留题/答案不得进入 Git 或交接文档 |
 
@@ -65,6 +65,13 @@
 - 原 S03 网关基线全部在鉴权时失败；用户指定新模型后另存校准，4 次请求均 200，但提前收尾且无财报来源，不是质量提升证据。后续人工确认按 E-ANNOT-02 单独归档，不能反向把旧模型运行变为通过。
 
 ## 验收证据
+
+### E-S20-03：发布失败的根因补查与协助边界
+
+- 起点 `ea48ab49e0dc369ce01db4be7ccde9c8d084767c`，原失败日志 hash 重新核对一致。逐项归因见 [release-failures.md](release-failures.md#2026-10-20-根因补充)：32 项环境/测试适配，1 项确定的 Skill 跨平台编译缺陷，2 项未完全归因的历史超时。32 项不等于免验收，尤其 19 项安全断言仍缺有效环境实跑。
+- 当前四个原用例串行定向结果为 2 passed / 2 failed。历史两个超时分别约 1669.7ms / 660.0ms，通过原 5 秒门槛；没有全套并行 CPU/I/O 证据，不能宣称已修复。Skill 原组合仍 5026/5000；实际上下文含 40 处 CRLF，独立进程只在 resource 读取时规范 LF 后，真实编译器在原 5000 预算返回 4986。没有写回源码、改 lock、提高验收阈值或调用模型。
+- 归档探针确认脚本原包 mode=755、Windows 解压文件 mode=666、重新打包 mode=644，导致篡改 fixture 先触发可执行位检查；原安全校验没有放行。新临时链接也复现 EPERM。Docker 只读探测当前 OSType=linux；不要求用户立即修改系统权限，后续优先准备隔离 Linux 测试环境。
+- 证据目录 `data/research-agent-upgrade/evidence/failure-root-causes/20261020-01/`，manifest SHA-256 `88e2f8c06b22b748912a0ff0c7962f280ca6953fcb38f82530518d6c32299d05`。相关源码/配置/资源与原隔离副本 LF 规范化后一致；本轮没有完整 release、Linux 安全测试、真实财务模型或业务库操作。三个产品问题与 S19 全分母质量阻塞不因本次归因解除。
 
 ### E-REVIEW-03：S16—S20 Review 与入口故障复现
 
@@ -359,6 +366,13 @@ E-Sxx-01 / 日期 / 会话标识：
 ```
 
 ## 会话历史
+
+### 2026-10-20-failure-root-causes
+
+- 用户要求详细解释 review 已确认的问题与 release-failures.md 中错误的原因、性质及是否需要协助。本轮核对 35 项历史失败与源码，补充 Skill 换行和归档 mode 的确定性证据，并保留两个历史超时的归因限制；没有实施产品修复。
+- 当前不缺用户凭据或原批次人工确认。工程修复可继续自主处理；只有坚持 Windows 原生真实链接验收且权限持续受限时，才可能需要系统权限协助。未来新财务样本的独立人工核查属于后续质量验收，不能复用已见保留集刷通过。
+- 仅同步 progress.md 与 release-failures.md，原始证据留本地。下一动作仍为修 R1 入口及 S17 的 R2/R3，再处理测试平台适配、Skill 文本规范化与有界并发诊断；原门禁、历史成本、S19/S20 blocked 和暂缓审计边界不变。
+- 本轮文档检查通过（77 Markdown / 537 本地链接），`git diff --check` 通过；检查日志在本轮 evidence 的 docs-check.log，源码同步与 CI 结果分别报告。
 
 ### 2026-10-20-review-s16-s20
 
