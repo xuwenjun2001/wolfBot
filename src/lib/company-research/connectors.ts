@@ -8,7 +8,10 @@ export async function marketGet(path: string, signal?: AbortSignal) {
   return boundedJson(await fetch(`${marketOrigin()}/api/v1/${path}`, { signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(35000)]) : AbortSignal.timeout(35000), redirect: 'error' }));
 }
 export async function resolveCompanies(query: string, signal?: AbortSignal): Promise<Company[]> {
-  const data = await marketGet(`symbols/resolve?query=${encodeURIComponent(query)}&count=10`, signal) as { results?: { symbol: string; name: string; asset_type: string }[] };
+  // The market resolver searches names or bare codes; saved research identities include an exchange.
+  const trimmed = query.trim();
+  const lookup = aShareSymbolPattern.test(trimmed) ? trimmed.split('.')[0] : trimmed;
+  const data = await marketGet(`symbols/resolve?query=${encodeURIComponent(lookup)}&count=10`, signal) as { results?: { symbol: string; name: string; asset_type: string }[] };
   return [...new Map((data.results || []).filter(c => c.asset_type === 'stock' && aShareSymbolPattern.test(c.symbol))
     .map(c => [c.symbol, { symbol: c.symbol, name: c.name || c.symbol }])).values()];
 }

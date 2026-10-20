@@ -1,17 +1,17 @@
 import { randomUUID } from 'node:crypto';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { specFixture } from '@/lib/company-research/version-test-fixtures';
 import { ResearchPersistenceError } from '@/lib/company-research/repository-errors';
 import { AuthorizationError } from '@/lib/auth/authorization';
 
-const mocked = vi.hoisted(() => ({ action: vi.fn(), create: vi.fn(), task: vi.fn(), report: vi.fn(), snapshot: vi.fn(), document: vi.fn(), artifact: vi.fn(), cancel: vi.fn(), resolve: vi.fn() }));
+const mocked = vi.hoisted(() => ({ action: vi.fn(), create: vi.fn(), task: vi.fn(), report: vi.fn(), snapshot: vi.fn(), document: vi.fn(), artifact: vi.fn(), cancel: vi.fn(), fetch: vi.fn() }));
 vi.mock('@/lib/auth/action', () => ({ requireAction: mocked.action }));
 vi.mock('@/lib/company-research/version-store', () => ({ createResearchTask: mocked.create, getResearchTask: mocked.task, getResearchReportRevision: mocked.report }));
 vi.mock('@/lib/company-research/report-update-store', () => ({ getResearchReportSnapshot: mocked.snapshot }));
 vi.mock('@/lib/company-research/document-store', () => ({ getResearchDocument: mocked.document, readResearchDocumentArtifact: mocked.artifact }));
 vi.mock('@/lib/company-research/attempt-store', () => ({ cancelResearchTask: mocked.cancel }));
-vi.mock('@/lib/company-research/connectors', () => ({ resolveCompanies: mocked.resolve }));
 import { POST as create } from '@/app/api/company-research/tasks/route';
+import { GET as resolve } from '@/app/api/company-research/resolve/route';
 import { GET as getTask } from '@/app/api/company-research/tasks/[id]/route';
 import { GET as getDocument } from '@/app/api/company-research/tasks/[id]/documents/[documentId]/[version]/route';
 import { GET as getReport } from '@/app/api/company-research/tasks/[id]/reports/[revision]/route';
@@ -21,8 +21,27 @@ const request = (body: unknown, origin = 'http://localhost:3000') => new Request
 describe('versioned research HTTP identity boundary', () => {
   beforeEach(() => {
     vi.resetAllMocks(); mocked.action.mockResolvedValue({ actorUserId: 'authenticated-user' });
-    mocked.resolve.mockResolvedValue([{ symbol: '600519.SH', name: '贵州茅台' }]);
+    vi.stubGlobal('fetch', mocked.fetch);
+    mocked.fetch.mockImplementation(async () => new Response(JSON.stringify({ results: [{ symbol: '600519', name: '贵州茅台', asset_type: 'stock' }] })));
     mocked.create.mockResolvedValue({ id: randomUUID(), status: 'draft' });
+  });
+  afterEach(() => vi.unstubAllGlobals());
+  it.each([['安迪苏', '600299', '安迪苏'], ['601919', '601919', '中远海控']])('resolves %s and confirms its saved identity through the real connector', async (query, code, name) => {
+    mocked.fetch.mockImplementation(async (input: string) => {
+      const lookup = new URL(input).searchParams.get('query');
+      return new Response(JSON.stringify({ results: lookup === query || lookup === code ? [{ symbol: code, name, asset_type: 'stock' }] : [] }));
+    });
+    const found = await resolve(new Request(`http://localhost:3000/api/company-research/resolve?query=${encodeURIComponent(query)}`));
+    expect((await found.json()).companies).toEqual([{ symbol: code, name }]);
+    const spec = { ...specFixture(), company: { symbol: `${code}.SH`, name, exchange: 'SH' } };
+    expect((await create(request(spec))).status).toBe(201);
+    expect(new URL(mocked.fetch.mock.calls[1][0]).searchParams.get('query')).toBe(code);
+    expect(mocked.create).toHaveBeenCalledWith('authenticated-user', spec, expect.any(String));
+  });
+  it.each([{ results: [] }, { results: [{ symbol: '600519.SZ', name: '贵州茅台', asset_type: 'stock' }] }, { results: [{ symbol: '601919', name: '中远海控', asset_type: 'stock' }] }])('rejects absent or mismatched authoritative identities: $results', async ({ results }) => {
+    mocked.fetch.mockImplementation(async () => new Response(JSON.stringify({ results })));
+    expect((await create(request(specFixture()))).status).toBe(400);
+    expect(mocked.create).not.toHaveBeenCalled();
   });
   it('uses trusted identity and creates a draft without dispatching legacy research', async () => {
     const spec = specFixture(), response = await create(request(spec));

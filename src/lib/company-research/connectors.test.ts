@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { deepSeekTools, readWebSource } from './connectors';
+import { deepSeekTools, readWebSource, resolveCompanies } from './connectors';
 import { researchConfig, safeError } from './config';
 
 const mocks = vi.hoisted(() => ({
@@ -23,6 +23,24 @@ beforeEach(() => {
   });
 });
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
+
+describe('company identity lookup', () => {
+  it.each(['安迪苏', '600299', '600299.SH', ' 600299.SH '])('adapts %s to the market search contract', async query => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ results: [
+      { symbol: '600299', name: '安迪苏', asset_type: 'stock' },
+      { symbol: '600299', name: '安迪苏', asset_type: 'stock' },
+      { symbol: '000300', name: '沪深300', asset_type: 'index' },
+    ] })));
+    vi.stubGlobal('fetch', fetchMock);
+    expect(await resolveCompanies(query)).toEqual([{ symbol: '600299', name: '安迪苏' }]);
+    expect(new URL(fetchMock.mock.calls[0][0]).searchParams.get('query')).toBe(query === '安迪苏' ? query : '600299');
+  });
+
+  it('preserves an empty authoritative result', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{"results":[]}')));
+    expect(await resolveCompanies('601919.SH')).toEqual([]);
+  });
+});
 
 describe('company research DeepSeek connector', () => {
   it('prefers the research search key, falls back to the official key and redacts both', () => {
