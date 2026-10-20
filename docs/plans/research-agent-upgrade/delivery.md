@@ -22,7 +22,9 @@ flowchart LR
   SSE --> UI
 ```
 
-`completed` 表示机器核验完成，人工验收是绑定报告 hash 的独立操作。OCR/复杂表格未复核时保留缺口。用户主动更新，原报告不可改写；修订与接管继承同一逻辑任务的工具、Token 和 deadline。
+`completed` 表示机器核验完成，人工验收是绑定报告 hash 的独立操作。OCR/复杂表格未复核时保留缺口。用户主动更新，原报告不可改写；新来源更新获得独立有界预算，修订、重试与接管继承该轮剩余额度及 deadline，任务累计用量和历史快照保留。
+
+2026-10-20 的入口补验通过真实本地行情服务、认证 Next HTTP 和独立 PostgreSQL，依次输入“安迪苏”“601919”，均返回 resolve 200 / create 201 / start 202，数据库状态 queued；随后取消测试任务，没有启动模型 Worker。证据为 `data/research-agent-upgrade/evidence/S20/journey-566e5dc3-cc6e-4133-872d-1d4bf8297934/entry-journey.json`。该结果补足旧存档重放绕过入口的缺口，不计作新模型报告质量成绩。`run-research-delivery.ts` 现会先跑入口旅程；设置 `RESEARCH_DELIVERY_AUTOMATED_ONLY=1` 可在该自动化检查后退出。
 
 ## 3—5 分钟演示脚本
 

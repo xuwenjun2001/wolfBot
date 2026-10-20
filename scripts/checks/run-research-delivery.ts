@@ -13,6 +13,7 @@ import { getResearchTask } from '../../src/lib/company-research/version-store';
 import { deterministicReportErrors } from '../../src/lib/company-research/verification-service';
 import { semanticPublicationErrors } from '../../src/lib/company-research/claim-verification';
 import type { ResearchReportRevision } from '../../src/lib/company-research/revision-contracts';
+import { specFixture } from '../../src/lib/company-research/version-test-fixtures';
 
 const exists = (file: string) => access(file).then(() => true, () => false);
 const json = async (file: string) => JSON.parse(await readFile(file, 'utf8'));
@@ -86,9 +87,41 @@ async function main() {
     }
     const anonymous = await fetch(`${baseUrl}/api/company-research/tasks`, { signal: AbortSignal.timeout(60000) });
     assert.equal(anonymous.status, 401);
+    // Exercise the public identity -> create -> start boundary before replaying archives.
+    // The market resolver is live; the worker stays stopped, so this journey costs no model calls.
+    const login = await fetch(`${baseUrl}/api/auth/sign-in/email`, { method: 'POST',
+      headers: { 'Content-Type': 'application/json', Origin: baseUrl }, body: JSON.stringify({ email, password: 'admin' }), signal: AbortSignal.timeout(60000) });
+    assert.equal(login.status, 200, 'Disposable delivery login failed');
+    const cookie = login.headers.getSetCookie().map(value => value.split(';')[0]).join('; ');
+    assert(cookie, 'Missing delivery session cookie');
+    const entryResults = [];
+    for (const query of ['安迪苏', '601919']) {
+      const resolved = await fetch(`${baseUrl}/api/company-research/resolve?query=${encodeURIComponent(query)}`, { headers: { Cookie: cookie }, signal: AbortSignal.timeout(60000) });
+      assert.equal(resolved.status, 200);
+      const { companies } = await resolved.json() as { companies: { symbol: string; name: string }[] };
+      assert.equal(companies.length, 1, 'Expected an unambiguous live security identity');
+      const company = companies[0], code = company.symbol.split('.')[0];
+      const exchange = code.startsWith('6') ? 'SH' : /^[03]/.test(code) ? 'SZ' : 'BJ';
+      const spec = { ...specFixture(), company: { symbol: `${code}.${exchange}`, exchange, name: company.name } };
+      const created = await fetch(`${baseUrl}/api/company-research/tasks`, { method: 'POST',
+        headers: { Cookie: cookie, Origin: baseUrl, 'Content-Type': 'application/json', 'Idempotency-Key': randomUUID() }, body: JSON.stringify(spec), signal: AbortSignal.timeout(60000) });
+      assert.equal(created.status, 201, `Entry create failed for ${query}`);
+      const { task: createdTask } = await created.json() as { task: { id: string; planRevision: number } };
+      const started = await fetch(`${baseUrl}/api/company-research/tasks/${createdTask.id}/start`, { method: 'POST',
+        headers: { Cookie: cookie, Origin: baseUrl, 'Content-Type': 'application/json' }, body: JSON.stringify({ expectedPlanRevision: createdTask.planRevision }), signal: AbortSignal.timeout(60000) });
+      assert.equal(started.status, 202);
+      const queued = (await getResearchTask(actor, createdTask.id))!;
+      assert.equal(queued.status, 'queued'); assert.equal(queued.spec.company.symbol, spec.company.symbol);
+      assert.equal(queued.usage.toolCalls, 0); assert.equal(queued.usage.unknownModelRequests, 0);
+      const cancelled = await fetch(`${baseUrl}/api/company-research/tasks/${createdTask.id}/cancel`, { method: 'POST', headers: { Cookie: cookie, Origin: baseUrl }, signal: AbortSignal.timeout(60000) });
+      assert.equal(cancelled.status, 200);
+      entryResults.push({ query, company: spec.company, taskId: createdTask.id, resolveStatus: resolved.status, createStatus: created.status, startStatus: started.status, status: queued.status, modelRequests: 0 });
+    }
+    await writeFile(path.join(evidence, 'entry-journey.json'), JSON.stringify({ source: 'live market resolver + authenticated Next HTTP + disposable PostgreSQL', entries: entryResults, workerStarted: false }, null, 2));
     await writeFile(path.join(evidence, 'runtime.json'), JSON.stringify({ baseUrl, taskId: id, actor, nextPid: child.pid, anonymousStatus: anonymous.status, archiveHash: restored.reportHash,
       scenario: 'read archive, source, revise plan, refresh, cancel; no model worker started', stopFile }, null, 2));
     console.log(`Authenticated delivery lab ready at ${baseUrl}/company-research; stop via ${stopFile}`);
+    if (process.env.RESEARCH_DELIVERY_AUTOMATED_ONLY === '1') return;
     while (!stopping && !(await exists(stopFile))) await new Promise(resolve => setTimeout(resolve, 1000));
   } finally {
     child.kill('SIGTERM');

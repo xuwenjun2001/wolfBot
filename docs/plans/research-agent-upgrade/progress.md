@@ -10,10 +10,10 @@
 | 计划版本 | v1 |
 | 总体状态 | S01—S18 已验收（S17 按当前反例修复并重验）；S19/S20 仍有必需验收阻塞。生产部署不在授权范围内 |
 | 已验收步骤 | 18/20；S17 重开与修复过程分别保留 E-REVIEW-03 / E-FIX-R2R3 |
-| 当前待处理步骤 | 发布测试适配、Skill 换行及超时诊断；S19/S20 仍 blocked，最终分别重验工程与财报质量门 |
-| 下一步骤 | 处理原 35 项发布失败，保留安全断言与原测试门槛；Linux 实跑权限测试，随后新质量批次 |
-| 下一具体动作 | 修复平台/换行/品牌及 tar 模式 fixture，再修 Skill 读取规范化、测量并发超时；不扩大暂缓依赖审计，不改原 14 次模型结果 |
-| 当前会话登记 | 2026-10-20-review-fixes：用户授权按顺序修入口 R1、更新预算 R2/重试 R3、测试适配、Skill 换行、超时诊断，最后分别重验发布与财报质量门。起点 33022c451e8474e6e5b4a02dacfefa69f8318f4a，工作区干净；先处理 tasks/route、证券连接器和正式回归，再逐阶段登记涉及文件与证据。原 14 次模型结果及评测标记保留，新质量验收另建有界实验 |
+| 当前待处理步骤 | 已完成入口、更新/重试、测试夹具、Skill 换行和并发修复；正在独立重验工程与财报质量门，S19/S20 仍 blocked |
+| 下一步骤 | 完成 Linux 安全测试、完整 release 和真实 resolve→create→start HTTP 旅程；新质量批次限四个开发案例 |
+| 下一具体动作 | Linux npm ci 已重现暂缓锁漂移，测试依赖在隔离容器准备，不能当作可复现安装通过；新质量批次 repair-validation-20261020-01 已登记，最多 4 个新模型任务，每个 40 工具/20 分钟，无候选调优或旧保留集重跑 |
+| 当前会话登记 | 2026-10-20-review-fixes：R1—R3/测试/Skill 修复已同步至 99a355e；当前改 scripts/checks/run-research-delivery.ts 补真实入口旅程，使用新隔离 checkout release-repair-worktree。新质量 campaign 已保存独占 registration/phase 标记；只运行冻结开发集 baseline 四次，不调用旧保留集或重开旧任务预算 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
 | 分支 / 本轮实现起点 | codex/research-agent-s11-s15；本次分析起点 `ea48ab49e0dc369ce01db4be7ccde9c8d084767c`，工作区干净；当前 HEAD 用 git rev-parse HEAD 核实 |
 | 目标仓库 | `https://github.com/xuwenjun2001/wolfBot`，默认分支 `main` |
@@ -65,6 +65,12 @@
 - 原 S03 网关基线全部在鉴权时失败；用户指定新模型后另存校准，4 次请求均 200，但提前收尾且无财报来源，不是质量提升证据。后续人工确认按 E-ANNOT-02 单独归档，不能反向把旧模型运行变为通过。
 
 ## 验收证据
+
+### E-FIX-ENTRY-E2E：真实解析到开始研究
+
+- 使用新建、隔离的 release-repair-worktree 与临时 PG，通过认证 HTTP 旅程输入“安迪苏”和“601919”；实际本地行情服务返回裸代码，API 保存规范身份后再次验证并成功创建/排队。两项 resolve 200 / create 201 / start 202，数据库状态 queued，工具/模型均零调用；随后取消。
+- `npm run test:research:postgres` 的原生模式追加 `--delivery` 与自动退出环境配置：46 PG 回归、入口旅程、34 迁移检查通过，QA server 和自建 PG 已停止。PG manifest：`S05/rehearsal-566e5dc3-cc6e-4133-872d-1d4bf8297934/manifest.json`；入口原件：`S20/journey-566e5dc3-cc6e-4133-872d-1d4bf8297934/entry-journey.json`。
+- 这补足 R1 的整条入口回归；重放的旧报告和真实模型质量验收仍分开计算。脚本不使用搜索摘要替代财报，也不自动点击人工报告验收。
 
 ### E-FIX-R2R3：新更新预算、失败重试与检查回执
 
