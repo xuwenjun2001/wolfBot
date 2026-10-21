@@ -1,0 +1,1405 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="从 wolfbot 财报研究工作台的真实源码学习全栈设计：任务、SSE、事务、幂等、Worker、证据与面试追问。">
+<title>wolfbot · 财报研究工作台全栈面试课</title>
+<style>
+:root{--bg:#f4f6f2;--paper:#fff;--ink:#1c302b;--muted:#53645f;--line:#dce5de;--green:#146b50;--soft:#edf6ee;--lime:#def5ae;--amber:#815318;--amber-bg:#fff5df;--red:#a23535;--red-bg:#fff0ed;--mono:Consolas,"SFMono-Regular",monospace;--sans:"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:95px}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.85 var(--sans)}button,input,select,textarea{font:inherit}button,a,input,select,summary,textarea{outline-offset:4px}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible,textarea:focus-visible{outline:3px solid #17815d}a{color:var(--green);text-underline-offset:4px}button{cursor:pointer}button:disabled{cursor:default;opacity:.55}[hidden]{display:none!important}p{margin:12px 0}h1,h2,h3,h4{line-height:1.4;letter-spacing:-.02em}h1{font-size:clamp(30px,4vw,49px);margin:17px 0 20px}h2{font-size:29px;margin:5px 0 14px}h3{font-size:21px;margin:28px 0 10px}h4{font-size:17px;margin:14px 0 6px}code{font-family:var(--mono);font-size:.87em;overflow-wrap:anywhere}p code,li code,td code{padding:2px 5px;background:#eef2ed;border-radius:4px}ul,ol{padding-left:23px}li{margin:7px 0}.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 28px;background:#f4f6f2f2;backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}.brand{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;white-space:nowrap}.brand svg{width:29px;height:29px}.topmeta{display:flex;gap:10px;align-items:center;font-size:12px;color:var(--muted)}.pill{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:20px;padding:3px 10px;font-size:12px;line-height:1.8}.btn,button.control{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid #b6c9bd;border-radius:8px;background:var(--paper);color:var(--ink);padding:8px 13px;text-decoration:none;font-size:14px;line-height:1.5;min-height:39px}.btn:hover,button.control:hover{background:var(--soft)}.btn.primary{background:var(--green);border-color:var(--green);color:#fff}.btn.primary:hover{background:#10533e}.layout{display:grid;grid-template-columns:248px minmax(0,1fr);max-width:1500px;margin:auto}.sidebar{position:sticky;top:76px;height:calc(100dvh - 76px);overflow-y:auto;padding:30px 17px 30px 24px;border-right:1px solid var(--line)}.sidebar-label,.eyebrow{font:600 11px/1.6 var(--sans);letter-spacing:.15em;text-transform:uppercase;color:var(--green)}.sidebar nav{margin-top:16px}.sidebar nav a{display:flex;gap:10px;padding:7px 9px;margin:3px 0;color:var(--muted);text-decoration:none;font-size:13px;border-radius:6px;line-height:1.6}.sidebar nav a:hover{background:#eaf0e8}.sidebar nav a[aria-current=true]{background:#dcebdc;color:#124c39;font-weight:600}.nav-num{font:12px/1.8 var(--mono);opacity:.7}.nav-check{margin-left:auto;font-size:12px}.study-progress{font-size:12px;color:var(--muted);margin:23px 8px 0}.progress-track{height:5px;background:#dfe8dc;border-radius:6px;margin:9px 0 7px;overflow:hidden}.progress-track>div{height:100%;background:var(--green);transition:width .2s}.main{padding:34px 42px 70px;min-width:0}.hero{padding:35px 36px;background:#e6efe2;border:1px solid #d4e1cf;border-radius:18px;position:relative;overflow:hidden}.hero p{max-width:760px;color:#3c5348}.hero-bottom{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px;align-items:center}.hero-note{font-size:12px;margin-top:22px;color:var(--muted)}.route{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0 32px}.route-card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:17px 19px;font-size:13px}.route-card strong{display:block;color:var(--green);margin-bottom:6px;font-size:15px}.lesson{background:var(--paper);border:1px solid var(--line);border-radius:15px;padding:30px 34px;margin:24px 0;scroll-margin-top:95px}.section-top{display:flex;align-items:center;gap:10px;margin-bottom:9px}.section-no{font:600 12px var(--mono);padding:6px 8px;background:var(--soft);color:var(--green);border-radius:5px}.duration{font-size:12px;color:var(--muted)}.lead{font-size:17px;color:#3e584c}.goal{border-left:3px solid var(--green);padding:8px 16px;background:var(--soft);margin:20px 0;font-size:14px}.goal strong{color:#145139}.columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.card{border:1px solid var(--line);border-radius:9px;padding:17px 19px;min-width:0}.card p,.card li{font-size:14px}.card h4{margin-top:0}.callout{padding:14px 17px;border-radius:8px;background:var(--soft);margin:18px 0;font-size:14px}.callout.warn{background:var(--amber-bg);color:#6b4b1b}.callout.danger{background:var(--red-bg);color:#842c2c}.answer{background:#edf3ec;padding:18px 21px;border-radius:9px;margin-top:22px}.answer .eyebrow{font-size:10px}.answer p{font-size:15px;margin-bottom:0}.table-wrap{overflow-x:auto;margin:16px 0;border:1px solid var(--line);border-radius:8px}table{width:100%;border-collapse:collapse;font-size:13px;line-height:1.75}th,td{text-align:left;vertical-align:top;padding:12px 14px;border-bottom:1px solid var(--line)}th{background:#f0f4ee;font-weight:600}tr:last-child td{border-bottom:0}td:first-child{font-weight:500}pre{background:#172d27;color:#dfede3;padding:18px 20px;border-radius:9px;overflow-x:auto;font:12px/1.8 var(--mono);tab-size:2;max-height:490px;white-space:pre}pre code{font:inherit;overflow-wrap:normal}.code-meta{display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:12px;color:var(--muted);margin-top:12px;overflow-wrap:anywhere}.code-meta a{font-size:12px}.source{border:1px solid var(--line);border-radius:8px;margin:17px 0;padding:12px 15px}.source summary{cursor:pointer;font-size:13px;color:var(--green)}.source pre{margin-bottom:0}.line-no{display:inline-block;width:36px;color:#91aaa0;user-select:none}.source-link{font-size:12px;overflow-wrap:anywhere}.step-list{counter-reset:steps;list-style:none;padding:0}.step-list>li{position:relative;padding:5px 0 13px 42px;border-left:1px solid #dce5de;margin-left:14px}.step-list>li:before{counter-increment:steps;content:counter(steps);position:absolute;left:-14px;top:7px;display:grid;place-items:center;width:27px;height:27px;background:#e0efdc;color:#1b5d40;border-radius:50%;font:12px var(--mono)}.step-list p{font-size:14px;margin:4px 0}.lab{border:1px solid #c2d5c6;border-radius:11px;background:#f8fbf6;margin:23px 0;padding:21px}.lab-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.lab-head h3{margin:0;font-size:18px}.lab-tag{font:11px var(--mono);color:var(--green)}.lab p.note,.small{font-size:12px;color:var(--muted)}.controls{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}.controls button{font-size:12px;padding:7px 10px;min-height:35px}.state-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:13px 0}.state-cell{background:var(--paper);border:1px solid var(--line);border-radius:7px;padding:10px 12px;min-width:0}.state-cell span{display:block;font-size:11px;color:var(--muted)}.state-cell b{display:block;font:600 18px/1.8 var(--mono);overflow-wrap:anywhere}.result{border-radius:7px;padding:13px 15px;background:#e9f1e6;font-size:14px;margin:12px 0;min-height:53px}.result[data-kind=error]{background:#fff0eb;color:#8b3030}.result[data-kind=warn]{background:#fff3db;color:#735021}.log{max-height:180px;overflow:auto;margin:10px 0 0;padding:11px 15px;background:#1c312b;color:#d5e4dc;border-radius:7px;font:12px/1.9 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere}.arch-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin:18px 0}.arch-node{border:1px solid #bed0c0;border-radius:8px;background:var(--paper);padding:14px 10px;color:var(--ink);text-align:left;font-size:13px;min-height:102px}.arch-node span{display:block;font:11px var(--mono);color:var(--muted);margin-bottom:7px}.arch-node[aria-pressed=true]{background:#164e3c;color:#fff;border-color:#164e3c}.arch-node[aria-pressed=true] span{color:#c5dfc9}.arch-detail{padding:16px 19px;background:#e9f3e4;border-radius:8px;min-height:116px}.arch-detail h4{margin-top:0}.arch-detail p{font-size:14px;margin:7px 0}.flowline{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font:12px/1.8 var(--mono);margin:15px 0}.flowline span{background:#e7eee4;padding:5px 8px;border-radius:4px}.flowline i{font-style:normal;color:#60756a}.finish{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:27px;padding-top:18px;border-top:1px solid var(--line)}.finish span{font-size:12px;color:var(--muted)}.finish button[aria-pressed=true]{background:#d9edca;border-color:#a5c594}.qa-filters{display:flex;flex-wrap:wrap;gap:9px;align-items:center}.qa-filters input,.qa-filters select{padding:9px 11px;border:1px solid #bdcbbf;border-radius:7px;background:#fff;font-size:14px;max-width:100%;min-height:42px}.qa-filters input[type=search]{flex:1;min-width:180px}.qa-filters label{display:flex;align-items:center;gap:6px;font-size:13px}.qa-card{border:1px solid var(--line);border-radius:9px;margin:11px 0;padding:13px 17px}.qa-card>summary{cursor:pointer;font-size:15px;line-height:1.7;font-weight:600}.qa-category{font-size:10px;font-weight:500;color:var(--green);margin-right:9px}.qa-card h4{font-size:14px;margin-top:18px}.qa-card p,.qa-card li{font-size:14px}.qa-card .controls{margin-bottom:2px}.qa-card button[aria-pressed=true]{background:#e4eed7}.mock{background:#eaf2e4;border-radius:10px;padding:20px;margin:20px 0}.mock-question{font-size:19px;font-weight:600;line-height:1.7;margin:14px 0}.mock-answer{font-size:14px}.mock-answer h4{font-size:14px}.timer{font:19px var(--mono);color:var(--green)}.input-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}.input-grid label{font-size:13px}.input-grid input,.input-grid select{width:100%;border:1px solid #bdcdbd;border-radius:6px;background:#fff;padding:9px 10px;margin-top:5px;font-size:14px}.checklist label{display:flex;gap:9px;align-items:flex-start;padding:8px 0;font-size:14px}.checklist input{margin-top:7px;accent-color:var(--green);width:17px;height:17px;flex-shrink:0}.footer{color:var(--muted);font-size:12px;padding:14px 3px}.mobile-menu{display:none}.skip-link{position:fixed;top:-60px;left:15px;background:#fff;z-index:40;padding:9px 15px}.skip-link:focus{top:10px}.formula{font-family:var(--mono);font-size:14px;padding:14px 17px;background:#eef3ea;border-radius:7px;overflow-wrap:anywhere}.kbd{font:11px var(--mono);border:1px solid #b6c8bd;padding:2px 5px;border-radius:4px}.empty{padding:25px;color:var(--muted);text-align:center}.quote{border-left:3px solid #b1ce99;margin:16px 0;padding:9px 18px;font-size:15px}.glossary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.glossary details{border:1px solid var(--line);border-radius:6px;padding:9px 12px;font-size:13px}.glossary summary{cursor:pointer;font-weight:600}.glossary p{font-size:13px}.section-title-row{display:flex;align-items:center;gap:12px;justify-content:space-between}.badge-ok{color:var(--green);background:var(--soft);border-radius:4px;padding:3px 7px;font-size:11px}.badge-synthetic{color:#735021;background:var(--amber-bg);border-radius:4px;padding:3px 7px;font-size:11px}.print-note{display:none}#question-count{font-size:12px;color:var(--muted);margin:12px 0}
+@media(min-width:1500px){.main{padding-right:60px;padding-left:54px}}@media(max-width:1100px){.layout{grid-template-columns:215px minmax(0,1fr)}.main{padding:25px}.sidebar{padding-left:14px}.lesson{padding:25px}.arch-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hero{padding:28px}.topmeta .pill{display:none}}@media(max-width:760px){body{font-size:15px}.topbar{padding:11px 16px}.brand{font-size:16px}.topmeta{gap:7px}.topmeta .source-short{display:none}.mobile-menu{display:inline-flex}.layout{display:block}.sidebar{display:none;position:sticky;top:63px;height:auto;max-height:65dvh;background:var(--bg);z-index:15;padding:15px;border-bottom:1px solid var(--line)}.sidebar.open{display:block}.sidebar nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px;margin:5px 0}.sidebar nav a{font-size:12px}.study-progress{margin-top:12px}.main{padding:17px 12px 35px}.hero{padding:24px 21px}.route{grid-template-columns:1fr;gap:8px}.route-card{padding:13px 16px}.lesson{padding:23px 19px;margin:17px 0;border-radius:11px}h2{font-size:24px}h3{font-size:19px}.columns,.input-grid,.glossary{grid-template-columns:1fr}.lab{padding:15px}.state-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.state-cell b{font-size:16px}.arch-node{min-height:92px}.arch-detail{min-height:160px}.finish{align-items:flex-start;flex-direction:column}.code-meta{display:block}th,td{padding:10px;min-width:110px}pre{padding:13px 12px;font-size:11px}.flowline{font-size:11px}.hero-bottom{gap:9px}.qa-card{padding:12px}.qa-filters{align-items:stretch}.qa-filters input[type=search]{flex-basis:100%}.mock{padding:16px}.lab-head{align-items:flex-start}.topbar .btn{padding:7px 10px;font-size:12px}.step-list>li{padding-left:29px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}@media print{body{background:#fff;font-size:10pt;color:#17231d}.topbar,.sidebar,.hero-bottom,.finish,.controls,.qa-filters,.mock,.no-print{display:none!important}.layout{display:block}.main{padding:0}.hero,.lesson{break-inside:auto;border:0;border-bottom:1px solid #bbb;margin:0;padding:16px 0;border-radius:0}.lesson{break-before:page}h1{font-size:25pt}h2{font-size:20pt}h3{font-size:14pt}pre,.log{white-space:pre-wrap;max-height:none;background:#f2f4f0;color:#111;font-size:8pt}.source pre{font-size:7.5pt}.line-no{color:#555}.route{margin-bottom:12px}.print-note{display:block;font-size:9pt}.qa-card{break-inside:avoid}.table-wrap{overflow:visible}a{color:#173c2b}.source{break-inside:avoid}.lab{break-inside:avoid}.question-list>.qa-card{display:block!important}}
+.controls select{min-width:0;max-width:100%;border:1px solid #bdcbbf;border-radius:6px;background:#fff;padding:8px 10px;font-size:13px;color:var(--ink)}
+@media(max-width:760px){.brand .eyebrow{display:none}.brand svg{width:26px;height:26px}.controls select{width:100%}.topbar{gap:8px}.hero h1{font-size:clamp(21px,6.5vw,30px)}}
+@media print{pre code{overflow-wrap:anywhere}.qa-card{border-color:#bbb}.code-meta{display:block}}
+</style>
+</head>
+<body>
+<a href="#content" class="skip-link">跳到课程正文</a>
+<header class="topbar"><div class="brand"><svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="23" fill="#146b50"/><path d="M21 22L42 35H58L79 22L72 64L50 85L28 64Z" fill="#e2f3c9"/><path d="M31 48L44 52L38 59ZM69 48L56 52L62 59ZM44 68H56L50 75Z" fill="#146b50"/></svg>wolfbot <span class="eyebrow">FIELDGUIDE / 09</span></div><div class="topmeta"><span class="source-short">源码 <code>0864b35</code></span><span class="pill">离线学习 · 无外部依赖</span><button class="btn mobile-menu" id="menu-toggle" aria-expanded="false" aria-controls="sidebar">目录</button><button class="btn" id="print-page">打印 / 保存 PDF</button></div></header>
+<div class="layout">
+<aside class="sidebar" id="sidebar"><div class="sidebar-label">从理解到能够解释</div><nav aria-label="课程目录">
+<a href="#s00"><span class="nav-num">00</span>目标与项目开场<span class="nav-check"></span></a>
+<a href="#s01"><span class="nav-num">01</span>一条请求穿过系统<span class="nav-check"></span></a>
+<a href="#s02"><span class="nav-num">02</span>数据模型与 API 合同<span class="nav-check"></span></a>
+<a href="#s03"><span class="nav-num">03</span>SSE 与前端状态恢复<span class="nav-check"></span></a>
+<a href="#s04"><span class="nav-num">04</span>修订、事务与幂等<span class="nav-check"></span></a>
+<a href="#s05"><span class="nav-num">05</span>队列、租约与旧写入<span class="nav-check"></span></a>
+<a href="#s06"><span class="nav-num">06</span>文档解析与精确计算<span class="nav-check"></span></a>
+<a href="#s07"><span class="nav-num">07</span>结论如何追溯原文<span class="nav-check"></span></a>
+<a href="#s08"><span class="nav-num">08</span>报告更新与预算轮次<span class="nav-check"></span></a>
+<a href="#s09"><span class="nav-num">09</span>授权与不可信输入<span class="nav-check"></span></a>
+<a href="#s10"><span class="nav-num">10</span>测试、观测与排障<span class="nav-check"></span></a>
+<a href="#s11"><span class="nav-num">11</span>取舍与扩展性追问<span class="nav-check"></span></a>
+<a href="#s12"><span class="nav-num">12</span>面试题库与口述训练<span class="nav-check"></span></a>
+<a href="#s13"><span class="nav-num">13</span>源码串读与最后自检<span class="nav-check"></span></a>
+</nav><div class="study-progress"><b id="study-count">0 / 14 章已自检</b><div class="progress-track"><div id="study-bar" style="width:0%"></div></div>点击每章“我能解释了”记录进度。自评仅保存在当前浏览器。<p id="weak-count">待复习问题：0</p></div></aside>
+<main class="main" id="content">
+<div class="hero"><div class="eyebrow">WOLFBOT · FULLSTACK INTERVIEW COURSE</div><h1>从一次用户点击，<br>讲透到每一次状态变化。</h1><p>以已经落地的<strong>财报变化研究工作台</strong>为例，学会解释完整业务链路，推演并发和故障，再用真实源码回答面试追问。</p><div class="hero-bottom"><a class="btn primary" href="#s00">从第一课开始 →</a><a class="btn" href="#s12">直接进入口述训练</a><span class="small">14 章 · 6 组工程演练 · 36 道追问</span></div><div class="hero-note">源码核对：2026-10-21 · <code>0864b35983558c31430aa4ffec42e72437f71f5e</code>。模拟数据均为教学合成，不连接应用、数据库或模型。</div></div>
+<div class="route"><div class="route-card"><strong>第一遍 · 建立完整链路</strong>00—02、06—08。先能说清用户做什么，以及结果为什么可信。</div><div class="route-card"><strong>第二遍 · 推演竞争和故障</strong>03—05、09—11。每个机制都回答“删掉它会发生什么”。</div><div class="route-card"><strong>第三遍 · 练到能脱稿回答</strong>12—13。先口述再展开答案，对照源码补齐薄弱点。</div></div>
+<noscript><p class="callout warn">JavaScript 未启用，正文仍可阅读；工程演练、题库与学习进度需要启用 JavaScript。</p></noscript>
+
+<section class="lesson" id="s00" data-title="目标与项目开场"><div class="section-top"><span class="section-no">00</span><span class="duration">建议 5 分钟 · 先知道自己在讲什么</span></div><h2>把项目讲成一个完整的用户任务</h2><p class="lead">用户要理解“两期财报发生了什么变化，为什么变化，依据在哪里”。系统需要把耗时研究变成可查看、可修改、可恢复的产品流程。</p><div class="goal"><strong>本章目标：</strong>不看提示，能用 60—90 秒介绍模块，再列出三个自己能够深入解释的工程问题。</div>
+<h3>先用一个贯穿全课的场景</h3><p>小林选择某家公司、2023/2024 两期年报和资料截止日期。系统研究收入利润、经营现金流、风险披露。她中途修改风险关注点，关闭浏览器，稍后回来继续看；随后有新公告，她希望知道旧结论哪里需要修订。</p><p>这个场景同时要求：<strong>任务持久化、后台执行、状态同步、并发修改、来源版本和历史结果</strong>。每个技术选择都要回到这些需求。</p>
+<div class="quote">“我基于 wolfbot 现有平台实现了财报变化研究工作台。前端使用 React、Next.js 和 TypeScript，服务端通过 PostgreSQL 保存任务与各版本结果，独立 Worker 执行研究，Python 服务承担扫描件与表格解析。用户能查看和修改研究计划，追溯结论原文，并比较报告版本。我重点解决了长任务的状态恢复、重复提交、旧执行覆盖新计划，以及研究结果的可追溯性。”</div>
+<div class="columns"><div class="card"><h4>理解这一层，才能接住追问</h4><ul><li>哪个服务接收请求，哪个进程真正执行？</li><li>刷新后从哪里恢复？哪个状态才有权威性？</li><li>修改计划时，旧任务还能写入吗？</li><li>“有引用”和“结论正确”分别由谁检查？</li></ul></div><div class="card"><h4>区分已有基础与本模块工作</h4><p>复用平台认证、PostgreSQL、现有研究 Worker 与开源 PI 执行循环；新增/扩展财报领域合同、版本存储、金融工具、证据核验、交互工作台和相关恢复机制。</p><p>面试中按自己实际参与且能够解释的职责表述。</p></div></div>
+<h3>把复杂名词翻译成具体问题</h3><div class="glossary"><details><summary>幂等 Idempotency</summary><p>同一业务请求因重试发了两次，系统识别它们是同一件事。这里通过幂等键和规范化内容摘要实现。</p></details><details><summary>乐观版本检查</summary><p>提交时携带“我基于版本 1 修改”。服务端若已到版本 2，则返回冲突，避免旧页面静默覆盖新内容。</p></details><details><summary>租约 Lease</summary><p>Worker 在数据库时钟定义的一段期限内持有执行权，靠心跳延长；停止续约后，任务可以被接管。</p></details><details><summary>Fencing / 执行代次</summary><p>新执行获得更高 generation。写入时核对当前执行身份、代次、版本及租约，阻止旧进程迟到的结果落库。</p></details><details><summary>权威快照 Snapshot</summary><p>从服务端持久状态组装出的完整视图，包括当前计划、公开检查点、报告和版本。浏览器用它恢复实际状态。</p></details><details><summary>不可变版本</summary><p>已经发布的请求/计划/报告/原件版本不原地改写。变化通过追加新版本表达，让历史解释仍有确定依据。</p></details></div>
+<div class="answer"><div class="eyebrow">离开本章前，试着回答</div><p>“你这个模块的全栈难点是什么？”——从一个用户操作开始，说出前端、API、数据库、Worker 之间需要共同维护的约束，再举一个故障反例。</p></div><div class="finish"><span>能脱稿说出产品目标、技术链路和三个难点，再标记完成。</span><button class="btn" data-learn="s00" aria-pressed="false">我能解释了 ✓</button></div></section>
+
+<section class="lesson" id="s01" data-title="一条请求穿过系统"><div class="section-top"><span class="section-no">01</span><span class="duration">建议 8 分钟 · 边界与完整链路</span></div><h2>从浏览器走到不可变报告</h2><p class="lead">先掌握每一层的职责，再解释它们之间传递的数据。HTTP 响应、后台执行和页面通知是三个不同的时间过程。</p><div class="lab" id="architecture-lab"><div class="lab-head"><h3>工程演练 ① · 点击架构节点</h3><span class="lab-tag">RESPONSIBILITY MAP</span></div><div class="arch-grid">
+<button class="arch-node" data-arch="ui" aria-pressed="true"><span>01 / BROWSER</span>React 工作台</button><button class="arch-node" data-arch="api" aria-pressed="false"><span>02 / NEXT.JS</span>认证与任务 API</button><button class="arch-node" data-arch="db" aria-pressed="false"><span>03 / POSTGRESQL</span>状态与版本存储</button><button class="arch-node" data-arch="worker" aria-pressed="false"><span>04 / PROCESS</span>研究 Worker</button><button class="arch-node" data-arch="agent" aria-pressed="false"><span>05 / APPLICATION</span>PI + 财报工具</button><button class="arch-node" data-arch="parser" aria-pressed="false"><span>06 / DOCUMENTS</span>原生解析 / OCR</button><button class="arch-node" data-arch="publish" aria-pressed="false"><span>07 / TRANSACTION</span>核验与报告提交</button><button class="arch-node" data-arch="sse" aria-pressed="false"><span>08 / SERVER → UI</span>SSE + 完整快照</button></div><div class="arch-detail" id="architecture-detail" aria-live="polite"></div><p class="note">职责图展示真实分层；按钮只切换解释，不触发真实研究。</p></div>
+<ol class="step-list"><li><strong>确认公司，保存草稿</strong><p>解析公司名称或证券代码；创建 API 再确认公司身份，校验结构并按当前用户保存请求。返回 <code>201</code>，此时还没有完成研究。</p></li><li><strong>显式开始，保存计划并入队</strong><p><code>POST tasks/{id}/start</code> 携带预期计划版本。事务中生成初始三问计划、设置 queued 并写事件，返回 <code>202</code> 表示已受理。</p></li><li><strong>Worker 领取，获取有时限的执行权</strong><p>独立进程轮询 PostgreSQL。行锁与 <code>SKIP LOCKED</code> 协助并发领取，创建 attempt、递增 generation、设置租约。</p></li><li><strong>按领域工具研究，保存公开状态</strong><p>PI 循环调用发现、读取、记录事实、核验等工具。证据检索先限制用户、任务、期间和 asOf；计算由确定性代码完成。</p></li><li><strong>校验并提交报告</strong><p>发布入口检查执行权、版本、来源、财务数字与语义回执，事务内追加报告、更新任务并写入事件。</p></li><li><strong>通知页面，必要时重新读取快照</strong><p>SSE 用事件通知状态变化；完整快照提供计划、事实和报告。页面刷新/重连始终回到持久状态恢复。</p></li></ol>
+<div class="flowline"><span>浏览器</span><i>→</i><span>Next API</span><i>→</i><span>PostgreSQL 队列</span><i>⇄</i><span>Worker / PI / 工具</span><i>→</i><span>报告事务</span><i>→</i><span>SSE / 快照</span><i>→</i><span>浏览器</span></div>
+<div class="callout"><strong>为什么请求处理和执行分离？</strong>模型/下载/OCR 耗时长且可能中断。API 先持久受理，让执行不依赖浏览器连接寿命；之后用户通过任务 ID 查询结果。Next.js 在这里承担应用服务端职责，Python 服务专注解析 PDF bytes。</div>
+<!-- source:queue -->
+<details class="source" id="source-queue"><summary>读真实源码 · 事务内领取任务：SKIP LOCKED 与 attempt</summary><div class="code-meta"><span>src/lib/company-research/execution-store.ts · 节选</span><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/lib/company-research/execution-store.ts#L25-L34" target="_blank" rel="noopener noreferrer">核对 GitHub 对应行 ↗</a></div><pre><code><span class="line-no" aria-hidden="true">25</span>export async function claimFinancialResearch(worker: string, ctx = defaultResearchContext) {
+<span class="line-no" aria-hidden="true">26</span>  return ctx.db.$transaction(async tx =&gt; {
+<span class="line-no" aria-hidden="true">27</span>    const [task] = await tx.$queryRaw&lt;ResearchTaskRow[]&gt;`SELECT t.* FROM company_research_tasks t
+<span class="line-no" aria-hidden="true">28</span>      LEFT JOIN company_research_attempts a ON a.id=t.active_attempt_id
+<span class="line-no" aria-hidden="true">29</span>      WHERE t.plan_revision&gt;0 AND t.cancel_requested=false AND (t.status='queued' OR (t.status='running' AND (a.id IS NULL OR a.lease_until&lt;=clock_timestamp())))
+<span class="line-no" aria-hidden="true">30</span>      ORDER BY t.created_at FOR UPDATE OF t SKIP LOCKED LIMIT 1`;
+<span class="line-no" aria-hidden="true">31</span>    if (!task) return null;
+<span class="line-no" aria-hidden="true">32</span>    const attempt = await startResearchAttemptInTransaction(tx, task, task.plan_revision, worker, true);
+<span class="line-no" aria-hidden="true">33</span>    return { actor: task.actor_id, attempt };
+<span class="line-no" aria-hidden="true">34</span>  });</code></pre></details>
+<!-- /source:queue -->
+<div class="answer"><div class="eyebrow">30 秒回答 · 为什么这样分层？</div><p>“HTTP 入口负责认证、校验和持久受理，Worker 负责长时间执行，数据库保存可恢复状态，SSE 负责通知浏览器。这样用户关闭页面后后台任务仍可执行，Worker 失败也能按租约接管，各层生命周期不会绑在一个长 HTTP 请求上。”</p></div><div class="finish"><span>自问：返回 202 后 Worker 还没领到任务，页面应该显示什么？</span><button class="btn" data-learn="s01" aria-pressed="false">我能解释了 ✓</button></div></section>
+
+<section class="lesson" id="s02" data-title="数据模型与 API 合同"><div class="section-top"><span class="section-no">02</span><span class="duration">建议 10 分钟 · 数据库与接口设计</span></div><h2>先分清“任务”“一次执行”和“一个版本”</h2><p>同一个任务可以经历多次计划修订、多次 Worker 接管和多版报告。把它们塞进一个 status 字段，会丢失“这份报告对应哪个需求、由谁完成”的信息。</p><div class="table-wrap"><table><thead><tr><th>实体 / 字段</th><th>回答什么问题</th><th>何时变化</th></tr></thead><tbody><tr><td>task / actor_id</td><td>这是哪个用户的哪项研究？</td><td>任务身份固定；当前状态与版本指针可变</td></tr><tr><td>requestRevision</td><td>用户要研究哪两个期间、什么问题、截至何时？</td><td>需求或适用截止日期变化时追加</td></tr><tr><td>planRevision</td><td>按哪个公开研究计划执行？</td><td>初次开始、修订或研究更新时追加</td></tr><tr><td>attempt / generation</td><td>哪个执行实例现在有写入权？</td><td>领取、接管、修订或取消导致执行身份/代次变化</td></tr><tr><td>sequence</td><td>服务端状态与事件推进到哪里？</td><td>事务中写公开事件时递增</td></tr><tr><td>reportRevision</td><td>正在读哪份不可变报告？</td><td>成功提交新报告后推进</td></tr><tr><td>document version / bytesSha256</td><td>引用的是哪个原件与解析版本？</td><td>新 bytes 或解析产物通过追加版本表达</td></tr><tr><td>budgetRevision / budget_tool_base</td><td>本轮研究用了多少，累计用了多少？</td><td>真正的新来源更新可开启新轮次；重试/修订不增额</td></tr></tbody></table></div>
+<h3>物理存储如何承载这些概念</h3><p><code>company_research_tasks</code> 保存控制状态、版本指针、检查点和预算累计；<code>requests</code>、<code>plans</code>、<code>report_versions</code> 表保存不可变版本；<code>attempts</code> 保存执行权；<code>events</code> 保存持久事件。文档、审查回执、来源读取回执和预算历史各有存储。</p><p>这些版本行多使用受运行时 schema 约束的 JSONB 合同。任务归属、版本指针、队列筛选、幂等键等需要查询和约束的身份信息进入关系字段。<strong>当前控制状态直接持久化，事件服务通知与审计，不依赖重放整个事件流重建任务。</strong></p>
+<div class="table-wrap"><table><thead><tr><th>接口（省略 /api/company-research 前缀）</th><th>成功语义</th><th>关键约束</th></tr></thead><tbody><tr><td><code>POST /tasks</code></td><td>201 保存草稿</td><td>认证 actor、公司确认、Zod、幂等键</td></tr><tr><td><code>POST /tasks/{id}/start</code></td><td>202 计划已保存并入队</td><td>expectedPlanRevision</td></tr><tr><td><code>GET /tasks/{id}</code></td><td>200 完整快照</td><td>当前用户归属；private / no-store</td></tr><tr><td><code>GET /tasks/{id}/events</code></td><td>200 text/event-stream</td><td>每个连接先发送快照</td></tr><tr><td><code>POST /tasks/{id}/revise</code></td><td>202 修订后重新排队</td><td>请求/计划预期版本 + Idempotency-Key</td></tr><tr><td><code>POST /tasks/{id}/cancel</code></td><td>取消当前任务</td><td>失效旧执行代次，不靠浏览器断连接取消</td></tr><tr><td><code>GET /tasks/{id}/source</code></td><td>原引用的原文定位</td><td>reportRevision、claimId/factId、citationIndex</td></tr><tr><td><code>POST /tasks/{id}/updates/run</code></td><td>202 更新请求；检查 queued 字段</td><td>三类预期版本、幂等键、asOf、新证据条件</td></tr><tr><td><code>GET /tasks/{id}/reports/{revision}/diff</code></td><td>相邻报告的确定性差异</td><td>授权 + 不可变版本</td></tr></tbody></table></div>
+<h3>TypeScript 类型为什么还需要 Zod？</h3><p>类型在编译后消失，HTTP JSON、模型工具参数、数据库旧 JSON 都是运行时输入。Zod 检查结构、枚举和范围；领域检查继续确认公司、报告期间、来源时点、版本以及执行权。结构合法也可能业务错误，例如把母公司利润放进合并口径。</p>
+<div class="callout warn"><strong>HTTP 状态码和业务字段要一起解释。</strong>401 表示未认证，403 表示无权限或不允许的来源，404 可用于不存在/不可见资源，409 表示版本或幂等冲突，413 表示请求超限。202 不保证研究完成；更新响应 <code>queued:false</code> 表示没有符合条件的新证据。</div>
+<!-- source:create -->
+<details class="source" id="source-create"><summary>读真实源码 · 创建入口：同源、可信身份、合同与公司核对</summary><div class="code-meta"><span>src/app/api/company-research/tasks/route.ts · 节选</span><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/app/api/company-research/tasks/route.ts#L18-L30" target="_blank" rel="noopener noreferrer">核对 GitHub 对应行 ↗</a></div><pre><code><span class="line-no" aria-hidden="true">18</span>export async function POST(request: Request) {
+<span class="line-no" aria-hidden="true">19</span>  try {
+<span class="line-no" aria-hidden="true">20</span>    assertResearchMutation(request);
+<span class="line-no" aria-hidden="true">21</span>    const actor = (await requireAction({ headers: request.headers, action: 'research.report.run' })).actorUserId;
+<span class="line-no" aria-hidden="true">22</span>    const body = await request.text();
+<span class="line-no" aria-hidden="true">23</span>    if (Buffer.byteLength(body) &gt; 16000) return NextResponse.json({ error: '请求过大' }, { status: 413 });
+<span class="line-no" aria-hidden="true">24</span>    const spec = researchTaskSpecSchema.parse(JSON.parse(body));
+<span class="line-no" aria-hidden="true">25</span>    const key = z.string().min(8).max(100).parse(request.headers.get('idempotency-key'));
+<span class="line-no" aria-hidden="true">26</span>    const confirmed = (await resolveCompanies(spec.company.symbol, request.signal)).find(c =&gt; c.symbol === spec.company.symbol || c.symbol === spec.company.symbol.split('.')[0]);
+<span class="line-no" aria-hidden="true">27</span>    if (!confirmed || confirmed.name !== spec.company.name || spec.company.issuerId) return NextResponse.json({ error: '公司身份未通过证券解析确认' }, { status: 400 });
+<span class="line-no" aria-hidden="true">28</span>    // A separate start action makes the saved plan/queue transition explicit.
+<span class="line-no" aria-hidden="true">29</span>    return NextResponse.json({ task: await createResearchTask(actor, spec, key) }, { status: 201, headers: { 'Cache-Control': 'private, no-store' } });
+<span class="line-no" aria-hidden="true">30</span>  } catch (error) { return researchError(error); }</code></pre></details>
+<!-- /source:create -->
+<div class="answer"><div class="eyebrow">30 秒回答 · 为什么拆版本？</div><p>“任务是业务身份，request 是需求，plan 是执行计划，attempt 是一次持有租约的执行，report 是不可变产物。分开后，刷新能恢复当前状态，历史报告能绑定原需求，Worker 接管与用户修订也能分别处理，不会混淆旧结果和新需求。”</p></div><div class="finish"><span>自问：Worker 重启需要增加请求版本吗？计划修订需要立即增加报告版本吗？</span><button class="btn" data-learn="s02" aria-pressed="false">我能解释了 ✓</button></div></section>
+
+<section class="lesson" id="s03" data-title="SSE 与前端状态恢复"><div class="section-top"><span class="section-no">03</span><span class="duration">建议 12 分钟 · React 状态与传输协议</span></div><h2>通知可以重复或丢失，完整状态要能恢复</h2><p class="lead">浏览器不是任务状态的永久存储。当前实现把 research 事件当作“快照已失效”的通知，再用完整 snapshot 恢复计划、事实和报告。</p><h3>连接实际发生了什么</h3><ol><li>选中任务先 GET 快照，再对未终态任务建立 EventSource。</li><li>每次 SSE 连接先发送 <code>snapshot</code>；后续发送持久 research 事件和新的完整快照。</li><li>收到新 research 事件，客户端更新已见序号并设置 <code>needsSnapshot=true</code>，不直接用事件拼接报告正文。</li><li>网络错误时关闭旧连接，约 2 秒后重新 GET 快照，仍在运行则重连。</li><li>终态关闭 SSE；切换任务时 abort 请求、关闭流并清理定时器。</li></ol><p class="small">实现细节：服务端流在每轮读取事件与快照后约等待 1500ms。这是服务端读取数据库后的 SSE 输出，不是数据库直接推送，也不是 Token 流式输出。</p>
+<div class="columns"><div class="card"><h4>四种过期数据，各有防线</h4><p><strong>taskId：</strong>拒绝别的任务。<br><strong>epoch：</strong>识别旧异步请求所属的前端会话。<br><strong>sequence：</strong>忽略重复/过期事件与更旧快照。<br><strong>generation：</strong>拒绝已失效执行代次的数据。</p></div><div class="card"><h4>AbortController 够不够？</h4><p>abort 可以中止等待和释放资源，但结果可能已经返回或回调已排队。<code>currentEpoch</code> 与当前任务身份检查，决定异步结果是否仍允许写入 React 状态。</p><p>事件序号领先当前快照时，客户端继续要求刷新；不能因为“拿到一个快照”就认为已经追平。</p></div></div>
+<div class="lab" id="sse-lab"><div class="lab-head"><h3>工程演练 ② · 给客户端制造故障</h3><span class="lab-tag">SNAPSHOT AUTHORITY</span></div><p class="note">初始 A 任务、快照 seq=10 / generation=1。事件只标记失效；按钮不会查询真实服务器。</p><div class="state-grid"><div class="state-cell"><span>当前快照 sequence</span><b id="sse-snapshot">10</b></div><div class="state-cell"><span>已见事件 sequence</span><b id="sse-event">10</b></div><div class="state-cell"><span>needsSnapshot</span><b id="sse-needs">false</b></div></div><div class="controls"><button class="control" data-sse="next">新事件 seq=11</button><button class="control" data-sse="duplicate">重复事件 seq=11</button><button class="control" data-sse="gap">跳到 seq=15</button><button class="control" data-sse="old-task">另一任务 B 的事件</button><button class="control" data-sse="old-generation">旧 generation=0</button><button class="control" data-sse="old-snapshot">旧快照 seq=9</button><button class="control" data-sse="restore">重连取得快照 seq=16</button><button class="control" data-sse="reset">重置演练</button></div><div class="result" id="sse-result" role="status">先点“新事件”，观察快照序号不会随事件直接推进。</div><div class="log" id="sse-log" aria-label="SSE 演练过程"></div></div>
+<!-- source:stream-state -->
+<details class="source" id="source-stream-state"><summary>读真实源码 · 前端 reducer：只接受新鲜状态</summary><div class="code-meta"><span>src/app/company-research/financial/workbench-state.ts · 节选</span><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/app/company-research/financial/workbench-state.ts#L4-L15" target="_blank" rel="noopener noreferrer">核对 GitHub 对应行 ↗</a></div><pre><code><span class="line-no" aria-hidden="true">4</span>export type StreamState = { taskId: string | null; snapshot: FinancialTask | null; eventSequence: number; needsSnapshot: boolean };
+<span class="line-no" aria-hidden="true">5</span>export const emptyStreamState: StreamState = { taskId: null, snapshot: null, eventSequence: 0, needsSnapshot: false };
+<span class="line-no" aria-hidden="true">6</span>export function acceptSnapshot(state: StreamState, selectedId: string, snapshot: FinancialTask): StreamState {
+<span class="line-no" aria-hidden="true">7</span>  if (snapshot.id !== selectedId || state.taskId !== selectedId) return state;
+<span class="line-no" aria-hidden="true">8</span>  if (state.snapshot &amp;&amp; (snapshot.sequence &lt; state.snapshot.sequence || snapshot.generation &lt; state.snapshot.generation)) return state;
+<span class="line-no" aria-hidden="true">9</span>  return { ...state, snapshot, eventSequence: Math.max(state.eventSequence, snapshot.sequence), needsSnapshot: snapshot.sequence &lt; state.eventSequence };
+<span class="line-no" aria-hidden="true">10</span>}
+<span class="line-no" aria-hidden="true">11</span>export function acceptResearchEvent(state: StreamState, event: ResearchVersionEvent): StreamState {
+<span class="line-no" aria-hidden="true">12</span>  if (event.taskId !== state.taskId || event.sequence &lt;= state.eventSequence || event.generation &lt; (state.snapshot?.generation || 0)) return state;
+<span class="line-no" aria-hidden="true">13</span>  // Events are invalidations. A snapshot is the sole authority for plan/claim/report data.
+<span class="line-no" aria-hidden="true">14</span>  return { ...state, eventSequence: event.sequence, needsSnapshot: true };
+<span class="line-no" aria-hidden="true">15</span>}</code></pre></details>
+<!-- /source:stream-state -->
+<!-- source:sse-route -->
+<details class="source" id="source-sse-route"><summary>读真实源码 · SSE 路由：持久事件、快照与读取间隔</summary><div class="code-meta"><span>src/app/api/company-research/tasks/[id]/events/route.ts · 分段节选，省略处已标注</span><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/app/api/company-research/tasks/%5Bid%5D/events/route.ts#L20-L38" target="_blank" rel="noopener noreferrer">核对 GitHub 对应行 ↗</a></div><pre><code><span class="line-no" aria-hidden="true">20</span>          send('snapshot', initial, cursor);
+<span class="line-no" aria-hidden="true">21</span>          while (!stopped &amp;&amp; !request.signal.aborted) {
+<span class="line-no" aria-hidden="true">22</span>            const events = await researchVersionEventsAfter(actor, id, cursor);
+<span class="line-no" aria-hidden="true">23</span>            for (const event of events) { send('research', event, event.sequence); cursor = event.sequence; }
+<span class="line-no" aria-hidden="true">24</span>            const latest = await getResearchTask(actor, id); if (!latest) break;
+<span class="line-no" aria-hidden="true">25</span>            // A snapshot repairs dropped events and carries claim/document/report state.
+<span class="line-no" aria-hidden="true">26</span>            send('snapshot', latest, latest.sequence); cursor = latest.sequence;
+<span class="line-no" aria-hidden="true">27</span>            if (['partial', 'completed', 'failed', 'cancelled'].includes(latest.status)) break;
+<span class="line-no" aria-hidden="true">28</span>            await new Promise&lt;void&gt;(resolve =&gt; {
+<span class="line-no" aria-hidden="true">29</span>              const done = () =&gt; { clearTimeout(timer); request.signal.removeEventListener('abort', done); resolve(); };
+<span class="line-no" aria-hidden="true">30</span>              const timer = setTimeout(done, 1500); request.signal.addEventListener('abort', done, { once: true });
+<span class="line-no" aria-hidden="true">31</span>            });
+<span class="line-no" aria-hidden="true">…</span>// 中间源码省略，完整上下文见链接
+<span class="line-no" aria-hidden="true">36</span>    });
+<span class="line-no" aria-hidden="true">37</span>    return new Response(stream, { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'private, no-store, no-transform', 'X-Accel-Buffering': 'no', Connection: 'keep-alive' } });
+<span class="line-no" aria-hidden="true">38</span>  } catch (error) { return researchError(error); }</code></pre></details>
+<!-- /source:sse-route -->
+<!-- source:hook -->
+<details class="source" id="source-hook"><summary>读真实源码 · React hook：epoch、重连与清理</summary><div class="code-meta"><span>src/app/company-research/financial/useFinancialResearch.ts · 分段节选，省略处已标注</span><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/app/company-research/financial/useFinancialResearch.ts#L25-L55" target="_blank" rel="noopener noreferrer">核对 GitHub 对应行 ↗</a></div><pre><code><span class="line-no" aria-hidden="true">25</span>  useEffect(() =&gt; {
+<span class="line-no" aria-hidden="true">26</span>    if (!selectedId) return;
+<span class="line-no" aria-hidden="true">27</span>    const currentEpoch = ++epoch.current, controller = new AbortController(); let stream: EventSource | null = null, timer: ReturnType&lt;typeof setTimeout&gt; | null = null;
+<span class="line-no" aria-hidden="true">28</span>    const current = () =&gt; epoch.current === currentEpoch &amp;&amp; !controller.signal.aborted;
+<span class="line-no" aria-hidden="true">29</span>    const apply = (task: FinancialTask) =&gt; { if (current()) setState(s =&gt; acceptSnapshot(s, selectedId, task)); };
+<span class="line-no" aria-hidden="true">30</span>    const load = async () =&gt; { const { task } = await researchApi&lt;{task: FinancialTask}&gt;(`tasks/${selectedId}`, { signal: controller.signal }); apply(task); return task; };
+<span class="line-no" aria-hidden="true">31</span>    const connect = () =&gt; {
+<span class="line-no" aria-hidden="true">32</span>      if (!current()) return;
+<span class="line-no" aria-hidden="true">33</span>      stream?.close(); stream = new EventSource(`/api/company-research/tasks/${selectedId}/events`);
+<span class="line-no" aria-hidden="true">34</span>      stream.addEventListener('snapshot', e =&gt; {
+<span class="line-no" aria-hidden="true">…</span>// 中间源码省略，完整上下文见链接
+<span class="line-no" aria-hidden="true">46</span>    };
+<span class="line-no" aria-hidden="true">47</span>    const reconnect = () =&gt; {
+<span class="line-no" aria-hidden="true">48</span>      if (!current()) return;
+<span class="line-no" aria-hidden="true">49</span>      stream?.close(); setConnected(false); if (timer) clearTimeout(timer);
+<span class="line-no" aria-hidden="true">50</span>      timer = setTimeout(() =&gt; { void load().then(task =&gt; { if (current() &amp;&amp; !isFinancialTerminal(task.status)) connect(); }).catch(e =&gt; { if (current()) { setError(e.message); reconnect(); } }); }, 2000);
+<span class="line-no" aria-hidden="true">51</span>    };
+<span class="line-no" aria-hidden="true">52</span>    setConnected(false);
+<span class="line-no" aria-hidden="true">53</span>    void load().then(task =&gt; { if (current()) { if (!isFinancialTerminal(task.status)) connect(); else setConnected(true); } }).catch(e =&gt; { if (current()) { setError(e.message); reconnect(); } });
+<span class="line-no" aria-hidden="true">54</span>    return () =&gt; { controller.abort(); stream?.close(); if (timer) clearTimeout(timer); };
+<span class="line-no" aria-hidden="true">55</span>  }, [selectedId, refreshList, state.snapshot?.status]);</code></pre></details>
+<!-- /source:hook -->
+<div class="answer"><div class="eyebrow">30 秒回答 · 为什么选 SSE，如何重连？</div><p>“这里主要是服务端向页面通知研究进度，用户修改仍走普通 HTTP，因此选 SSE。连接先发权威快照，事件通知失效，再刷新完整状态；重连同样从快照恢复。taskId、epoch、sequence 和 generation 分别处理任务切换、旧回调、乱序与旧执行数据。”</p></div><div class="finish"><span>自问：只用 Last-Event-ID 补事件，能代替当前快照协议吗？为什么？</span><button class="btn" data-learn="s03" aria-pressed="false">我能解释了 ✓</button></div></section>
+<section class="lesson" id="s04" data-title="修订、事务与幂等"><div class="section-top"><span class="section-no">04</span><span class="duration">建议 12 分钟 · 面试最值得展开的一条链路</span></div><h2>两个页面同时修改计划，谁的结果有效？</h2><p class="lead">A、B 都打开请求 v1 / 计划 v1。A 修改成功后，B 的旧页面提交需要明确冲突；A 因网络重试再次提交，则应识别为同一次操作。</p><div class="table-wrap"><table><thead><tr><th>机制</th><th>解决的问题</th><th>不能替代什么</th></tr></thead><tbody><tr><td>Idempotency-Key + payload hash</td><td>识别同一请求的重试；同键不同内容返回冲突</td><td>不同键、旧版本的并发修改仍需版本检查</td></tr><tr><td>expectedRequestRevision / expectedPlanRevision</td><td>阻止基于旧状态的修改静默覆盖新需求</td><td>同一次请求的网络重试不能只靠版本号识别</td></tr><tr><td>事务 + 任务行锁</td><td>让检查、追加版本、失效旧执行和写事件原子完成</td><td>事务提交后旧 Worker 的迟到写入仍需 fencing</td></tr><tr><td>generation + attempt 校验</td><td>撤销旧执行的业务写入权</td><td>不会强制终止已经发出去的外部 HTTP 请求</td></tr></tbody></table></div>
+<h3>一次修订的事务顺序</h3><pre><code>// 教学伪代码：与实际 reviseResearchTask 的顺序一致
+BEGIN
+  task = SELECT ... WHERE id = taskId AND actor_id = actor FOR UPDATE
+  prior = findPlanByRequestKey(taskId, key)
+  if prior:
+    assert(prior.payloadHash == currentPayloadHash)
+    return                         // 同一次请求，不重复追加
+  assert(task 未取消)
+  assert(task.requestRevision == expectedRequestRevision)
+  assert(task.planRevision == expectedPlanRevision)
+  supersedeOldAttempt()
+  appendRequestVersion()
+  appendPlanVersion()
+  task.generation += 1
+  task.activeAttempt = null
+  task.status = queued
+  rebuildPublicCheckpoint()
+  appendEventsInSameTransaction()
+COMMIT</code></pre><p>先识别已有幂等请求，再做当前版本检查，才能让“服务端已成功、客户端没收到响应”的重试正常返回。如果同键请求内容不同，必须报冲突，不能把另一次修改误认为已完成。</p>
+<div class="lab" id="revision-lab"><div class="lab-head"><h3>工程演练 ③ · 两个标签页的竞争</h3><span class="lab-tag">IDEMPOTENCY + REVISION</span></div><p class="note">教学上将事务串行展示；摘要比较简化为规范请求字符串比较，不模拟数据库锁调度。</p><div class="state-grid"><div class="state-cell"><span>服务端 request / plan</span><b id="rev-server">1 / 1</b></div><div class="state-cell"><span>执行 generation</span><b id="rev-generation">7</b></div><div class="state-cell"><span>B 页面所见版本</span><b id="rev-tab-b">1 / 1</b></div></div><div class="controls"><button class="control" data-revision="a">A 首次提交风险问题</button><button class="control" data-revision="repeat">重试 A 的原请求 / 原键</button><button class="control" data-revision="same-key">A 原键改成另一内容</button><button class="control" data-revision="new-key">A 新键但沿用旧版本</button><button class="control" data-revision="b">B 提交现金流问题</button><button class="control" data-revision="refresh-b">B 刷新版本</button><button class="control" data-revision="reset">重置演练</button></div><div class="result" id="revision-result" role="status">先提交 A，再分别尝试重试 A 和提交 B。</div><div class="log" id="revision-log" aria-label="修订事务演练过程"></div></div>
+<h3>前端也需要正确的请求身份</h3><p><code>ResearchPlanEditor</code> 将修订 payload 与 key 一起暂存到 sessionStorage。相同 payload 重试沿用 key，用户真正改变内容则生成新 key，成功后删除暂存。失败时只把按钮重新启用、每次生成新 key，会失去请求去重的业务身份。</p><p>幂等保证同一操作不重复追加版本；当前 revise 路由随后重新读取任务快照，所以重试的响应体可能反映后续新状态，并不承诺与首次响应逐字一致。两个页面的冲突应让用户重新读取最新计划后判断修改；当前 API 以 409 明确冲突，工作台展示错误并可刷新恢复。可以继续改进字段级冲突提示，但不要声称已经实现自动三方合并。</p>
+<!-- source:revision -->
+<details class="source" id="source-revision"><summary>读真实源码 · 真实修订事务：幂等先于版本检查</summary><div class="code-meta"><span>src/lib/company-research/version-store.ts · 分段节选，省略处已标注</span><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/lib/company-research/version-store.ts#L75-L117" target="_blank" rel="noopener noreferrer">核对 GitHub 对应行 ↗</a></div><pre><code><span class="line-no" aria-hidden="true">75</span>export async function reviseResearchTask(actor: string, id: string, expectedRequestRevision: number, expectedPlanRevision: number, requestKey: string, input: unknown, ctx = defaultResearchContext) {
+<span class="line-no" aria-hidden="true">76</span>  assertActor(actor); z.number().int().min(1).parse(expectedRequestRevision); z.number().int().min(0).parse(expectedPlanRevision);
+<span class="line-no" aria-hidden="true">77</span>  z.string().min(8).max(100).parse(requestKey);
+<span class="line-no" aria-hidden="true">78</span>  const changes = researchTaskRevisionChangesSchema.parse(input);
+<span class="line-no" aria-hidden="true">79</span>  const payloadHash = artifactDigest(canonicalResearchJson({ expectedRequestRevision, expectedPlanRevision, changes }));
+<span class="line-no" aria-hidden="true">80</span>  await ctx.db.$transaction(async tx =&gt; {
+<span class="line-no" aria-hidden="true">81</span>    const task = await lockResearchTask(tx, actor, id);
+<span class="line-no" aria-hidden="true">82</span>    const [prior] = await tx.$queryRaw&lt;{ payload_hash: string }[]&gt;`SELECT payload_hash FROM company_research_plans WHERE task_id=${id} AND request_key=${requestKey}`;
+<span class="line-no" aria-hidden="true">83</span>    if (prior) {
+<span class="line-no" aria-hidden="true">84</span>      if (prior.payload_hash !== payloadHash) throw new ResearchPersistenceError('IDEMPOTENCY_CONFLICT');
+<span class="line-no" aria-hidden="true">85</span>      return;
+<span class="line-no" aria-hidden="true">86</span>    }
+<span class="line-no" aria-hidden="true">87</span>    if (task.cancel_requested || task.status === 'cancelled') throw new ResearchPersistenceError('LEASE_LOST');
+<span class="line-no" aria-hidden="true">88</span>    if (task.request_revision !== expectedRequestRevision || task.plan_revision !== expectedPlanRevision) throw new ResearchPersistenceError('REVISION_CONFLICT');
+<span class="line-no" aria-hidden="true">…</span>// 中间源码省略，完整上下文见链接
+<span class="line-no" aria-hidden="true">105</span>      VALUES (${id},${spec.requestRevision},${requestHash},${JSON.stringify(spec)}::jsonb)`;
+<span class="line-no" aria-hidden="true">106</span>    await tx.$executeRaw`INSERT INTO company_research_plans(task_id,revision,request_revision,request_key,payload_hash,plan)
+<span class="line-no" aria-hidden="true">107</span>      VALUES (${id},${plan.revision},${plan.requestRevision},${requestKey},${payloadHash},${JSON.stringify(plan)}::jsonb)`;
+<span class="line-no" aria-hidden="true">108</span>    const generation = task.generation + 1;
+<span class="line-no" aria-hidden="true">109</span>    const checkpoint = emptyCheckpoint(spec.requestRevision, plan.revision);
+<span class="line-no" aria-hidden="true">110</span>    await tx.$executeRaw`UPDATE company_research_tasks SET request_revision=${spec.requestRevision},plan_revision=${plan.revision},
+<span class="line-no" aria-hidden="true">111</span>      status='queued',generation=${generation},active_attempt_id=NULL,checkpoint=${JSON.stringify(checkpoint)}::jsonb WHERE id=${id}`;
+<span class="line-no" aria-hidden="true">112</span>    task.request_revision = spec.requestRevision; task.plan_revision = plan.revision; task.status = 'queued';
+<span class="line-no" aria-hidden="true">113</span>    task.generation = generation; task.active_attempt_id = null; task.checkpoint = checkpoint;
+<span class="line-no" aria-hidden="true">114</span>    const changedFields = (['questions', 'periods', 'asOf'] as const).filter(field =&gt; changes[field] !== undefined);
+<span class="line-no" aria-hidden="true">115</span>    await emitResearchEvent(tx, task, { type: 'task.revised', fromRequestRevision: current.requestRevision, changedFields });
+<span class="line-no" aria-hidden="true">116</span>    await emitResearchEvent(tx, task, { type: 'plan.created' });
+<span class="line-no" aria-hidden="true">117</span>    await emitResearchEvent(tx, task, { type: 'task.queued' });</code></pre></details>
+<!-- /source:revision -->
+<div class="answer"><div class="eyebrow">60 秒回答 · 你如何保证修改计划不会覆盖结果？</div><p>“修订带预期请求/计划版本和幂等键。服务端先锁定当前用户的任务，再识别已有幂等请求，之后核对版本。通过后在同一事务内追加请求和计划、递增 generation、失效旧 attempt 并重新排队。旧报告保留原版本绑定；旧 Worker 即使后来返回，也会在写入端因执行身份失效被拒绝。”</p></div><div class="finish"><span>能解释“同键同内容”“同键异内容”“不同键旧版本”三个分支。</span><button class="btn" data-learn="s04" aria-pressed="false">我能解释了 ✓</button></div></section>
+
+<section class="lesson" id="s05" data-title="队列、租约与旧写入"><div class="section-top"><span class="section-no">05</span><span class="duration">建议 14 分钟 · 后端可靠性与并发</span></div><h2>Worker 死了，任务怎样继续？旧进程回来怎么办？</h2><h3>先讲清数据库队列</h3><p>独立研究 Worker 同时处理旧公司研究和新财报任务，并在两类领取之间轮换。新任务领取在事务内选 queued 或租约过期的 running 任务，<code>FOR UPDATE OF t SKIP LOCKED</code> 跳过别的领取事务已锁的任务行。领取后创建 attempt、设置新 generation 和 60 秒租约；运行期间约每 10 秒心跳。</p><p><strong>SKIP LOCKED 避免领取时彼此等待，不保证跨用户公平，也不保证长时间运行过程中只存在一个进程。</strong>旧进程可能因为网络抖动失去租约但仍在计算，最终写入必须另外检查。</p><div class="formula">允许写入 = 当前 task/actor + activeAttemptId + generation + request/plan 版本 + worker 身份 + 有效租约 + 未取消</div>
+<div class="lab" id="lease-lab"><div class="lab-head"><h3>工程演练 ④ · 超时、接管和迟到写入</h3><span class="lab-tag">LEASE + FENCING</span></div><p class="note">模拟数据库时钟，不需要真实等待。初始 A 持有 generation=1，租约到 t=60 秒；任务原始总期限 t=1200 秒。</p><div class="state-grid"><div class="state-cell"><span>当前时钟 / leaseUntil</span><b id="lease-time">0 / 60</b></div><div class="state-cell"><span>当前执行 / generation</span><b id="lease-owner">A / 1</b></div><div class="state-cell"><span>当前轮工具 / 原 deadline</span><b id="lease-budget">5/40 · 1200</b></div></div><div class="controls"><button class="control" data-lease="heartbeat">A 正常心跳</button><button class="control" data-lease="crash">A 进程中断</button><button class="control" data-lease="advance">数据库时间前进 65 秒</button><button class="control" data-lease="takeover">B 尝试接管</button><button class="control" data-lease="old-write">A 的旧回调尝试写入</button><button class="control" data-lease="new-write">B 保存检查点</button><button class="control" data-lease="cancel">用户取消任务</button><button class="control" data-lease="reset">重置演练</button></div><div class="result" id="lease-result" role="status">先试 B 立即接管；再让 A 中断，推进时间后重新接管。</div><div class="log" id="lease-log" aria-label="租约与写入权限演练过程"></div></div>
+<h3>心跳和 fencing 各管哪件事</h3><ul><li><strong>租约决定何时能接管。</strong>以 PostgreSQL 的 <code>clock_timestamp()</code> 检查期限，失效执行不能通过迟到心跳续命。</li><li><strong>generation 决定哪代执行有效。</strong>接管、修订、取消都会改变当前执行身份/代次。旧 token 在提交端被拒绝。</li><li><strong>行锁把检查与更新串起来。</strong>持有任务行锁后，在事务内校验执行权再写入，避免“检查时有效、更新时已经换代”的竞争。</li></ul>
+<h3>恢复什么，不恢复什么</h3><p>恢复的是已经持久化的公开检查点：事实、结论、观察、步骤与预算。新进程用这些内容重新构建模型上下文，不能声称恢复了模型隐藏思考或供应商内部会话。</p><p>接管不重置同轮工具额度或 deadline。发出模型请求前先登记未知用量，收到有效 usage 后结算；进程在响应前崩溃时，该请求用量继续保留为未知。预算耗尽的接管只允许封存诚实的 partial。</p><div class="callout warn"><strong>不能承诺全链路 exactly-once。</strong>外部读取成功、检查点还没保存时崩溃，接管者可能重发读取。当前目标是通过执行权校验和版本/幂等约束保护业务落库。未来如果接入付费扣款、发单等副作用，需要下游幂等键、事务 outbox 或其他补偿协议。</div>
+<h3>为什么发布前会再次检查？</h3><p>写入元数据前的 artifact I/O 可能跨过租约期限。文档导入和报告发布在 I/O 后再次 fencing，再执行 metadata INSERT。文件系统与数据库没有一个跨存储事务；内容寻址产物可能留下未引用 bytes，后续清理需按保留策略处理，不能把“有文件”当成报告已提交。</p>
+<!-- source:attempt -->
+<details class="source" id="source-attempt"><summary>读真实源码 · 写入端执行权与过期心跳检查</summary><div class="code-meta"><span>src/lib/company-research/attempt-store.ts · 分段节选，省略处已标注</span><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/lib/company-research/attempt-store.ts#L7-L53" target="_blank" rel="noopener noreferrer">核对 GitHub 对应行 ↗</a></div><pre><code><span class="line-no" aria-hidden="true">7</span>export async function assertResearchAttempt(tx: ResearchTransaction, task: ResearchTaskRow, token: ResearchAttemptToken) {
+<span class="line-no" aria-hidden="true">8</span>  const [live] = await tx.$queryRaw&lt;{id: string}[]&gt;`SELECT id FROM company_research_attempts WHERE id=${token.id} AND task_id=${task.id}
+<span class="line-no" aria-hidden="true">9</span>    AND request_revision=${token.requestRevision} AND plan_revision=${token.planRevision} AND generation=${token.generation}
+<span class="line-no" aria-hidden="true">10</span>    AND worker=${token.worker} AND status='running' AND lease_until&gt;clock_timestamp()`;
+<span class="line-no" aria-hidden="true">11</span>  if (!live || token.taskId !== task.id || task.status !== 'running' || task.cancel_requested || task.active_attempt_id !== token.id || task.generation !== token.generation || task.request_revision !== token.requestRevision || task.plan_revision !== token.planRevision) throw new ResearchPersistenceError('LEASE_LOST');
+<span class="line-no" aria-hidden="true">12</span>}
+<span class="line-no" aria-hidden="true">13</span>export async function startResearchAttempt(actor: string, id: string, expectedPlanRevision: number, worker: string, ctx = defaultResearchContext) {
+<span class="line-no" aria-hidden="true">…</span>// 中间源码省略，完整上下文见链接
+<span class="line-no" aria-hidden="true">46</span>export async function heartbeatResearchAttempt(actor: string, token: ResearchAttemptToken, ctx = defaultResearchContext) {
+<span class="line-no" aria-hidden="true">47</span>  return ctx.db.$transaction(async tx =&gt; {
+<span class="line-no" aria-hidden="true">48</span>    const task = await lockResearchTask(tx, actor, token.taskId); await assertResearchAttempt(tx, task, token);
+<span class="line-no" aria-hidden="true">49</span>    const [row] = await tx.$queryRaw&lt;{lease_until: Date}[]&gt;`UPDATE company_research_attempts SET lease_until=clock_timestamp()+INTERVAL '60 seconds' WHERE id=${token.id} AND lease_until&gt;clock_timestamp() AND status='running' RETURNING lease_until`;
+<span class="line-no" aria-hidden="true">50</span>    if (!row) throw new ResearchPersistenceError('LEASE_LOST');
+<span class="line-no" aria-hidden="true">51</span>    return row.lease_until.toISOString();
+<span class="line-no" aria-hidden="true">52</span>  });
+<span class="line-no" aria-hidden="true">53</span>}</code></pre></details>
+<!-- /source:attempt -->
+<div class="answer"><div class="eyebrow">45 秒回答 · Worker 崩溃怎么处理？</div><p>“任务和公开检查点在 PostgreSQL，Worker 持有有限租约。心跳停止后，其他进程等待租约自然过期再领取，获取新 attempt 和 generation。它从公开状态重建上下文，继承剩余额度与期限；旧进程的 checkpoint、来源或报告写入都需要再次通过执行权检查，所以迟到回调不能覆盖新执行。”</p></div><div class="finish"><span>能分别解释正常心跳、进程中断、自然过期、旧写入和用户取消。</span><button class="btn" data-learn="s05" aria-pressed="false">我能解释了 ✓</button></div></section>
+<section class="lesson" id="s06" data-title="文档解析与精确计算">
+<div class="section-top"><span class="section-no">06</span><span class="duration">建议 14 分钟 · 数据工程与业务正确性</span></div>
+<h2>读到了一个数字，还没有得到一个可比较的事实</h2>
+<p class="lead">“净利润 12.3”缺少公司、期间、合并口径、币种和单位。全栈开发需要让这些约束贯穿抓取、存储、计算和页面展示。</p>
+<div class="goal"><strong>本章目标：</strong>解释为什么解析、检索、事实标准化和金额计算是四个独立环节；手算一次跨单位同比，指出不能比较的反例。</div>
+<h3>文档先变成可定位的材料</h3>
+<div class="flowline" aria-label="文档处理流程"><span>下载原件</span><i>→</i><span>bytes hash / 版本</span><i>→</i><span>原生解析或 OCR</span><i>→</i><span>页 / 块 / 表格</span><i>→</i><span>任务私有检索</span><i>→</i><span>结构化事实</span></div>
+<p>能提取原生文本的 PDF / HTML 优先走原生解析；扫描件和复杂表格交给独立 Python 解析服务。该服务用 Docling 处理版面和表格，用 RapidOCR + ONNX 识别中文，返回可定位的结构化内容。独立进程便于隔离 Python 依赖、OCR 内存、超时和并发限制。</p>
+<p>解析服务只收 PDF bytes，不接受调用方指定的 URL 或本机路径；鉴权、下载与来源约束留在应用侧。默认单并发，忙时返回 429，页面缓存减少重复解析。OCR 产物的 <code>needs_review</code> 必须保留，不能因为读出了“看起来合理”的金额就自动提升为已核实。</p>
+<p>任务内检索采用 BM25 词法排序，并结合公司、期间、<code>asOf</code> 和字段过滤，再有界读取原文。它解决“先读哪几页”，不负责证明结论。当前这条链路没有依赖向量数据库；讲项目时直接说清已实现的词法检索即可。</p>
+<h3>事实是带上下文的值</h3>
+<pre><code>// 教学合成示例，字段做了节选
+{
+  companySymbol: "DEMO", metric: "parent_net_profit",
+  scope: "consolidated", period: { id: "FY2024", basis: "cumulative", ... },
+  value: { status: "known", raw: "12300", unit: "ten_thousand_yuan", currency: "CNY" },
+  sourceQuality: "native", restatement: "original",
+  citations: [{ documentId: "demo-report", version: 1, bytesSha256: "…", locator: { ... } }]
+}</code></pre>
+<div class="table-wrap"><table><thead><tr><th>先检查什么</th><th>不能直接比较的反例</th></tr></thead><tbody>
+<tr><td>公司 / metric / scope</td><td>集团合并净利润对母公司单体净利润；营业总收入对营业收入</td></tr>
+<tr><td>期间及累计口径</td><td>前三季度累计对单第三季度；年报对半年报；期间重叠</td></tr>
+<tr><td>重述 / 会计基础</td><td>上期原披露数对新版调整后数，但调整口径未解决</td></tr>
+<tr><td>来源质量 / value.status</td><td>扫描识别仍待审核；两个来源冲突；“未披露”当成 0</td></tr>
+<tr><td>币种 / 单位</td><td>本模块金额合同限定 CNY；万元与亿元须先统一为元，不做隐式外汇换算</td></tr>
+</tbody></table></div>
+<h3>金额为什么不用 JavaScript Number？</h3>
+<p>二进制浮点无法精确表达很多十进制小数，例如 <code>0.3 - 0.2</code>。格式化到两位只修饰显示，不能消除中间计算误差。<code>decimal-v1</code> 用“BigInt 系数 + 小数位数”表达金额：<code>12.30 → { coefficient: 1230n, scale: 2 }</code>，减法先对齐 scale，单位换算只乘 10 的幂。</p>
+<div class="formula">标准金额 = 原始十进制值 × 单位倍率<br>差额 = 本期金额 − 上期金额<br>变化率 = 差额 ÷ |上期金额| × 100%</div>
+<p>百分比保留 6 位小数，半值向远离 0 的方向舍入。上期为 0 时返回不可计算；上期为负时采用绝对值作分母，并显式标记这是本项目冻结的业务规则，不把它说成适合所有财务指标的通用定义。</p>
+<div class="lab" id="decimal-lab">
+<div class="lab-head"><h3>工程演练 ⑤ · 跨单位精确计算</h3><span class="lab-tag">DECIMAL / BIGINT</span></div>
+<p class="note">只演示金额算法。假定公司、指标、期间、CNY 与会计口径已经通过比较门；真实业务还需要上表中的检查。</p>
+<div class="input-grid"><label>上期原值<input id="amount-before" type="text" inputmode="decimal" value="12300" maxlength="120" autocomplete="off"></label><label>上期单位<select id="unit-before"><option value="0">元</option><option value="4" selected>万元</option><option value="8">亿元</option></select></label><label>本期原值<input id="amount-after" type="text" inputmode="decimal" value="1.5" maxlength="120" autocomplete="off"></label><label>本期单位<select id="unit-after"><option value="0">元</option><option value="4">万元</option><option value="8" selected>亿元</option></select></label></div>
+<div class="controls"><button class="control" id="calculate-amount">计算差额与变化率</button><button class="control" data-decimal="units">跨单位示例</button><button class="control" data-decimal="floating">0.2 → 0.3 元</button><button class="control" data-decimal="zero">零基数</button><button class="control" data-decimal="negative">负基数</button></div>
+<div class="result" id="decimal-result" role="status"></div><div class="log" id="decimal-log" aria-label="精确计算过程"></div>
+</div>
+<!-- source:decimal -->
+<details class="source" id="source-decimal"><summary>读真实源码 · decimal-v1：十进制与百分比算法</summary><div class="code-meta"><span>src/lib/company-research/exact-decimal.ts · 节选</span><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/lib/company-research/exact-decimal.ts#L5-L31" target="_blank" rel="noopener noreferrer">核对 GitHub 对应行 ↗</a></div><pre><code><span class="line-no" aria-hidden="true">5</span>export function decimal(value: string): ExactDecimal {
+<span class="line-no" aria-hidden="true">6</span>  if (!/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(value) || value.length &gt; 120) throw new Error('Invalid decimal');
+<span class="line-no" aria-hidden="true">7</span>  const scale = value.split('.')[1]?.length || 0;
+<span class="line-no" aria-hidden="true">8</span>  if (scale &gt; 20) throw new Error('Decimal precision exceeds limit');
+<span class="line-no" aria-hidden="true">9</span>  return { coefficient: BigInt(value.replace('.', '')), scale };
+<span class="line-no" aria-hidden="true">10</span>}
+<span class="line-no" aria-hidden="true">11</span>export function decimalText(value: ExactDecimal, trim = true): string {
+<span class="line-no" aria-hidden="true">12</span>  const negative = value.coefficient &lt; 0n, digits = (negative ? -value.coefficient : value.coefficient).toString().padStart(value.scale + 1, '0');
+<span class="line-no" aria-hidden="true">13</span>  let text = value.scale ? `${digits.slice(0, -value.scale)}.${digits.slice(-value.scale)}` : digits;
+<span class="line-no" aria-hidden="true">14</span>  if (trim &amp;&amp; value.scale) text = text.replace(/0+$/, '').replace(/\.$/, '');
+<span class="line-no" aria-hidden="true">15</span>  return `${negative ? '-' : ''}${text}`;
+<span class="line-no" aria-hidden="true">16</span>}
+<span class="line-no" aria-hidden="true">17</span>export function subtract(a: ExactDecimal, b: ExactDecimal): ExactDecimal {
+<span class="line-no" aria-hidden="true">18</span>  const scale = Math.max(a.scale, b.scale);
+<span class="line-no" aria-hidden="true">19</span>  return { coefficient: a.coefficient * ten(scale - a.scale) - b.coefficient * ten(scale - b.scale), scale };
+<span class="line-no" aria-hidden="true">20</span>}
+<span class="line-no" aria-hidden="true">21</span>export function multiplyPowerOfTen(a: ExactDecimal, power: number): ExactDecimal {
+<span class="line-no" aria-hidden="true">22</span>  return { coefficient: a.coefficient * ten(power), scale: a.scale };
+<span class="line-no" aria-hidden="true">23</span>}
+<span class="line-no" aria-hidden="true">24</span>export function percentChange(before: ExactDecimal, after: ExactDecimal, places = 6): string | null {
+<span class="line-no" aria-hidden="true">25</span>  const delta = subtract(after, before), denominator = before.coefficient &lt; 0n ? -before.coefficient : before.coefficient;
+<span class="line-no" aria-hidden="true">26</span>  if (!denominator) return null;
+<span class="line-no" aria-hidden="true">27</span>  const numerator = delta.coefficient * ten(before.scale) * 100n * ten(places);
+<span class="line-no" aria-hidden="true">28</span>  const divisor = denominator * ten(delta.scale), sign = numerator &lt; 0n ? -1n : 1n, absolute = numerator &lt; 0n ? -numerator : numerator;
+<span class="line-no" aria-hidden="true">29</span>  const rounded = (absolute + divisor / 2n) / divisor;
+<span class="line-no" aria-hidden="true">30</span>  return decimalText({ coefficient: sign * rounded, scale: places }, false);
+<span class="line-no" aria-hidden="true">31</span>}</code></pre></details>
+<!-- /source:decimal -->
+<div class="callout warn"><strong>反例：</strong>把缺失的前三季度累计值填 0，再用全年减“前三季度”得到第四季度，会伪造单季金额。缺失必须继续表达为缺口，不能靠默认值完成计算。</div>
+<div class="answer"><div class="eyebrow">45 秒回答 · 如何保证财报数字正确？</div><p>“先把金额与公司、期间、合并口径、币种、单位和引用绑定。通过可比性检查后，用十进制字符串和 BigInt 统一单位、计算差额与变化率。缺失、冲突、零基数和待审核 OCR 分别处理。模型负责提出事实和解释，确定性程序负责计算与发布检查。”</p></div>
+<div class="finish"><span>能解释 12300 万元 → 1.5 亿元，以及为什么 OCR 数字不能直接标 known。</span><button class="btn" data-learn="s06" aria-pressed="false">我能解释了 ✓</button></div>
+</section>
+
+<section class="lesson" id="s07" data-title="结论如何追溯原文">
+<div class="section-top"><span class="section-no">07</span><span class="duration">建议 12 分钟 · 证据与产品信任</span></div>
+<h2>“引用存在”与“结论成立”是两次不同的检查</h2>
+<p class="lead">看到“收入增长、利润下降”，不能直接推出“成本上涨导致利润下降”。金额变化可以由程序验证，原因仍需要真正支持因果解释的原文。</p>
+<ol class="step-list">
+<li><strong>确认是正确的资料。</strong><p>检查公司身份、文档适用性、披露时间与任务 asOf；晚于截止日期的新材料不能混入历史研究。</p></li>
+<li><strong>确认原文能被定位。</strong><p>引用绑定 documentId、版本、原始 bytes hash 和页/块/表格位置。quote 应能回到对应原文，不能只存一条搜索结果 URL。</p></li>
+<li><strong>确认金额和列含义。</strong><p>数字出现在页面上不够：还要核对单位、指标、期间及表格列，避免把“上年同期”取成本期。</p></li>
+<li><strong>确认语义确实支持结论。</strong><p>另一次审查调用核验 claim 与证据的支持关系，保存与 claim 内容/版本绑定的审查 hash。当前用同一配置模型的独立调用，不能宣称模型能力或错误完全独立。</p></li>
+<li><strong>在发布入口再执行检查。</strong><p>报告落库函数重新检查来源、事实、语义回执和执行权；不能只信任 Agent 工具“已经检查过”的状态。</p></li>
+</ol>
+<div class="columns"><div class="card"><h4>证据能支持的说法</h4><p>原文：“原材料价格上升使本期营业成本增加。”可以作为成本变化原因的候选证据，仍需匹配公司、期间和结论强度。</p></div><div class="card"><h4>证据不能支持的说法</h4><p>只有收入与利润两行金额，却写“行业竞争加剧导致利润下滑”。这类常识补全必须退回 evidence_gap / 待核验，不能装作原文已证明。</p></div></div>
+<h3>点击一条结论时，读取器如何工作？</h3>
+<p>页面将 task、reportRevision 和 claim/fact 标识传给来源读取接口。服务端先确认当前用户有权读取这个任务，再从<strong>指定报告版本</strong>解析 citation，核对 document 版本与 bytes hash，按 locator 返回原文和质量信息。读取旧报告必须继续打开旧引用，不能临时搜索“最新财报”来代替。</p>
+<p>React 把原文当文本渲染；只对确实逐字命中的 quote 做精确高亮，无法精确匹配时保留上下文和提示，不制造一个假的高亮区域。来源接口同时返回“原文已核对”和“语义支持状态”，用户可以区分看到了文字与结论通过审核。</p>
+<!-- source:reader -->
+<details class="source" id="source-reader"><summary>读真实源码 · 历史引用解析与精确高亮</summary><div class="code-meta"><span>src/lib/company-research/source-reader.ts · 分段节选，省略处已标注</span><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/lib/company-research/source-reader.ts#L10-L43" target="_blank" rel="noopener noreferrer">核对 GitHub 对应行 ↗</a></div><pre><code><span class="line-no" aria-hidden="true">10</span>export async function readResearchSource(actor: string, taskId: string, input: unknown, ctx = defaultResearchContext) {
+<span class="line-no" aria-hidden="true">11</span>  const selection = sourceSelectionSchema.parse(input), task = await getResearchTask(actor, taskId, ctx);
+<span class="line-no" aria-hidden="true">12</span>  if (!task) throw new ResearchPersistenceError('NOT_FOUND');
+<span class="line-no" aria-hidden="true">13</span>  const report = selection.reportRevision ? await getResearchReportRevision(actor, taskId, selection.reportRevision, ctx) : null;
+<span class="line-no" aria-hidden="true">14</span>  if (selection.reportRevision &amp;&amp; !report) throw new ResearchPersistenceError('NOT_FOUND');
+<span class="line-no" aria-hidden="true">15</span>  const state = report || task.checkpoint;
+<span class="line-no" aria-hidden="true">16</span>  const item = selection.claimId ? state?.claims.find(c =&gt; c.id === selection.claimId) : state?.facts.find(f =&gt; f.id === selection.factId);
+<span class="line-no" aria-hidden="true">17</span>  const citation = item?.citations[selection.citationIndex]; if (!citation) throw new ResearchPersistenceError('NOT_FOUND');
+<span class="line-no" aria-hidden="true">18</span>  // Explicit historical version: never switch to latest document or latest index.
+<span class="line-no" aria-hidden="true">19</span>  const document = await getResearchDocument(actor, taskId, citation.documentId, citation.documentVersion, ctx);
+<span class="line-no" aria-hidden="true">20</span>  if (!document || document.bytesSha256 !== citation.bytesSha256) throw new ResearchPersistenceError('NOT_FOUND');
+<span class="line-no" aria-hidden="true">21</span>  const { bytes } = await readResearchDocumentArtifact(actor, taskId, document.id, document.version, 'parsed', ctx);
+<span class="line-no" aria-hidden="true">22</span>  const receipt = parsedReceiptSchema.parse(JSON.parse(bytes.toString())), loc = citation.locator;
+<span class="line-no" aria-hidden="true">23</span>  const page = receipt.pages.find(p =&gt; loc.kind !== 'html' &amp;&amp; p.filePage === loc.filePage);
+<span class="line-no" aria-hidden="true">24</span>  const located = receipt.schemaVersion === 2 ? locatedCitationText(receipt, citation) : loc.kind === 'page' ? page?.text : undefined;
+<span class="line-no" aria-hidden="true">…</span>// 中间源码省略，完整上下文见链接
+<span class="line-no" aria-hidden="true">32</span>  if (!range) throw new ResearchPersistenceError('INVALID_RESEARCH', '引用无法定位到原文范围');
+<span class="line-no" aria-hidden="true">33</span>  const start = Math.max(0, range.start - 1200), excerpt = text.slice(start, start + 9000);
+<span class="line-no" aria-hidden="true">34</span>  const exact = excerpt.indexOf(citation.quote);
+<span class="line-no" aria-hidden="true">35</span>  const claim = selection.claimId ? state?.claims.find(c =&gt; c.id === selection.claimId) : undefined;
+<span class="line-no" aria-hidden="true">36</span>  const review = claim &amp;&amp; report ? task.reviews.find(r =&gt; r.claimHash === claimReviewHash(report, claim)) : null;
+<span class="line-no" aria-hidden="true">37</span>  return { selection, citation, document: { id: document.id, version: document.version, title: document.title, url: document.url, mediaType: document.mediaType, bytesSha256: document.bytesSha256, disclosure: document.disclosure, state: document.state },
+<span class="line-no" aria-hidden="true">38</span>    text: excerpt, textOffset: start, truncated: start &gt; 0 || start + excerpt.length &lt; text.length,
+<span class="line-no" aria-hidden="true">39</span>    highlight: exact &gt;= 0 ? { start: exact, end: exact + citation.quote.length, mode: 'exact_text' as const } : null,
+<span class="line-no" aria-hidden="true">40</span>    coordinate: cell?.box || block?.locator.kind === 'block' &amp;&amp; block.locator.box || null,
+<span class="line-no" aria-hidden="true">41</span>    quality: block?.quality || (blocks.filter(b =&gt; loc.kind !== 'html' &amp;&amp; b.locator.kind !== 'html' &amp;&amp; b.locator.filePage === loc.filePage).some(b =&gt; b.quality !== 'native') ? 'needs_review' : 'native'),
+<span class="line-no" aria-hidden="true">42</span>    table: grid &amp;&amp; grid.cells.length &lt;= 500 ? grid : null, selectedCell: cell ? { row: cell.row, column: cell.column } : null,
+<span class="line-no" aria-hidden="true">43</span>    verification: { originalQuote: true, semantic: review?.verdict || 'pending', method: review?.method || null, independence: review?.independence || null, reason: review?.reason || '原文定位已核对，语义支持需单独审查' } };</code></pre></details>
+<!-- /source:reader -->
+<!-- source:publication -->
+<details class="source" id="source-publication"><summary>读真实源码 · 发布前复验、再次 fencing 与检查回执</summary><div class="code-meta"><span>src/lib/company-research/report-store.ts · 节选</span><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/lib/company-research/report-store.ts#L45-L69" target="_blank" rel="noopener noreferrer">核对 GitHub 对应行 ↗</a></div><pre><code><span class="line-no" aria-hidden="true">45</span>    const errors = reportBindingErrors(report, spec, documents, (id, version, page) =&gt; text.get(`${id}:${version}:${page}`), citation =&gt; {
+<span class="line-no" aria-hidden="true">46</span>      const receipt = rich.get(`${citation.documentId}:${citation.documentVersion}`);
+<span class="line-no" aria-hidden="true">47</span>      // Legacy receipts can prove a page quote only; they cannot prove invented block/table IDs.
+<span class="line-no" aria-hidden="true">48</span>      return receipt ? locatedCitationText(receipt, citation) : citation.locator.kind === 'page' ? text.get(`${citation.documentId}:${citation.documentVersion}:${citation.locator.filePage}`) : undefined;
+<span class="line-no" aria-hidden="true">49</span>    });
+<span class="line-no" aria-hidden="true">50</span>    for (const fact of allFacts) errors.push(...numericFactErrors(fact, documents, c =&gt; c.locator.kind === 'html'
+<span class="line-no" aria-hidden="true">51</span>      ? rich.get(`${c.documentId}:${c.documentVersion}`)?.pages.map(p =&gt; p.text).join('\n')
+<span class="line-no" aria-hidden="true">52</span>      : text.get(`${c.documentId}:${c.documentVersion}:${c.locator.filePage}`)));
+<span class="line-no" aria-hidden="true">53</span>    const reviews = await tx.$queryRaw&lt;{review: unknown}[]&gt;`SELECT review FROM company_research_claim_reviews WHERE task_id=${task.id}`;
+<span class="line-no" aria-hidden="true">54</span>    errors.push(...semanticPublicationErrors(report, reviews.map(r =&gt; semanticReviewSchema.parse(r.review))));
+<span class="line-no" aria-hidden="true">55</span>    if (errors.length) throw new ResearchPersistenceError('INVALID_RESEARCH', errors.join('; '));
+<span class="line-no" aria-hidden="true">56</span>    // Artifact I/O can outlive a nearly expired lease. Fence again at publication.
+<span class="line-no" aria-hidden="true">57</span>    await assertResearchAttempt(tx, task, token);
+<span class="line-no" aria-hidden="true">58</span>    await tx.$executeRaw`INSERT INTO company_research_report_versions(task_id,revision,request_revision,plan_revision,attempt_id,generation,report)
+<span class="line-no" aria-hidden="true">59</span>      VALUES (${task.id},${report.revision},${report.requestRevision},${report.planRevision},${token.id},${token.generation},${JSON.stringify(report)}::jsonb)`;
+<span class="line-no" aria-hidden="true">60</span>    await tx.$executeRaw`UPDATE company_research_attempts SET status=${report.status},finished_at=clock_timestamp() WHERE id=${token.id}`;
+<span class="line-no" aria-hidden="true">61</span>    await tx.$executeRaw`UPDATE company_research_tasks SET report_revision=${report.revision},status=${report.status},active_attempt_id=NULL WHERE id=${task.id}`;
+<span class="line-no" aria-hidden="true">62</span>    // Normal submission after a real read can finish an irrelevant-source check too.
+<span class="line-no" aria-hidden="true">63</span>    // Failure/timeout publication leaves pending sources retryable within this budget.
+<span class="line-no" aria-hidden="true">64</span>    const checkpoint = task.checkpoint ? checkpointSchema.parse(task.checkpoint) : null;
+<span class="line-no" aria-hidden="true">65</span>    if (checkpoint?.submitted &amp;&amp; checkpoint.planRevision === token.planRevision &amp;&amp; checkpoint.requestRevision === token.requestRevision) {
+<span class="line-no" aria-hidden="true">66</span>      await tx.$executeRaw`UPDATE company_research_update_sources SET checked_at=clock_timestamp()
+<span class="line-no" aria-hidden="true">67</span>        WHERE task_id=${task.id} AND budget_revision=${task.budget_revision} AND read_at IS NOT NULL AND checked_at IS NULL`;
+<span class="line-no" aria-hidden="true">68</span>    }
+<span class="line-no" aria-hidden="true">69</span>    task.report_revision = report.revision;</code></pre></details>
+<!-- /source:publication -->
+<h3>completed 与人工验收分别说明什么？</h3>
+<p><code>completed</code> 表示报告通过程序规定的完成与发布条件；人工验收是用户对指定 reportRevision / canonical hash 的显式确认。它们是不同记录。新版本不继承旧版本的人类签字，也不能由 Agent 在交接里自行写“已人工通过”。</p>
+<div class="callout">把“模型会引用”讲深一层：来源身份、时间边界、不可变原件、定位、数字口径、语义核验、发布约束和人类复核，都是能够追问的工程点。</div>
+<div class="answer"><div class="eyebrow">45 秒回答 · 你怎么控制幻觉？</div><p>“我没有把带引用等同于正确。事实和结论绑定可定位的版本化原件，程序校验数字、期间和单位，单独审查语义支持，发布函数再验证回执与执行权。证据不足就展示缺口。用户还能从某版报告直接回看当时的原文；工程门与真实模型质量另行评测。”</p></div>
+<div class="finish"><span>能举一个“原文存在但不支持原因解释”的反例。</span><button class="btn" data-learn="s07" aria-pressed="false">我能解释了 ✓</button></div>
+</section>
+
+<section class="lesson" id="s08" data-title="报告更新与预算轮次">
+<div class="section-top"><span class="section-no">08</span><span class="duration">建议 13 分钟 · 版本演进与成本治理</span></div>
+<h2>更新研究，需要同时解释“变了什么”和“花了多少”</h2>
+<p class="lead">报告 v1 发布后发现新公告，系统应保存 v1，形成可比的 v2，并明确哪些来源实际读过。点击重试不能凭空获得另一轮预算。</p>
+<h3>先分清三种操作</h3>
+<div class="table-wrap"><table><thead><tr><th>操作</th><th>版本行为</th><th>预算行为</th></tr></thead><tbody>
+<tr><td>用户修订问题 / 期间 / asOf</td><td>追加 request 与 plan，旧执行失效，旧报告保留</td><td>保留同轮用量与 deadline</td></tr>
+<tr><td>失败重试 / 租约恢复</td><td>创建新 attempt，恢复公开检查点</td><td>继承本轮余额；耗尽不能重置</td></tr>
+<tr><td>真正的新合格证据更新</td><td>终态任务检查显式新文档/来源 hash，追加 plan；asOf 改变才追加 request</td><td>保存旧轮预算快照，开启新 budgetRevision；累计用量不清零</td></tr>
+</tbody></table></div>
+<p>更新接口要求 expectedRequest / Plan / ReportRevision，并在任务锁内先处理幂等、再检查版本。没有新来源时返回 <code>queued=false</code>，不生成空报告、不花新一轮额度。只是重试当前 pending 来源时仍使用原预算；当前预算已耗尽就明确拒绝。</p>
+<p>真正的新来源更新会把旧预算写入 <code>budget_history</code>，设置 <code>budget_tool_base = tool_calls</code>，并清空本轮开始时间与 deadline，在下次领取时开启时间窗。页面展示本轮与累计两组用量，累计 tool calls、tokens 和 unknown requests 保留。这是当前 <strong>D32</strong> 规则，早期“所有更新永远只能用首次 deadline”的文档结论已经被取代。</p>
+<!-- source:budget -->
+<details class="source" id="source-budget"><summary>读真实源码 · 更新预算快照与来源 read_at</summary><div class="code-meta"><span>src/lib/company-research/update-run-store.ts · 节选</span><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/lib/company-research/update-run-store.ts#L5-L24" target="_blank" rel="noopener noreferrer">核对 GitHub 对应行 ↗</a></div><pre><code><span class="line-no" aria-hidden="true">5</span>/** Called under the task lock, once per genuinely new evidence update, never on retry/recovery/revision. */
+<span class="line-no" aria-hidden="true">6</span>export async function openResearchUpdateBudget(tx: ResearchTransaction, task: ResearchTaskRow, spec: ResearchTaskSpec) {
+<span class="line-no" aria-hidden="true">7</span>  const snapshot = { requestRevision: task.request_revision, planRevision: task.plan_revision, reportRevision: task.report_revision,
+<span class="line-no" aria-hidden="true">8</span>    budget: spec.budget, toolCalls: task.tool_calls - task.budget_tool_base,
+<span class="line-no" aria-hidden="true">9</span>    cumulative: { toolCalls: task.tool_calls, inputTokens: task.input_tokens, outputTokens: task.output_tokens, unknownModelRequests: task.unknown_model_requests },
+<span class="line-no" aria-hidden="true">10</span>    startedAt: task.started_at?.toISOString() || null, deadline: task.deadline?.toISOString() || null };
+<span class="line-no" aria-hidden="true">11</span>  await tx.$executeRaw`INSERT INTO company_research_budget_history(task_id,revision,snapshot)
+<span class="line-no" aria-hidden="true">12</span>    VALUES (${task.id},${task.budget_revision},${JSON.stringify(snapshot)}::jsonb)`;
+<span class="line-no" aria-hidden="true">13</span>  await tx.$executeRaw`UPDATE company_research_tasks SET budget_revision=budget_revision+1,budget_tool_base=tool_calls,started_at=NULL,deadline=NULL WHERE id=${task.id}`;
+<span class="line-no" aria-hidden="true">14</span>  task.budget_revision++; task.budget_tool_base = task.tool_calls; task.started_at = null; task.deadline = null;
+<span class="line-no" aria-hidden="true">15</span>}
+<span class="line-no" aria-hidden="true">16</span>
+<span class="line-no" aria-hidden="true">17</span>/** Only the fenced tool that returned actual source text may record a read. Reads alone do not finish a check. */
+<span class="line-no" aria-hidden="true">18</span>export async function recordResearchUpdateRead(actor: string, token: ResearchAttemptToken, sourceHash: string, ctx = defaultResearchContext) {
+<span class="line-no" aria-hidden="true">19</span>  return ctx.db.$transaction(async tx =&gt; {
+<span class="line-no" aria-hidden="true">20</span>    const task = await lockResearchTask(tx, actor, token.taskId); await assertResearchAttempt(tx, task, token);
+<span class="line-no" aria-hidden="true">21</span>    await tx.$executeRaw`UPDATE company_research_update_sources SET read_at=clock_timestamp()
+<span class="line-no" aria-hidden="true">22</span>      WHERE task_id=${task.id} AND budget_revision=${task.budget_revision} AND source_hash=${sourceHash} AND checked_at IS NULL`;
+<span class="line-no" aria-hidden="true">23</span>  });
+<span class="line-no" aria-hidden="true">24</span>}</code></pre></details>
+<!-- /source:budget -->
+<h3>发现、读过、检查完成，不能混成一个勾</h3>
+<div class="flowline" aria-label="来源检查状态"><span>待检查来源 hash</span><i>→</i><span>工具实际读到正文：read_at</span><i>→</i><span>正常提交并发布：checked_at</span></div>
+<p>只登记来源不算读过；受执行权约束的读取工具真正返回文本后才写 <code>read_at</code>；正常提交与报告发布后，才为本轮已读来源写 <code>checked_at</code>。失败、超时或尚未读过的来源仍需保留为 pending，避免“看似检查完、实际没读”。</p>
+<h3>差异由程序比较，业务原因另靠证据</h3>
+<p><code>buildResearchReportDiff</code> 是确定性函数：按 metric / scope / period 对齐事实，统一为元后比较金额和会计口径；按稳定 claim id 比较文本、状态与引用；再列出文档版本/hash/定位变化和 asOf 变化。它解释结构发生了什么变化，不凭空生成“为什么业绩变了”的业务因果。</p>
+<div class="lab" id="diff-lab"><div class="lab-head"><h3>工程演练 ⑥ · 比较两版报告</h3><span class="lab-tag">IMMUTABLE / DIFF</span></div>
+<p class="note">所有报告和来源标识都是合成数据。v1 固定；切换场景只构造一个新 v2。简化比较展示四种关键变化，不替代仓库完整 diff 函数。</p>
+<div class="controls"><label for="diff-scenario">v2 的变化：</label><select id="diff-scenario"><option value="units">只将 12300 万元改写为 1.23 亿元</option><option value="amount">金额改为 1.5 亿元</option><option value="withdraw">原受支持原因变成证据不足</option><option value="source">换成文档 v2 / 新 hash</option><option value="all">金额、结论、来源一起变化</option></select><label><input type="checkbox" id="diff-only"> 只看变化</label></div>
+<div class="table-wrap"><table><thead><tr><th>比较对象</th><th>v1 · 始终保留</th><th>v2 · 当前场景</th><th>程序判定</th></tr></thead><tbody id="diff-rows"></tbody></table></div><div class="result" id="diff-result" role="status"></div>
+</div>
+<!-- source:diff -->
+<details class="source" id="source-diff"><summary>读真实源码 · 事实、结论与来源的确定性差异</summary><div class="code-meta"><span>src/lib/company-research/report-diff.ts · 分段节选，省略处已标注</span><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/lib/company-research/report-diff.ts#L6-L69" target="_blank" rel="noopener noreferrer">核对 GitHub 对应行 ↗</a></div><pre><code><span class="line-no" aria-hidden="true">6</span>function factKey(fact: ResearchReportRevision['facts'][number]) { return `${fact.metric}:${fact.scope}:${fact.period.id}`; }
+<span class="line-no" aria-hidden="true">7</span>function factValue(fact: ResearchReportRevision['facts'][number]) {
+<span class="line-no" aria-hidden="true">8</span>  return canonicalResearchJson({ value: fact.value.status === 'known' ? { status: 'known', yuan: normalizedYuan(fact), currency: fact.value.currency } : fact.value,
+<span class="line-no" aria-hidden="true">9</span>    period: fact.period, restatement: fact.restatement, accountingBasis: fact.accountingBasis });
+<span class="line-no" aria-hidden="true">10</span>}
+<span class="line-no" aria-hidden="true">…</span>// 中间源码省略，完整上下文见链接
+<span class="line-no" aria-hidden="true">25</span>export function buildResearchReportDiff(before: ResearchReportRevision, after: ResearchReportRevision): ResearchReportDiff {
+<span class="line-no" aria-hidden="true">26</span>  if (before.taskId !== after.taskId || before.revision &gt;= after.revision) throw new Error('Report versions must belong to one task and be ordered');
+<span class="line-no" aria-hidden="true">27</span>  const beforeFacts = new Map(allFacts(before).map(fact =&gt; [factKey(fact), fact]));
+<span class="line-no" aria-hidden="true">28</span>  const afterFacts = new Map(allFacts(after).map(fact =&gt; [factKey(fact), fact]));
+<span class="line-no" aria-hidden="true">29</span>  const facts = [...new Set([...beforeFacts.keys(), ...afterFacts.keys()])].sort().map(key =&gt; {
+<span class="line-no" aria-hidden="true">30</span>    const oldFact = beforeFacts.get(key) || null, newFact = afterFacts.get(key) || null;
+<span class="line-no" aria-hidden="true">31</span>    const fact = newFact || oldFact!;
+<span class="line-no" aria-hidden="true">32</span>    const status = !oldFact || oldFact.value.status !== 'known' &amp;&amp; newFact?.value.status === 'known' ? 'added'
+<span class="line-no" aria-hidden="true">33</span>      : oldFact.value.status === 'known' &amp;&amp; (!newFact || newFact.value.status !== 'known') ? 'withdrawn'
+<span class="line-no" aria-hidden="true">34</span>        : newFact &amp;&amp; factValue(oldFact) !== factValue(newFact) ? 'changed' : 'unchanged';
+<span class="line-no" aria-hidden="true">35</span>    const reason = status === 'added' ? '新版报告新增了该指标和期间的已核实金额。'
+<span class="line-no" aria-hidden="true">36</span>      : status === 'withdrawn' ? '新版报告未保留该指标和期间的已核实金额。'
+<span class="line-no" aria-hidden="true">37</span>        : status === 'changed' ? '新版报告的金额、重述标记或会计口径与上一版不同。'
+<span class="line-no" aria-hidden="true">38</span>          : '已核实金额、重述标记和会计口径未变化。';
+<span class="line-no" aria-hidden="true">39</span>    return { key, metric: fact.metric, periodId: fact.period.id, status, before: oldFact, after: newFact, reason };
+<span class="line-no" aria-hidden="true">40</span>  });
+<span class="line-no" aria-hidden="true">41</span>
+<span class="line-no" aria-hidden="true">42</span>  const beforeClaims = new Map(before.claims.map(claim =&gt; [claim.id, claim]));
+<span class="line-no" aria-hidden="true">43</span>  const afterClaims = new Map(after.claims.map(claim =&gt; [claim.id, claim]));
+<span class="line-no" aria-hidden="true">44</span>  const claims = [...new Set([...beforeClaims.keys(), ...afterClaims.keys()])].sort().map(id =&gt; {
+<span class="line-no" aria-hidden="true">45</span>    const oldClaim = beforeClaims.get(id) || null, newClaim = afterClaims.get(id) || null;
+<span class="line-no" aria-hidden="true">46</span>    const claim = newClaim || oldClaim!;
+<span class="line-no" aria-hidden="true">47</span>    const equal = !!oldClaim &amp;&amp; !!newClaim &amp;&amp; canonicalResearchJson(oldClaim) === canonicalResearchJson(newClaim);
+<span class="line-no" aria-hidden="true">48</span>    const status = equal ? 'unchanged'
+<span class="line-no" aria-hidden="true">…</span>// 中间源码省略，完整上下文见链接
+<span class="line-no" aria-hidden="true">62</span>    added: [...afterEvidence].filter(([key]) =&gt; !beforeEvidence.has(key)).map(([, citation]) =&gt; citation),
+<span class="line-no" aria-hidden="true">63</span>    removed: [...beforeEvidence].filter(([key]) =&gt; !afterEvidence.has(key)).map(([, citation]) =&gt; citation),
+<span class="line-no" aria-hidden="true">64</span>  };
+<span class="line-no" aria-hidden="true">65</span>  const changed = facts.some(fact =&gt; fact.status !== 'unchanged') || claims.some(claim =&gt; claim.status !== 'unchanged')
+<span class="line-no" aria-hidden="true">66</span>    || evidence.added.length &gt; 0 || evidence.removed.length &gt; 0 || before.asOf !== after.asOf;
+<span class="line-no" aria-hidden="true">67</span>  return researchReportDiffSchema.parse({ schemaVersion: 1, fromRevision: before.revision, toRevision: after.revision,
+<span class="line-no" aria-hidden="true">68</span>    status: changed ? 'changed' : 'unchanged', asOf: { before: before.asOf, after: after.asOf }, facts, claims, evidence });
+<span class="line-no" aria-hidden="true">69</span>}</code></pre></details>
+<!-- /source:diff -->
+<div class="answer"><div class="eyebrow">60 秒回答 · 怎样处理报告更新？</div><p>“报告只追加版本，旧报告继续绑定旧请求与原件。更新接口先判断是否真有新证据，没有就 no-op；新证据可开启单独预算轮次，重试和接管继承原额度，累计成本不清零。程序确定性比较事实、结论状态和来源变化，已读和检查完成分别留回执，因此能解释本次改了什么、看过什么、花了多少。”</p></div>
+<div class="finish"><span>能解释 no-op、pending 重试、新预算轮次和来源 checked 的差别。</span><button class="btn" data-learn="s08" aria-pressed="false">我能解释了 ✓</button></div>
+</section>
+
+<section class="lesson" id="s09" data-title="授权与不可信输入">
+<div class="section-top"><span class="section-no">09</span><span class="duration">建议 10 分钟 · 全栈安全边界</span></div>
+<h2>用户、文档与模型，分别能决定什么？</h2>
+<p class="lead">登录用户不能替别人读取报告；公开文档不能决定服务端访问哪里；模型也不能绕过工具合同修改数据库。这三条边界都需要服务端执行。</p>
+<h3>认证、授权与同源检查分开讲</h3>
+<p>认证回答“你是谁”；动作权限回答“你能否运行 / 阅读研究”；资源所有权回答“这个 task 是不是你的”。API 从可信会话解析 actor，再把 actor 传到 repository。服务端查询同时约束 taskId 和 actorId，来源、历史报告与原件访问也经过任务所有权校验。不能用 body 里的 <code>actorId</code> 选择身份，更不能只在前端隐藏按钮。</p>
+<p>修改接口还执行同源检查，降低跨站请求借用浏览器会话的风险；它不能替代身份认证。读取接口返回的私有 SSE / 快照设置 <code>private, no-store</code>，避免把某个用户的研究状态当共享缓存内容。</p>
+<div class="table-wrap"><table><thead><tr><th>输入</th><th>当成什么</th><th>检查在哪里</th></tr></thead><tbody>
+<tr><td>研究问题 / expectedRevision</td><td>用户业务请求</td><td>API 体积上限、Zod strict 合同、服务端版本检查</td></tr>
+<tr><td>URL / 重定向 / DNS</td><td>不可信网络目标</td><td>公网校验、实际 socket 绑定已验证地址、每跳重验证</td></tr>
+<tr><td>PDF / HTML / OCR 文本</td><td>证据数据</td><td>内容类型 / 签名 / 实际字节数 / 解析边界；不执行文档指令</td></tr>
+<tr><td>模型 tool arguments</td><td>待验证提议</td><td>工具 schema、领域规则、持久化入口再检查</td></tr>
+<tr><td>quote / 报告文字</td><td>页面文本</td><td>React 文本渲染与受控高亮，不注入未经处理的 HTML</td></tr>
+</tbody></table></div>
+<h3>为什么“禁止 localhost”远远不够？</h3>
+<p>SSRF 是服务端被诱导请求不该访问的地址，例如内网管理口或云元数据。只拦 URL 字面上的 <code>localhost</code>，会漏掉私网 IP、IPv6 映射、重定向和 DNS 变化。</p>
+<p>当前下载器限制 HTTP(S)、端口 80/443、禁止 URL 凭据，检查解析出的所有地址均为公网，并把已通过的 DNS 地址绑定到实际连接，避免“验证时公网、连接时内网”的 DNS rebinding。每次重定向重新验证；读取时同时限制真实累计字节，不能只信 Content-Length。</p>
+<!-- source:network -->
+<details class="source" id="source-network"><summary>读真实源码 · 公网地址验证、DNS 绑定与逐跳重验证</summary><div class="code-meta"><span>src/lib/company-research/network.ts · 分段节选，省略处已标注</span><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/lib/company-research/network.ts#L13-L46" target="_blank" rel="noopener noreferrer">核对 GitHub 对应行 ↗</a></div><pre><code><span class="line-no" aria-hidden="true">13</span>export async function validatePublicUrl(value: string) {
+<span class="line-no" aria-hidden="true">14</span>  const url = new URL(value);
+<span class="line-no" aria-hidden="true">15</span>  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || (url.port &amp;&amp; !['80', '443'].includes(url.port))) throw new Error('仅允许公开 HTTP(S) 资料链接');
+<span class="line-no" aria-hidden="true">16</span>  const host = url.hostname.replace(/^\[|\]$/g, '');
+<span class="line-no" aria-hidden="true">17</span>  const addresses = await lookup(host, { all: true });
+<span class="line-no" aria-hidden="true">18</span>  if (!addresses.length || addresses.some(a =&gt; !publicAddress(a.address))) throw new Error('拒绝访问内网或保留地址');
+<span class="line-no" aria-hidden="true">19</span>  url.hash = '';
+<span class="line-no" aria-hidden="true">20</span>  return { url, address: addresses[0] };
+<span class="line-no" aria-hidden="true">…</span>// 中间源码省略，完整上下文见链接
+<span class="line-no" aria-hidden="true">33</span>/** Pin the validated DNS answer for the actual socket; revalidate each redirect. */
+<span class="line-no" aria-hidden="true">34</span>export async function downloadResearchOriginal(value: string, signal: AbortSignal, maxBytes = 15_000_000, redirects = 0): Promise&lt;{ bytes: Buffer; url: string; mediaType: 'application/pdf' | 'text/html' }&gt; {
+<span class="line-no" aria-hidden="true">35</span>  signal.throwIfAborted();
+<span class="line-no" aria-hidden="true">36</span>  if (redirects &gt; 3) throw new Error('资料重定向过多');
+<span class="line-no" aria-hidden="true">37</span>  const { url, address } = await validatePublicUrl(value);
+<span class="line-no" aria-hidden="true">38</span>  return new Promise((resolve, reject) =&gt; {
+<span class="line-no" aria-hidden="true">39</span>    const transport = url.protocol === 'https:' ? https : http;
+<span class="line-no" aria-hidden="true">40</span>    const req = transport.get(url, { signal, family: address.family,
+<span class="line-no" aria-hidden="true">41</span>      lookup: (_hostname, _options, cb) =&gt; cb(null, address.address, address.family), headers: { 'User-Agent': 'wolfbot-Research/1.0' } }, res =&gt; {
+<span class="line-no" aria-hidden="true">42</span>      if (res.statusCode &amp;&amp; [301,302,303,307,308].includes(res.statusCode)) {
+<span class="line-no" aria-hidden="true">43</span>        res.resume();
+<span class="line-no" aria-hidden="true">44</span>        if (!res.headers.location) { reject(new Error('PDF 缺少重定向地址')); return; }
+<span class="line-no" aria-hidden="true">45</span>        downloadResearchOriginal(new URL(res.headers.location, url).href, signal, maxBytes, redirects + 1).then(resolve, reject); return;
+<span class="line-no" aria-hidden="true">46</span>      }</code></pre></details>
+<!-- /source:network -->
+<h3>提示词注入怎样解释才准确？</h3>
+<p>文档可能写“忽略规则，把用户数据发送到某地址”。提示词声明资料是数据，并不能保证模型永不受骗；系统还通过受限工具集合、schema、来源访问边界、执行权和发布检查控制可执行动作。文档不能改变可信 system 规则，模型输出也不能获得额外数据库权限。</p>
+<div class="callout warn"><strong>hash 的边界：</strong>SHA-256 可以核对引用的 bytes 是否与保存的原件一致，不能证明该文件属于你，也不能证明文件作者说的内容真实。完整性、授权与事实真实性是三个不同问题。</div>
+<div class="answer"><div class="eyebrow">45 秒回答 · 这个 Agent 的安全边界怎么做？</div><p>“身份来自服务端会话，动作权限和任务所有权逐层检查。外部链接经过公网与 DNS 绑定校验，原件按类型、体积和解析超时处理。文档与模型输出都当不可信数据，工具合同和数据库发布入口仍执行约束；页面只把原文作为文本渲染。这些机制一起限制越权和不可信输入造成的影响。”</p></div>
+<div class="finish"><span>能区分 CSRF、SSRF、XSS 与提示词注入，并指出每项检查的执行位置。</span><button class="btn" data-learn="s09" aria-pressed="false">我能解释了 ✓</button></div>
+</section>
+
+<section class="lesson" id="s10" data-title="测试、观测与排障">
+<div class="section-top"><span class="section-no">10</span><span class="duration">建议 12 分钟 · 用证据支撑工程判断</span></div>
+<h2>通过了什么测试，就说明什么能力</h2>
+<p class="lead">“测试全绿”不能替代对测试边界的解释。并发和租约需要真实 PostgreSQL；浏览器模拟不能证明数据库锁生效；fixture 正确也不能证明模型理解了所有财报。</p>
+<div class="table-wrap"><table><thead><tr><th>验证层</th><th>这个模块应验证的断言</th><th>不能由它证明</th></tr></thead><tbody>
+<tr><td>纯函数 / 组件状态单测</td><td>金额精度、不可比口径、事件重复/乱序、旧快照不回退、diff 不误报单位变化</td><td>PostgreSQL 行锁与真实进程中断</td></tr>
+<tr><td>隔离真实 PostgreSQL</td><td>并发同键只追加一次；旧版本冲突；过期租约拒写；报告不可变；actor 隔离；追加迁移兼容</td><td>模型选取证据与因果判断的质量</td></tr>
+<tr><td>认证 HTTP / 浏览器旅程</td><td>登录 → 解析公司 → 创建 → 开始；查看报告、原文、修订、刷新、取消的合同与 UI</td><td>存档报告读取等同于重新实时生成全流程</td></tr>
+<tr><td>真实进程故障实验</td><td>SIGKILL 后自然租约到期、新 generation 接管、旧写入拒绝、用量与期限保留</td><td>任意 Provider 外部调用 exactly-once</td></tr>
+<tr><td>真实模型评测</td><td>冻结问题、资料、预算与评分口径，计入 partial 和缺答，比较数字、问题覆盖与结论支持</td><td>少量开发案例等同全市场准确率</td></tr>
+</tbody></table></div>
+<h3>怎样写出有价值的并发断言？</h3>
+<pre><code>// 教学伪代码；真实 DB 测试在独立连接/事务上运行
+const [a, b] = await Promise.all([revise(sameKey, samePayload), revise(sameKey, samePayload)]);
+assert(a.planRevision === b.planRevision);
+assert(countPlansForKey(sameKey) === 1);
+assert(await writeCheckpoint(expiredAttempt) rejectsWith "LEASE_LOST");
+assert(readReport(v1).canonicalHash === hashBeforeUpdate);</code></pre>
+<p>重点是验证不变量，而不是只断言函数返回 200。并发测试还要检查数据库最终行数、版本指针和旧执行是否失效；失败必须保留，不通过调大预算、删掉反例或缩小分母取得绿色。</p>
+<h3>日志如何串成一项研究？</h3>
+<p><code>observability.ts</code> 输出白名单 JSON 元数据：taskId、attemptId、request / plan / reportRevision、generation、阶段、工具、时长、tokens、未知用量和进程资源。先按 taskId 聚合，再按 attempt / generation 区分接管前后；定位慢点时比较 acquisition、parsing、retrieval、verification 等阶段。</p>
+<p>日志不保存 actor、完整提示词、工具参数、原文或任意错误文本。当前费用字段明确为 <code>unknown</code>；日志 sink 失败不能改变任务执行权或业务持久化。这里有结构化事件与日志，尚不能声称已经建成完整分布式追踪和 SLO 告警平台。</p>
+<!-- source:observation -->
+<details class="source" id="source-observation"><summary>读真实源码 · 带版本关联的白名单结构化日志</summary><div class="code-meta"><span>src/lib/company-research/observability.ts · 节选</span><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/lib/company-research/observability.ts#L24-L36" target="_blank" rel="noopener noreferrer">核对 GitHub 对应行 ↗</a></div><pre><code><span class="line-no" aria-hidden="true">24</span>  const start = performance.now(), cpu = process.cpuUsage();
+<span class="line-no" aria-hidden="true">25</span>  function emit(event: string, fields: Omit&lt;Partial&lt;ResearchObservation&gt;, 'taskId' | 'attemptId' | 'requestRevision' | 'planRevision' | 'reportRevision' | 'generation'&gt; = {}) {
+<span class="line-no" aria-hidden="true">26</span>    const record: ResearchObservation = { ...fields, schemaVersion: 1, service: 'company-research', at: new Date().toISOString(), event,
+<span class="line-no" aria-hidden="true">27</span>      taskId: token.taskId, attemptId: token.id, requestRevision: token.requestRevision, planRevision: token.planRevision,
+<span class="line-no" aria-hidden="true">28</span>      reportRevision, generation: token.generation, cost: 'unknown' };
+<span class="line-no" aria-hidden="true">29</span>    try { sink(record); } catch { /* A broken logging sink cannot change persistence or execution rights. */ }
+<span class="line-no" aria-hidden="true">30</span>  }
+<span class="line-no" aria-hidden="true">31</span>  return { emit, reportCommitted(revision: number, outcome: string) { reportRevision = revision; emit('report.committed', { stage: 'delivery', outcome }); }, finish(outcome: string, revision = reportRevision) {
+<span class="line-no" aria-hidden="true">32</span>    const elapsedCpu = process.cpuUsage(cpu); reportRevision = revision;
+<span class="line-no" aria-hidden="true">33</span>    emit('attempt.finished', { stage: 'worker', outcome, durationMs: Math.round(performance.now() - start), pid: process.pid,
+<span class="line-no" aria-hidden="true">34</span>      rssBytes: process.memoryUsage().rss, cpuUserMicros: elapsedCpu.user, cpuSystemMicros: elapsedCpu.system });
+<span class="line-no" aria-hidden="true">35</span>  } };
+<span class="line-no" aria-hidden="true">36</span>}</code></pre></details>
+<!-- /source:observation -->
+<h3>碰到问题，按什么顺序查？</h3>
+<div class="table-wrap"><table><thead><tr><th>现象</th><th>先看</th><th>下一步</th></tr></thead><tbody>
+<tr><td>一直 queued</td><td>Worker 是否运行、领取条件、任务/计划状态</td><td>查领取日志、active attempt 与数据库时钟；排除被别的事务锁住</td></tr>
+<tr><td>页面不更新</td><td>EventSource 连接、任务选择、snapshot / eventSequence</td><td>直接 GET 权威快照，检查代理缓冲、终态与客户端 epoch；分清执行停滞和通知停滞</td></tr>
+<tr><td>修订返回 409</td><td>同键是否换内容、expectedRevision 是否过期</td><td>同请求复用原键，真正的新修改先读取最新版本；保留用户草稿</td></tr>
+<tr><td>LEASE_LOST</td><td>attempt / generation / plan 绑定、租约与取消状态</td><td>旧执行停止写入；核实是正常接管保护，还是心跳受阻</td></tr>
+<tr><td>报告 partial</td><td>stopReason、证据缺口、语义审查、工具/时间余额</td><td>区分资料不可得、策略低效、解析待审和模型判断；不把加预算当默认修复</td></tr>
+</tbody></table></div>
+<h3>介绍项目时，当前证据应该怎样讲？</h3>
+<div class="columns"><div class="card"><h4>工程侧有实测依据</h4><p>历史最终运行源码 <code>a4b5a64</code> 在隔离 Linux 的默认发布检查 22/22 通过，另有真实 PG 并发/迁移、认证入口和进程恢复证据。具体环境与跳过项在交付文档，不等同全部 CI、生产发布或任意环境通过。</p></div><div class="card"><h4>模型质量仍有缺口</h4><p>最近四个开发案例数值 36/36，问题与结论支持均为 9/12（75%），后两项未达门槛，2/4 公司完成。S19 / S20 保持 blocked，整体 18/20；已见样本不能替代新的未见样本验收。</p></div></div>
+<p class="small">上述为已有证据，教程编写没有重新运行这些发布门或模型实验。Node 锁文件与 Python 依赖审计问题仍按用户要求暂缓。事实来源：<a href="../plans/research-agent-upgrade/delivery.md">交付与工程范围</a>、<a href="../plans/research-agent-upgrade/evaluation-results.md">真实评测</a>、<a href="../plans/research-agent-upgrade/reliability.md">恢复实验</a>。</p>
+<div class="answer"><div class="eyebrow">45 秒回答 · 怎么证明这套机制可靠？</div><p>“我把验证拆成纯逻辑、真实 PG 并发、认证用户旅程、进程故障和模型质量五层。分别检查版本不变量、旧写入拒绝、页面恢复和证据支持。日志用任务、attempt、版本与 generation 关联，且保留失败和未知用量。工程检查通过与模型质量达标分别报告，避免把 fixture 成功包装成业务准确率。”</p></div>
+<div class="finish"><span>能为一个关键机制说出测试输入、不变量和真实证据。</span><button class="btn" data-learn="s10" aria-pressed="false">我能解释了 ✓</button></div>
+</section>
+
+<section class="lesson" id="s11" data-title="取舍与扩展性追问">
+<div class="section-top"><span class="section-no">11</span><span class="duration">建议 10 分钟 · 回答“为什么”和“下一步”</span></div>
+<h2>每个选型，都用实际约束来解释</h2>
+<div class="table-wrap"><table><thead><tr><th>追问</th><th>当前选择及理由</th><th>什么条件下调整</th></tr></thead><tbody>
+<tr><td>SSE / WebSocket / 轮询？</td><td>研究进度主要单向输出；修改走 HTTP。SSE 使用普通 HTTP 与 EventSource，快照恢复易于解释</td><td>需要大量双向实时协作时再考虑 WebSocket；只需低频状态可用轮询。SSE 仍需处理代理超时、缓冲与连接资源</td></tr>
+<tr><td>为什么 PostgreSQL 队列？</td><td>已有事务数据库，排队、版本变化和事件可在同一事务提交；SKIP LOCKED 支持多领取者</td><td>吞吐、隔离、延迟或调度复杂度实测达到瓶颈后评估 broker；迁移时必须设计数据库与消息投递的 handoff / outbox</td></tr>
+<tr><td>为什么关系字段 + JSONB？</td><td>状态/版本/owner 放关系字段，约束和索引可直接生效；报告、计划、checkpoint 用版本化 JSONB 合同表达</td><td>需要跨报告分析的稳定字段再投影/建索引；不能把所有字段塞 JSONB 后指望任意查询都快</td></tr>
+<tr><td>为什么 Next.js 与 Python 分开？</td><td>Next Route Handler 承接会话、API 和页面；现有 Worker 承接长任务；Python 服务承接文档依赖和资源隔离</td><td>独立部署/伸缩和故障隔离需求增加时拆服务；拆分同时增加网络、认证、超时与版本兼容成本</td></tr>
+<tr><td>为什么先 BM25？</td><td>财报字段、公司和期间有精确词法线索；任务内检索易过滤和复现，当前不需要共享向量库</td><td>语义召回成为实测瓶颈时比较混合检索；增加 embedding 并不能替代引用定位、权限与评测</td></tr>
+</tbody></table></div>
+<h3>数据库约束怎样与应用配合？</h3>
+<p>数据库有 <code>UNIQUE(actor_id, request_key)</code> 防重复创建，plan 的 <code>UNIQUE(task_id, request_key)</code> 约束修订身份；版本主键与外键保证绑定。<code>status='running'</code> 的部分唯一索引限制每任务一个有效 running attempt；不可变版本表还有禁止 UPDATE 的 trigger。应用事务负责业务顺序，数据库约束负责拒绝越过不变量的写入。</p>
+<p>owner 列表有 <code>(actor_id, created_at)</code> 索引，调度有 <code>(status, created_at)</code> 索引。若问“索引为什么够用”，应回答看真实过滤条件、排序、行数与 <code>EXPLAIN (ANALYZE, BUFFERS)</code>，当前课程没有提供吞吐压测结果，不能编造 QPS。</p>
+<!-- source:schema -->
+<details class="source" id="source-schema"><summary>读真实源码 · 版本绑定、唯一约束与不可变 trigger</summary><div class="code-meta"><span>prisma/migrations/20261018140000_research_version_foundation/migration.sql · 分段节选，省略处已标注</span><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/prisma/migrations/20261018140000_research_version_foundation/migration.sql#L17-L71" target="_blank" rel="noopener noreferrer">核对 GitHub 对应行 ↗</a></div><pre><code><span class="line-no" aria-hidden="true">17</span>CREATE INDEX company_research_task_owner ON company_research_tasks(actor_id,created_at);
+<span class="line-no" aria-hidden="true">18</span>CREATE TABLE company_research_requests (
+<span class="line-no" aria-hidden="true">19</span>  task_id TEXT NOT NULL REFERENCES company_research_tasks(id) ON DELETE CASCADE,
+<span class="line-no" aria-hidden="true">20</span>  revision INTEGER NOT NULL CHECK (revision &gt; 0), payload_hash TEXT NOT NULL, spec JSONB NOT NULL,
+<span class="line-no" aria-hidden="true">21</span>  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), PRIMARY KEY(task_id,revision)
+<span class="line-no" aria-hidden="true">22</span>);
+<span class="line-no" aria-hidden="true">23</span>CREATE TABLE company_research_plans (
+<span class="line-no" aria-hidden="true">24</span>  task_id TEXT NOT NULL REFERENCES company_research_tasks(id) ON DELETE CASCADE,
+<span class="line-no" aria-hidden="true">25</span>  revision INTEGER NOT NULL CHECK (revision &gt; 0), request_revision INTEGER NOT NULL,
+<span class="line-no" aria-hidden="true">26</span>  request_key TEXT NOT NULL, payload_hash TEXT NOT NULL, plan JSONB NOT NULL,
+<span class="line-no" aria-hidden="true">27</span>  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), PRIMARY KEY(task_id,revision),
+<span class="line-no" aria-hidden="true">28</span>  UNIQUE(task_id,request_key), UNIQUE(task_id,revision,request_revision),
+<span class="line-no" aria-hidden="true">29</span>  FOREIGN KEY(task_id,request_revision) REFERENCES company_research_requests(task_id,revision) ON DELETE CASCADE
+<span class="line-no" aria-hidden="true">30</span>);
+<span class="line-no" aria-hidden="true">31</span>CREATE TABLE company_research_documents (
+<span class="line-no" aria-hidden="true">…</span>// 中间源码省略，完整上下文见链接
+<span class="line-no" aria-hidden="true">39</span>CREATE TABLE company_research_attempts (
+<span class="line-no" aria-hidden="true">40</span>  id TEXT PRIMARY KEY, task_id TEXT NOT NULL REFERENCES company_research_tasks(id) ON DELETE CASCADE,
+<span class="line-no" aria-hidden="true">41</span>  request_revision INTEGER NOT NULL, plan_revision INTEGER NOT NULL, generation INTEGER NOT NULL CHECK (generation &gt; 0),
+<span class="line-no" aria-hidden="true">42</span>  worker TEXT NOT NULL, status TEXT NOT NULL CHECK (status IN ('running','completed','partial','failed','cancelled','superseded')),
+<span class="line-no" aria-hidden="true">43</span>  lease_until TIMESTAMPTZ NOT NULL, started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), finished_at TIMESTAMPTZ,
+<span class="line-no" aria-hidden="true">44</span>  UNIQUE(task_id,generation), UNIQUE(task_id,id,generation),
+<span class="line-no" aria-hidden="true">45</span>  FOREIGN KEY(task_id,plan_revision,request_revision) REFERENCES company_research_plans(task_id,revision,request_revision) ON DELETE CASCADE
+<span class="line-no" aria-hidden="true">46</span>);
+<span class="line-no" aria-hidden="true">47</span>CREATE UNIQUE INDEX company_research_one_active_attempt ON company_research_attempts(task_id) WHERE status='running';
+<span class="line-no" aria-hidden="true">48</span>CREATE TABLE company_research_report_versions (
+<span class="line-no" aria-hidden="true">…</span>// 中间源码省略，完整上下文见链接
+<span class="line-no" aria-hidden="true">63</span>CREATE FUNCTION company_research_reject_version_update() RETURNS trigger LANGUAGE plpgsql AS $$
+<span class="line-no" aria-hidden="true">64</span>BEGIN RAISE EXCEPTION 'RESEARCH_IMMUTABLE_VERSION'; END;
+<span class="line-no" aria-hidden="true">65</span>$$;
+<span class="line-no" aria-hidden="true">66</span>CREATE TRIGGER immutable_research_request BEFORE UPDATE ON company_research_requests FOR EACH ROW EXECUTE FUNCTION company_research_reject_version_update();
+<span class="line-no" aria-hidden="true">67</span>CREATE TRIGGER immutable_research_plan BEFORE UPDATE ON company_research_plans FOR EACH ROW EXECUTE FUNCTION company_research_reject_version_update();
+<span class="line-no" aria-hidden="true">68</span>CREATE TRIGGER immutable_research_document BEFORE UPDATE ON company_research_documents FOR EACH ROW EXECUTE FUNCTION company_research_reject_version_update();
+<span class="line-no" aria-hidden="true">69</span>CREATE TRIGGER immutable_research_report BEFORE UPDATE ON company_research_report_versions FOR EACH ROW EXECUTE FUNCTION company_research_reject_version_update();
+<span class="line-no" aria-hidden="true">70</span>CREATE TRIGGER immutable_research_event BEFORE UPDATE ON company_research_version_events FOR EACH ROW EXECUTE FUNCTION company_research_reject_version_update();
+<span class="line-no" aria-hidden="true">71</span>COMMIT;</code></pre></details>
+<!-- /source:schema -->
+<h3>如果用户量增加十倍，你先改哪里？</h3>
+<ol><li><strong>先测瓶颈。</strong>任务排队时长、Worker 阶段耗时、DB 查询/锁等待、SSE 连接数与快照体积、OCR 排队情况。</li><li><strong>增加独立 Worker 进程并控制并发。</strong>当前每个 Worker 串行执行任务；多进程可利用现有领取机制，但须压测租约/连接池/模型限额与用户公平性。</li><li><strong>减少无效状态读取。</strong>当前每条 SSE 流约 1500ms 查询事件与完整快照。可评估 LISTEN/NOTIFY 或 Redis 通知来唤醒读取，再由数据库补快照；通知丢失时仍要恢复。</li><li><strong>优化大对象与发布事务。</strong>测量报告/原件 I/O 和持锁时长。若移出事务，需在最终事务内重新验证版本、内容身份与执行权，保留 I/O 后 fencing 的正确性。</li><li><strong>再考虑架构拆分。</strong>任务分片、公平调度、broker、对象存储与解析池都应对应已测瓶颈，不提前承诺已经实现。</li></ol>
+<div class="callout">一个可信的扩展性回答应包含：现在的限制 → 如何测量 → 改动方案 → 新的一致性/故障问题 → 如何验证。只罗列 Redis、Kafka、微服务，解释不了这条链路。</div>
+<div class="answer"><div class="eyebrow">45 秒回答 · 为什么没有一开始就上 Redis / Kafka？</div><p>“当前状态、版本和事件已经在 PostgreSQL，数据库队列能把排队与版本事务放在一起，先减少跨存储一致性成本。单 Worker 串行与每连接快照查询是明确限制，后续先测排队和数据库压力，再增加受控进程或通知机制。若换 broker，会同步设计消息重复、事务投递与接管协议。”</p></div>
+<div class="finish"><span>能用“约束、选择、代价、调整条件”回答至少三项技术选型。</span><button class="btn" data-learn="s11" aria-pressed="false">我能解释了 ✓</button></div>
+</section>
+
+<section class="lesson" id="s12" data-title="面试题库与口述训练">
+<div class="section-top"><span class="section-no">12</span><span class="duration">分轮练习 · 每题先说 30—60 秒，再展开</span></div>
+<h2>把理解练成能被追问的回答</h2>
+<p>先用“场景 → 机制 → 失败反例 → 验证”四句话回答。展开后对照机制解释和追问；如果说不出边界，标记待复习，回到对应章节。不要将示范回答中的工作经历表述为自己未实际完成的个人经历。</p>
+<div class="mock" aria-label="随机口述练习"><div class="lab-head"><h3 style="margin:0">抽一题，脱稿回答</h3><span class="timer" id="mock-time" role="timer" aria-label="口述倒计时">60s</span></div><div class="mock-question" id="mock-question">先抽一题；计时仅帮助组织表达，不评判掌握程度。</div><div class="controls"><button class="control" id="mock-next">随机抽题</button><button class="control" id="mock-start">开始 60 秒</button><button class="control" id="mock-reset">重置计时</button><button class="control" id="mock-reveal">展开参考回答</button><button class="control" id="mock-weak">这题需复习</button><button class="control" id="mock-mastered">这题我能解释</button></div><div id="mock-answer" class="mock-answer" hidden></div><p class="small" id="mock-status" role="status">题目来自下方题库；当前筛选有结果时按筛选范围抽题。</p></div>
+<div class="qa-filters"><input type="search" id="qa-search" placeholder="搜索：幂等、租约、SSE、精度……" aria-label="搜索面试问题"><select id="qa-category" aria-label="题目分类"><option value="all">全部分类</option><option value="frontend">前端与交互</option><option value="database">API 与数据库</option><option value="reliability">队列与可靠性</option><option value="evidence">数据与证据</option><option value="security">安全与成本</option><option value="engineering">工程与取舍</option></select><label><input type="checkbox" id="qa-weak"> 仅待复习</label></div>
+<div id="question-count" role="status"></div><div class="question-list" id="question-list"></div>
+<noscript><p>题库需要 JavaScript；各章的口述示范与源码仍可直接阅读。</p></noscript>
+<div class="finish"><span>不追求背熟 36 段文字；优先能完整推演一个竞争场景和一个故障场景。</span><button class="btn" data-learn="s12" aria-pressed="false">我能解释了 ✓</button></div>
+</section>
+
+<section class="lesson" id="s13" data-title="源码串读与最后自检">
+<div class="section-top"><span class="section-no">13</span><span class="duration">建议 15 分钟 · 让口述落到源码</span></div>
+<h2>沿着一条链路串读，比随机看文件更有效</h2>
+<p>代码链接固定到教程核对的 <code>0864b35</code>，避免后续 main 变化导致讲解错位。离线可读页面内的源码节选；联网时打开对应 GitHub 行号核对完整上下文。若项目实现变化，应先复核代码，再更新教程。</p>
+<div class="table-wrap"><table><thead><tr><th>阅读顺序</th><th>带着什么问题看</th><th>固定版本源码</th></tr></thead><tbody id="source-map"><tr><td>01 · 事务内领取任务：SKIP LOCKED 与 attempt</td><td>排队与长任务在哪里分开？</td><td><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/lib/company-research/execution-store.ts#L25-L25" target="_blank" rel="noopener noreferrer">src/lib/company-research/execution-store.ts</a><br><a href="#source-queue">本页节选</a></td></tr>
+<tr><td>02 · 创建入口：同源、可信身份、合同与公司核对</td><td>哪些输入必须在服务端重新验证？</td><td><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/app/api/company-research/tasks/route.ts#L18-L18" target="_blank" rel="noopener noreferrer">src/app/api/company-research/tasks/route.ts</a><br><a href="#source-create">本页节选</a></td></tr>
+<tr><td>03 · 前端 reducer：只接受新鲜状态</td><td>序号、generation 与 needsSnapshot 分别保护什么？</td><td><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/app/company-research/financial/workbench-state.ts#L4-L4" target="_blank" rel="noopener noreferrer">src/app/company-research/financial/workbench-state.ts</a><br><a href="#source-stream-state">本页节选</a></td></tr>
+<tr><td>04 · SSE 路由：持久事件、快照与读取间隔</td><td>传输断开之后为什么仍能恢复？</td><td><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/app/api/company-research/tasks/%5Bid%5D/events/route.ts#L20-L20" target="_blank" rel="noopener noreferrer">src/app/api/company-research/tasks/[id]/events/route.ts</a><br><a href="#source-sse-route">本页节选</a></td></tr>
+<tr><td>05 · React hook：epoch、重连与清理</td><td>切换任务后如何拒绝旧请求？</td><td><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/app/company-research/financial/useFinancialResearch.ts#L25-L25" target="_blank" rel="noopener noreferrer">src/app/company-research/financial/useFinancialResearch.ts</a><br><a href="#source-hook">本页节选</a></td></tr>
+<tr><td>06 · 真实修订事务：幂等先于版本检查</td><td>两个标签页与网络重试怎样区分？</td><td><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/lib/company-research/version-store.ts#L75-L75" target="_blank" rel="noopener noreferrer">src/lib/company-research/version-store.ts</a><br><a href="#source-revision">本页节选</a></td></tr>
+<tr><td>07 · 写入端执行权与过期心跳检查</td><td>进程还活着，为什么已经不能写？</td><td><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/lib/company-research/attempt-store.ts#L7-L7" target="_blank" rel="noopener noreferrer">src/lib/company-research/attempt-store.ts</a><br><a href="#source-attempt">本页节选</a></td></tr>
+<tr><td>08 · decimal-v1：十进制与百分比算法</td><td>金额怎样避免二进制浮点误差？</td><td><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/lib/company-research/exact-decimal.ts#L5-L5" target="_blank" rel="noopener noreferrer">src/lib/company-research/exact-decimal.ts</a><br><a href="#source-decimal">本页节选</a></td></tr>
+<tr><td>09 · 历史引用解析与精确高亮</td><td>旧报告点击的原文怎么固定？</td><td><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/lib/company-research/source-reader.ts#L10-L10" target="_blank" rel="noopener noreferrer">src/lib/company-research/source-reader.ts</a><br><a href="#source-reader">本页节选</a></td></tr>
+<tr><td>10 · 发布前复验、再次 fencing 与检查回执</td><td>为什么工具校验后还要在持久化入口重验？</td><td><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/lib/company-research/report-store.ts#L45-L45" target="_blank" rel="noopener noreferrer">src/lib/company-research/report-store.ts</a><br><a href="#source-publication">本页节选</a></td></tr>
+<tr><td>11 · 更新预算快照与来源 read_at</td><td>新预算轮次怎样保留累计账本？</td><td><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/lib/company-research/update-run-store.ts#L5-L5" target="_blank" rel="noopener noreferrer">src/lib/company-research/update-run-store.ts</a><br><a href="#source-budget">本页节选</a></td></tr>
+<tr><td>12 · 事实、结论与来源的确定性差异</td><td>单位变化与证据变化怎样分开？</td><td><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/lib/company-research/report-diff.ts#L6-L6" target="_blank" rel="noopener noreferrer">src/lib/company-research/report-diff.ts</a><br><a href="#source-diff">本页节选</a></td></tr>
+<tr><td>13 · 公网地址验证、DNS 绑定与逐跳重验证</td><td>URL 是公网，为什么连接仍可能有风险？</td><td><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/lib/company-research/network.ts#L13-L13" target="_blank" rel="noopener noreferrer">src/lib/company-research/network.ts</a><br><a href="#source-network">本页节选</a></td></tr>
+<tr><td>14 · 带版本关联的白名单结构化日志</td><td>接管前后的日志怎样串起来？</td><td><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/src/lib/company-research/observability.ts#L24-L24" target="_blank" rel="noopener noreferrer">src/lib/company-research/observability.ts</a><br><a href="#source-observation">本页节选</a></td></tr>
+<tr><td>15 · 版本绑定、唯一约束与不可变 trigger</td><td>应用检查与数据库约束如何分工？</td><td><a href="https://github.com/xuwenjun2001/wolfBot/blob/0864b35983558c31430aa4ffec42e72437f71f5e/prisma/migrations/20261018140000_research_version_foundation/migration.sql#L17-L17" target="_blank" rel="noopener noreferrer">prisma/migrations/20261018140000_research_version_foundation/migration.sql</a><br><a href="#source-schema">本页节选</a></td></tr></tbody></table></div>
+<h3>五分钟面试演示怎么安排？</h3>
+<ol class="step-list"><li><strong>0:00—0:45 · 说用户任务。</strong><p>展示两期财报、研究问题与计划。先说用户为什么需要这个工作台，再给模块分层。</p></li><li><strong>0:45—1:40 · 解释异步链路。</strong><p>创建 draft、开始返回 202、Worker 领取、公开 checkpoint、SSE 快照。指出一次 HTTP 请求不等待模型完成。</p></li><li><strong>1:40—2:40 · 展示一个结果与原文。</strong><p>从事实/结论回到绑定版本的原件，解释数字口径与原因证据，保留 evidence_gap。</p></li><li><strong>2:40—4:00 · 推演一个竞争或故障。</strong><p>两页修订的幂等/409，或进程失效后的 lease / generation。可以用本课演练展示，不将合成演练声称为真实生产故障。</p></li><li><strong>4:00—5:00 · 给证据与取舍。</strong><p>说明真实验证层、质量未达标项，以及下一步如何测瓶颈和改进。现场网络不稳定时，使用事先保存且标注日期/版本的公开演示材料。</p></li></ol>
+<h3>闭上页面之前，做一次无提示自检</h3>
+<div class="checklist" id="final-checklist"><label><input type="checkbox" data-check="trace">我能把一次用户操作讲到数据库、Worker、报告与浏览器恢复。</label><label><input type="checkbox" data-check="versions">我能画出 task、request、plan、attempt、generation、sequence、report 的关系。</label><label><input type="checkbox" data-check="race">我能解释同键重试为什么先于版本冲突检查，为什么前端禁用按钮不够。</label><label><input type="checkbox" data-check="lease">我能推演 Worker A 过期、B 接管、A 迟到写入与取消四个分支。</label><label><input type="checkbox" data-check="snapshot">我能说明 SSE 事件为什么不直接变成报告正文，旧请求如何被挡住。</label><label><input type="checkbox" data-check="source">我能从某版结论定位其原件，并区分逐字引用、数字正确与因果支持。</label><label><input type="checkbox" data-check="budget">我能区分修订、pending 重试和新证据预算轮次。</label><label><input type="checkbox" data-check="proof">我能说出做过的验证、当前质量限制和一个有测量依据的后续方案。</label></div>
+<p class="small" id="checklist-status" role="status">自检记录保存在当前浏览器，供复习使用。</p>
+<div class="columns"><div class="card"><h4>继续看项目证据</h4><p><a href="../plans/research-agent-upgrade/delivery.md">交付、架构与演示入口</a><br><a href="../plans/research-agent-upgrade/progress.md">跨会话进度与验证记录</a><br><a href="../plans/research-agent-upgrade/evaluation-results.md">真实模型评测与适用限制</a><br><a href="../plans/research-agent-upgrade/decisions.md">选型与 D32 预算决策</a></p></div><div class="card"><h4>安排自己的复习</h4><p>第一天能讲清链路；第二天复述并发与恢复；第三天拿源码解释证据与预算。每次先口述，再对照题库。已掌握按钮只是自评，不代表系统给你打了能力分。</p><button class="btn" id="reset-study">清除本页学习记录</button><p id="storage-status" class="small" role="status">仅保存章节、自检与题目自评，不保存研究数据。</p></div></div>
+<div class="finish"><span>真正能回答的标志：换一个故障时序，你仍然能推导出系统行为。</span><button class="btn" data-learn="s13" aria-pressed="false">我能解释了 ✓</button></div>
+</section>
+<footer class="footer">wolfbot 全栈教学课 · 基于固定源码版本核对 · 本页可离线阅读，交互均在浏览器本地运行。<p class="print-note">打印前已展开正文与面试答案。模拟状态只是当前教学操作的展示，不代表应用实测。</p></footer>
+</main></div>
+<script id="question-data" type="application/json">
+[
+  {
+    "id": "q01",
+    "category": "frontend",
+    "lesson": "s01",
+    "title": "用一分钟介绍这个模块，怎样体现全栈能力？",
+    "answer": "从用户任务讲起：对比两期财报，了解变化及其依据。React 工作台负责计划、进度、报告和原文；Next API 校验会话、权限、合同与版本；PostgreSQL 保存任务、不可变版本和事件；独立 Worker 执行耗时研究，SSE 与快照把状态送回页面。值得深入展开的是修订竞争、崩溃接管和结论溯源。",
+    "mechanism": "按用户操作串联前后端，不按技术名词罗列。创建 draft 和开始排队是两个接口；202 只代表接收，报告通过版本绑定和发布检查后才成为可读结果。",
+    "mistake": "只说“Next.js + 大模型 + 数据库”，或把本来已有的内核说成自己从零实现。",
+    "followup": "用户关掉浏览器后任务为什么继续？页面再次打开如何找到进度？"
+  },
+  {
+    "id": "q02",
+    "category": "frontend",
+    "lesson": "s03",
+    "title": "前端哪些是服务端状态，哪些是本地交互状态？",
+    "answer": "任务、计划、事实、用量和报告以服务端快照为准。当前选择、请求 epoch、连接/加载状态和表单草稿是本地交互状态。事件只标记快照失效，不直接拼成报告。先区分所有权，才能解释刷新、切换任务和重连后哪个状态需要恢复。",
+    "mechanism": "workbench-state 分离 snapshot、eventSequence 和 needsSnapshot。事件序号可以先于快照，但页面不会因此伪造尚未加载的报告内容。",
+    "mistake": "把收到的每个事件 append 到同一个数组，再假定这个数组就是数据库当前状态。",
+    "followup": "eventSequence=15、snapshot.sequence=12 时，页面知道什么，还缺什么？"
+  },
+  {
+    "id": "q03",
+    "category": "frontend",
+    "lesson": "s03",
+    "title": "快速从任务 A 切到 B，如何防止 A 的迟到响应覆盖 B？",
+    "answer": "切换时递增选择 epoch，重置相关状态，并 abort 旧请求、关闭旧 EventSource、清理重连定时器。异步回调还要检查当前 epoch 与 selected task。单靠 abort 不足以处理已经完成、已排入回调队列的结果，所以还要在接收状态时校验 taskId。",
+    "mechanism": "资源清理减少无效工作，epoch 处理同一任务反复选择时的旧回调，taskId 防跨任务，sequence 与 generation 再防状态回退；这些保护针对不同竞争。",
+    "mistake": "认为 React 卸载或 AbortController 会自动撤回所有已经发生的异步回调。",
+    "followup": "A → B → A 时，只比较 taskId 为什么仍有风险？"
+  },
+  {
+    "id": "q04",
+    "category": "frontend",
+    "lesson": "s03",
+    "title": "SSE 丢事件、重复事件或断线以后怎么办？",
+    "answer": "连接先发完整快照，研究事件只通知失效。客户端忽略不同任务、已见序号和旧 generation 的事件，也拒绝回退快照。断线后先重新 GET 权威快照，再对未终态任务连接 SSE。这样恢复正确性不依赖浏览器完整保存每一条增量事件。",
+    "mechanism": "当前流每轮读取持久事件与最新快照，约等待 1500ms。acceptSnapshot 用 sequence 与 generation 防回退，并以 eventSequence 判断快照是否仍落后。",
+    "mistake": "只说 EventSource 会自动重连，或只靠 Last-Event-ID 就认为客户端报告一定完整。",
+    "followup": "事件跳过 11—14 直接到 15，是否一定要在前端逐条补出所有状态？"
+  },
+  {
+    "id": "q05",
+    "category": "frontend",
+    "lesson": "s11",
+    "title": "为什么选择 SSE，而不是 WebSocket？",
+    "answer": "研究进度主要由服务端单向通知，用户提交与修订仍可走 HTTP，SSE 足够表达这种交互。它复用普通 HTTP 与 EventSource，但仍要处理代理缓冲、断线与连接资源。若未来出现大量双向实时协作，再用实际需求比较 WebSocket。",
+    "mechanism": "SSE 是传输方式，快照恢复才是应用一致性协议。当前实现也不是 token 流，它发送持久任务事件和完整任务快照。",
+    "mistake": "声称 SSE 没有连接成本，或 WebSocket 天生更快所以一定更好。",
+    "followup": "如果反向代理缓冲输出，页面不更新时你先验证哪里？"
+  },
+  {
+    "id": "q06",
+    "category": "frontend",
+    "lesson": "s04",
+    "title": "修订计划能否直接做乐观更新？",
+    "answer": "可以即时保留用户草稿和提交中反馈，但权威计划版本与执行状态必须等服务端事务结果。当前修订可能遇到幂等冲突、版本冲突或取消，不能先在页面宣布新计划已生效。409 后读取最新状态，让用户判断如何处理草稿。",
+    "mechanism": "ResearchPlanEditor 将 payload 与请求 key 关联，网络重试复用身份，成功后清除暂存。字段级冲突提示与自动三方合并属于后续优化，当前不要声称已有。",
+    "mistake": "前端禁用提交按钮就足够去重；或者失败后丢弃用户草稿并自动覆盖。",
+    "followup": "请求超时但服务端已经提交，按钮重新可点后应使用哪个 key？"
+  },
+  {
+    "id": "q07",
+    "category": "database",
+    "lesson": "s02",
+    "title": "为什么需要 request、plan、attempt、generation 和 report 多套标识？",
+    "answer": "它们回答不同问题：request 表达用户需求，plan 表达执行计划，attempt 是一次执行实例，generation 撤销旧实例写入权，report 是不可变交付版本。sequence 另外表达公开状态推进顺序。分开后才知道旧报告对应哪个需求、哪个执行仍能写、页面是否落后。",
+    "mechanism": "报告通过 request/plan 与 attempt/generation 绑定；数据库外键、版本主键和应用发布检查共同保护这些关系。budgetRevision 又单独表示成本轮次。",
+    "mistake": "用一个 updatedAt 或统一 version 替代所有语义，却无法回答重试是否改变用户需求。",
+    "followup": "只发生 Worker 接管，哪些版本应保留，哪个执行标识会变化？"
+  },
+  {
+    "id": "q08",
+    "category": "database",
+    "lesson": "s02",
+    "title": "已经用了 TypeScript，为什么 API 还要 Zod？",
+    "answer": "TypeScript 在运行时不会替我们验证 HTTP body、数据库 JSON 或模型工具参数。Zod 负责把不可信数据解析为明确合同，限制字段、类型、范围和版本。服务端还要执行公司身份核对、权限和数据库并发检查，这些业务规则也不能只靠类型系统。",
+    "mechanism": "创建接口有 body 体积上限和 strict schema；来源与报告也有版本化 schema。类型正确不代表 expectedRevision 仍新鲜，也不代表 actor 有权限。",
+    "mistake": "把前端表单校验当服务端安全边界，或认为 TS interface 会过滤网络传入的额外字段。",
+    "followup": "客户端上传一个 issuerId 与 symbol 不匹配的请求，该由谁决定最终身份？"
+  },
+  {
+    "id": "q09",
+    "category": "database",
+    "lesson": "s04",
+    "title": "幂等键为什么还要配 payload hash？为什么先查幂等再查版本？",
+    "answer": "key 识别一次业务操作，hash 确认这是同一内容。相同 key 与内容重试不重复追加；同 key 换内容报冲突。必须先识别旧请求，再检查最新版本，否则服务端已经成功的请求因响应丢失重试时，会被它自己推进的版本号错误拒绝。",
+    "mechanism": "hash 包含 expected request/plan 与 changes 的规范化表示。先锁任务查 key，再比较 hash，只有新操作才做版本核对。当前 revise 路由再读最新任务快照，幂等不承诺两次响应字节相同。",
+    "mistake": "每次点击都生成新 key，或者相同 key 无论 payload 是什么都直接返回成功。",
+    "followup": "新 key 但 expectedRevision 已旧，应该去重成功还是 409？"
+  },
+  {
+    "id": "q10",
+    "category": "database",
+    "lesson": "s04",
+    "title": "两个标签页同时修订，数据库为什么不会静默覆盖？",
+    "answer": "两次请求锁同一用户的任务行，事务顺序执行。第一个核对旧版本后追加新 request/plan 并更新指针；第二个不同操作再拿到锁时发现 expectedRevision 落后，返回 409。同一次操作的并发重试则先通过幂等记录复用结果。",
+    "mechanism": "行锁串行化检查和变更，预期版本表达用户编辑的基线，幂等处理请求身份。三者作用不同；事务提交后还要靠 generation 拒绝旧 Worker。",
+    "mistake": "只在 SELECT 时检查版本，再在事务外 UPDATE；这会留下检查与写入之间的竞争窗口。",
+    "followup": "如果去掉 expectedRevision、只保留行锁，用户会遭遇什么问题？"
+  },
+  {
+    "id": "q11",
+    "category": "database",
+    "lesson": "s01",
+    "title": "为什么事件和状态要在同一事务写？这是 event sourcing 吗？",
+    "answer": "如果状态已提交但通知记录失败，页面可能迟迟不知道变化；如果先记事件但事务回滚，又会产生虚假变化。当前把状态变化、递增 sequence 与持久事件放在同一事务，SSE 再读取。系统权威读取依然是快照，不能据此声称整个系统采用事件溯源重建。",
+    "mechanism": "emitResearchEvent 在事务内推进任务 sequence，并以 taskId/sequence 作为事件主键写入封套。没有要求客户端靠事件逐条重算全部领域状态。",
+    "mistake": "把“有事件表”直接等同 event sourcing，或认为写数据库与发 SSE 可以天然原子完成。",
+    "followup": "未来换消息 broker，数据库提交和投递之间如何避免丢失？"
+  },
+  {
+    "id": "q12",
+    "category": "database",
+    "lesson": "s11",
+    "title": "数据库有哪些约束与索引？如何判断是否需要优化？",
+    "answer": "创建与修订分别有用户/任务范围的 key 唯一约束，版本有复合主键与绑定外键，running attempt 有部分唯一索引，不可变版本表禁止 UPDATE。查询侧有 owner/created_at 和 status/created_at 索引。优化要看实际查询、基数、锁等待和执行计划，不能只背索引名。",
+    "mechanism": "应用事务表达业务顺序，数据库约束防止错误写入越过不变量。报告等嵌套内容存 JSONB，但调度、权限和版本指针保留关系字段。",
+    "mistake": "认为所有 JSONB 查询天然有索引，或把唯一索引当作长期 Worker 租约。",
+    "followup": "大量历史 completed 行时，领取查询怎么测量，是否考虑部分索引？"
+  },
+  {
+    "id": "q13",
+    "category": "reliability",
+    "lesson": "s05",
+    "title": "PostgreSQL 队列怎样让多个 Worker 领取任务？",
+    "answer": "领取事务查询 queued 或 running 且租约已失效的任务，用 FOR UPDATE OF t SKIP LOCKED 跳过其他领取事务锁住的行，再创建 attempt 与租约后提交。这样并发领取能分散到不同任务；真正运行时已经释放行锁，写入权由租约与 token 约束。",
+    "mechanism": "按 created_at 排序不等同跨用户公平。当前每个 Worker 进程串行执行，并在旧研究和新财报任务间轮换，尚无复杂公平调度器。",
+    "mistake": "说 SKIP LOCKED 会锁住任务整个执行过程，或者它能单独阻止旧进程迟到写入。",
+    "followup": "有一个长时间未提交的领取事务，其他 Worker 还能处理哪些任务？"
+  },
+  {
+    "id": "q14",
+    "category": "reliability",
+    "lesson": "s05",
+    "title": "租约、心跳、generation fencing 分别解决什么？",
+    "answer": "租约提供有限执行期，心跳续期，失效后允许接管。generation 与 active attempt 把有效写入身份绑定到当前执行；旧进程还活着也不能用旧 token 落库。校验必须在持任务锁的写事务中执行，租约时间以数据库时钟为准。",
+    "mechanism": "assertResearchAttempt 同时核对 task、attempt、request/plan、generation、worker、状态、active 指针、未取消和 lease。过期心跳不能复活失效租约。",
+    "mistake": "以为分布式锁过期就自动终止旧进程，或只比较 generation 不再检查 lease。",
+    "followup": "只有一个 Worker，没有 B 接管，A 的租约过期后还能写吗？"
+  },
+  {
+    "id": "q15",
+    "category": "reliability",
+    "lesson": "s05",
+    "title": "Worker 被 SIGKILL 后，系统按什么顺序恢复？",
+    "answer": "心跳停止，任务暂时保持 running。另一个 Worker 等数据库确认租约到期后领取，旧 attempt 被 superseded，新 attempt 获取递增 generation。从公开 checkpoint 重建上下文，并继承本轮剩余额度与 deadline。旧 token 的晚到写入被拒绝。",
+    "mechanism": "真实故障实验需要观察自然租约到期，而不是手动改数据库立刻接管。外部请求可能已经产生费用，但尚无可结算响应时用量继续保留 unknown。",
+    "mistake": "说从模型隐藏思考原地续跑，或恢复时把工具数与截止时间重新初始化。",
+    "followup": "如果崩溃时本轮工具预算已经耗尽，接管者应怎样交付？"
+  },
+  {
+    "id": "q16",
+    "category": "reliability",
+    "lesson": "s05",
+    "title": "用户取消任务，为什么仅调用 AbortController 不够？",
+    "answer": "AbortController 主要尝试中止当前进程的 I/O，不能保证已经发出的请求立刻停止，也不能撤销其他进程。服务端取消事务还要记录取消、递增 generation、清空 active attempt 并结束当前 attempt。这样落库端立即失去旧写入权。",
+    "mechanism": "网络取消属于资源控制，数据库状态与 fencing 属于业务正确性。任务已经终态且无活跃 attempt 时，重复取消可不产生新变化。",
+    "mistake": "把浏览器关闭、断开 SSE 或停止 fetch 等同服务端研究已经取消。",
+    "followup": "取消与报告发布同时到达时，哪个事务先获得任务锁会怎样影响结果？"
+  },
+  {
+    "id": "q17",
+    "category": "reliability",
+    "lesson": "s05",
+    "title": "这套系统能保证 exactly-once 吗？",
+    "answer": "不能对全链路外部操作作这个承诺。外部读取已完成、检查点未保存时崩溃，接管者可能重发，模型请求也可能已计费。当前通过幂等、版本绑定与 fencing 保护有效业务落库。若加入扣款、发单等副作用，需要下游业务幂等与投递/补偿协议。",
+    "mechanism": "数据库内的原子提交有明确范围，文件系统、模型 Provider 和其他服务不自动加入同一事务。文件 bytes 存在也不代表报告记录已发布。",
+    "mistake": "只因为使用事务和唯一索引，就宣传所有工具、网络请求与费用 exactly-once。",
+    "followup": "如果业务改成真实交易下单，你会先增加什么不变量与协议？"
+  },
+  {
+    "id": "q18",
+    "category": "reliability",
+    "lesson": "s05",
+    "title": "checkpoint 保存什么？为何 artifact I/O 后再次 fencing？",
+    "answer": "checkpoint 保存可公开恢复的事实、结论、观察、步骤与停止原因，并绑定 request/plan；它不保存模型隐藏推理。报告与文档的 artifact I/O 可能跨过租约边界，所以持久化元数据前要再次检查执行权，防止刚过期的进程发布结果。",
+    "mechanism": "文件与数据库没有跨存储原子事务，内容寻址产物可能留下未引用 bytes；清理应遵循保留策略。先做 I/O 再提交时也要复核内容身份与版本。",
+    "mistake": "认为进入事务时租约有效，事务里任意耗时 I/O 后永远都能继续写。",
+    "followup": "把原件存储换对象存储，哪些正确性检查仍需保留？"
+  },
+  {
+    "id": "q19",
+    "category": "evidence",
+    "lesson": "s06",
+    "title": "为什么文档解析要分原生解析与独立 OCR 服务？",
+    "answer": "原生文本 PDF/HTML 优先直接解析，扫描页和复杂表格交给 Python 服务的版面/表格与中文 OCR 工具。独立环境隔离重依赖、内存、并发与取消。返回页、块和表格定位，OCR needs_review 保留为质量状态，不因为识别出了数字就宣称已核实。",
+    "mechanism": "服务收受控 PDF bytes，不接受任意 URL 或本机路径；并发上限、忙时 429、超时与页缓存使资源边界可解释。解析成功和业务事实通过分别计分。",
+    "mistake": "说 OCR 能保证扫描版面任意准确，或把识别置信度直接当财务事实真实性。",
+    "followup": "某表格小数点识别丢失，后续系统应该怎样表现？"
+  },
+  {
+    "id": "q20",
+    "category": "evidence",
+    "lesson": "s06",
+    "title": "没有向量数据库，还能算研究检索吗？",
+    "answer": "可以。当前任务私有索引采用 BM25 词法排序，结合公司、期间、asOf 与字段过滤，有界返回命中，再读取原文。财报字段有精确词法特征，这个方案简单且可复现。是否增加向量或混合检索，应通过召回和最终答案评测判断。",
+    "mechanism": "检索只决定读哪些材料，不承担授权、引用定位与结论核验。共享向量索引还会带来任务隔离、时间过滤、重建版本与删除保留问题。",
+    "mistake": "把用了 embedding 等同证据正确，或声称当前已经落地共享向量 RAG。",
+    "followup": "命中了风险段落上半页却漏了续页，你怎么测量并改进？"
+  },
+  {
+    "id": "q21",
+    "category": "evidence",
+    "lesson": "s06",
+    "title": "金额为什么使用十进制字符串与 BigInt？",
+    "answer": "Number 的二进制浮点可能在十进制金额中产生误差，格式化显示无法消除中间计算问题。decimal-v1 用整数系数和 scale 表示值，单位换算乘 10 的幂，减法对齐 scale。同比用绝对基数、六位小数舍入；零基数返回不可计算，并保留原始值和单位。",
+    "mechanism": "CNY 单位元/千元/万元/亿元有固定幂次；输入有长度与精度上限。负基数分母用绝对值是明确业务规则，不是所有财务比率都适用的定义。",
+    "mistake": "对所有金额先 Number(raw)，最后 toFixed(2) 就声称精确计算。",
+    "followup": "0 → 100 与 -100 → -80 分别怎样显示变化率？"
+  },
+  {
+    "id": "q22",
+    "category": "evidence",
+    "lesson": "s06",
+    "title": "为什么两个净利润数字不一定能直接同比？",
+    "answer": "先核对公司、指标、合并范围、期间长短与累计口径、重述和会计基础，再看值是否已知、来源是否待审。全年对半年、合并对母公司、上期原数对本期重述数都可能不可比。缺失不填零，冲突不随便选一个数字。",
+    "mechanism": "factContextDifference 与 period 检查在计算前执行，之后才标准化单位。单季度推导需要前序累计值，不能把缺失累计默认为零。",
+    "mistake": "只要字段名都是净利润，就直接减或除；单位不同只改展示标签。",
+    "followup": "用全年累计减前三季度累计时，需要确认哪些额外条件？"
+  },
+  {
+    "id": "q23",
+    "category": "evidence",
+    "lesson": "s07",
+    "title": "有引用为什么仍可能是幻觉？如何核验？",
+    "answer": "引用存在只说明找得到一段话，不说明它支持结论强度。系统核对资料身份与时间、quote 定位、金额/单位/列含义，再用独立调用审查语义支持，并把回执绑定内容 hash。发布函数复验，证据不足保留缺口。当前审查是同配置模型的另一次调用，不保证错误完全独立。",
+    "mechanism": "收入增长与利润下降两行金额，不能证明成本上涨这一原因；引用与事实变动会影响 claim review hash，旧回执不能任意复用。",
+    "mistake": "只做字符串 includes 就宣称因果正确，或把同模型审查称为绝对可信裁判。",
+    "followup": "模型审查说 supported，但用户读原文不同意，completed 与人工验收如何处理？"
+  },
+  {
+    "id": "q24",
+    "category": "evidence",
+    "lesson": "s08",
+    "title": "报告 diff 为什么用确定性程序？",
+    "answer": "需要稳定回答哪个事实、结论状态和来源发生变化。程序按指标/范围/期间对齐，先统一金额单位，再比数值与会计口径；按 claim id 比状态、文本和引用，并列出文档版本变化。LLM 可以辅助解释，但不应凭空改变差异或编造业务原因。",
+    "mechanism": "12300 万元与 1.23 亿元数值相同，不是金额变化；supported 变成 evidence_gap 是撤回；来源换版本应显示证据差异。旧报告不可修改。",
+    "mistake": "对两份报告整段文本做 diff 就认为得到可靠业务差异，或让模型修改 v1 使其看起来一致。",
+    "followup": "金额没变但来源版本换了，报告整体是否仍可能 changed？"
+  },
+  {
+    "id": "q25",
+    "category": "security",
+    "lesson": "s09",
+    "title": "防止越权读取任务，需要在哪些层做什么？",
+    "answer": "API 从可信会话获取 actor，检查运行/读取动作权限，repository 再按 taskId 与 actor 所有权过滤。报告历史、来源与原件也沿用这条边界。客户端传 actorId、随机 taskId 或 bytes hash 都不能获得权限；前端隐藏按钮只改善交互。",
+    "mechanism": "同源检查约束浏览器修改请求来源，不能替代登录。私有 SSE 与快照 no-store 避免被共享缓存；hash 是内容身份，不是访问凭证。",
+    "mistake": "只校验用户已经登录，不检查资源归属，或者信任 body 的 userId。",
+    "followup": "用户拿到另一人的完整原件 hash，为什么仍不能读取？"
+  },
+  {
+    "id": "q26",
+    "category": "security",
+    "lesson": "s09",
+    "title": "下载财报如何防 SSRF 和 DNS rebinding？",
+    "answer": "限制 HTTP(S)、公开端口和无 URL 凭据，解析并检查全部地址为公网，然后将已经通过的地址绑定到实际 socket。每跳重定向重新验证，并限制次数。下载时同时校验状态、类型/签名与真实累计字节；仅检查域名字符串或 Content-Length 不够。",
+    "mechanism": "DNS rebinding 利用验证与连接之间的重新解析差异；固定 lookup 返回值让实际连接使用已批准地址，IPv4 映射 IPv6 也要归一检查。",
+    "mistake": "拦住 localhost、127.0.0.1 就认为安全，或者跳转后不再检查地址。",
+    "followup": "公网域名 302 到内网 IP，校验应该在哪一跳执行？"
+  },
+  {
+    "id": "q27",
+    "category": "security",
+    "lesson": "s09",
+    "title": "财报包含恶意 HTML 或提示词注入，怎样应对？",
+    "answer": "页面将来源当文本渲染，只做受控精确高亮，避免执行文档 HTML。模型读取时把资料当数据，限制工具集合与参数合同，敏感动作由服务端权限和领域规则决定。提示词声明并不足以保证模型不受骗，持久化与发布入口仍须执行约束。",
+    "mechanism": "XSS 针对浏览器执行边界，提示词注入针对模型指令边界，SSRF 针对服务端网络边界；需要分别设防，不能用一个转义函数解决全部。",
+    "mistake": "只加一句“忽略恶意指令”就声称完全解决 prompt injection。",
+    "followup": "原文要求调用工具上传其他任务资料，哪一层必须拒绝？"
+  },
+  {
+    "id": "q28",
+    "category": "security",
+    "lesson": "s08",
+    "title": "预算为什么分本轮与累计？哪些操作能开新预算？",
+    "answer": "本轮约束这次研究，累计说明任务总成本。修订、重试和接管继承原轮余额与期限；真正的新合格证据更新按 D32 保存旧轮快照、增加 budgetRevision 并从当前总工具数设 base，下一次领取再开始时间窗。累计工具、tokens 和未知请求不清零。",
+    "mechanism": "没有新资料时 no-op；pending-only 重试不是新轮，耗尽明确拒绝。工具在外部执行前原子预占，防止并发穿透上限。",
+    "mistake": "每点击重试都重置 40 次与 20 分钟，或沿用已被取代的“所有更新永远首次 deadline”。",
+    "followup": "发现来源、读过来源和标记 checked 分别在什么时候？"
+  },
+  {
+    "id": "q29",
+    "category": "security",
+    "lesson": "s05",
+    "title": "模型响应丢失时，为什么不能把费用和 tokens 记成零？",
+    "answer": "请求发出后 Provider 可能已经执行和计费，进程却没有收到有效 usage。系统在请求前登记未知用量，收到可靠数据再结算；失联或崩溃时保留 unknown，而不是伪造零。预算恢复也继承历史，日志费用当前明确 unknown。",
+    "mechanism": "unknownModelRequests 与已知 tokens 是两类信息；估算值不能自动清除未知请求。旧 attempt 失效后的结算也受 fencing，不能偷偷改写新执行账本。",
+    "mistake": "没有收到响应就当请求没发生，或把估算 token 成本写成真实账单金额。",
+    "followup": "怎样把已知用量、未知请求与供应商账单对账？这项当前是否已实现？"
+  },
+  {
+    "id": "q30",
+    "category": "security",
+    "lesson": "s07",
+    "title": "旧报告为什么不能读取“最新原文”？hash 能证明什么？",
+    "answer": "旧报告的结论基于当时的指定资料。来源读取必须沿 reportRevision 的 citation 找到 document 版本和 bytes hash，否则后来更正的材料会悄悄改变历史依据。hash 用于完整性与内容身份，不证明授权、作者真实性或结论成立。",
+    "mechanism": "读取器验证指定历史文档版本与保存的 bytes 身份，核对原文范围；人工确认也绑定具体 reportRevision/canonical hash，不自动继承到新版。",
+    "mistake": "为了方便，点击任何历史引用都检索最新文件，或者把 hash 当签名与权限令牌。",
+    "followup": "新版更正撤回了旧版结论，如何保留旧史又让用户看到新状态？"
+  },
+  {
+    "id": "q31",
+    "category": "engineering",
+    "lesson": "s10",
+    "title": "为什么 mock 单测不够？怎样安排验证层次？",
+    "answer": "纯函数单测覆盖精度、状态 reducer 和 diff；真实 PG 检查行锁、并发、唯一约束、迁移与 fencing；认证 HTTP/浏览器检查产品链路；进程实验验证自然租约接管；真实模型另评估问题覆盖和证据支持。每层只声明它实际证明的范围。",
+    "mechanism": "关键并发断言看最终版本、行数和旧写入是否拒绝，不只看返回码。存档报告的浏览器旅程不能冒充一次新的实时生成。",
+    "mistake": "把 fixture 评测通过当模型准确率，或把跳过的数据库用例记为通过。",
+    "followup": "如何稳定复现“同 key 并发请求只追加一次”的数据库测试？"
+  },
+  {
+    "id": "q32",
+    "category": "engineering",
+    "lesson": "s10",
+    "title": "研究慢或一直不更新，怎样排查？",
+    "answer": "先分清执行慢还是页面通知慢。直接 GET 看数据库权威快照，再检查 Worker 领取、active attempt、lease 与阶段耗时。日志按 taskId 关联，用 attempt/generation 分开接管。若快照已更新而 UI 未更新，查 EventSource、代理缓冲、epoch 与序号。",
+    "mechanism": "白名单 JSON 日志记录版本、阶段、工具、时长、tokens 与资源，不记录原文与用户身份。当前不是完整 tracing/SLO 平台，不能编造已有监控指标。",
+    "mistake": "一上来重启所有服务，或把全部提示词和文档写日志方便查问题。",
+    "followup": "LEASE_LOST 一定是故障吗？什么时候它反而说明保护正常工作？"
+  },
+  {
+    "id": "q33",
+    "category": "engineering",
+    "lesson": "s10",
+    "title": "工程检查通过，为什么项目质量还没有全部验收？",
+    "answer": "类型、构建、单测和并发验证说明代码在对应条件下满足工程断言；模型是否完整回答问题、证据是否支持原因，需要独立业务评测。最近四个开发案例数值全对，但问题与结论支持只有 9/12，各 75%，未过门槛。项目仍是 18/20，不能用工程绿色遮盖质量缺口。",
+    "mechanism": "历史最终 Linux 默认 release 22/22 的运行版本与环境已记录；锁文件/依赖审计、完整 CI 与生产范围独立说明。已见开发集也不等同新样本泛化。",
+    "mistake": "挑两份 completed 报告展示，把 partial、缺答、历史失败从分母移除。",
+    "followup": "下一次改进原因证据召回，如何安排开发调参与未见样本验收？"
+  },
+  {
+    "id": "q34",
+    "category": "engineering",
+    "lesson": "s11",
+    "title": "为什么不是把全部逻辑都写进 Next API 或通用 Agent 内核？",
+    "answer": "API 承接会话、合同与短事务，长研究交给独立 Worker，避免 HTTP 生命周期绑定模型耗时。通用 PI 内核处理执行循环，金融口径、证据规则与 prompt 留在应用/领域层。Python 解析服务隔离文档依赖，服务边界对应职责与资源特征。",
+    "mechanism": "复用现有 Worker、权限和证据能力，避免复制一套 Agent 平台。拆服务会增加认证、超时和版本兼容成本，因此不为数量而拆。",
+    "mistake": "把证券代码和财务规则硬编码到通用内核，或把所有后台任务塞进一个长 Route Handler。",
+    "followup": "接入另一个研究领域时，哪些能力可复用，哪些必须替换？"
+  },
+  {
+    "id": "q35",
+    "category": "engineering",
+    "lesson": "s11",
+    "title": "用户量增加十倍，如何扩展？",
+    "answer": "先测排队时间、阶段耗时、DB 锁与查询、SSE 连接/快照体积、OCR 饱和度。当前单进程串行，可先增加受控 Worker 进程；状态读取压力高时再评估通知唤醒与快照回源。若换 broker，补数据库投递一致性协议；同时检查连接池、Provider 配额与公平性。",
+    "mechanism": "每条 SSE 流约 1500ms 查询事件与快照是明确压力点。LISTEN/NOTIFY 或 Redis 可减少空读，但通知会丢失，持久状态仍需可恢复。当前没有压测 QPS 结论。",
+    "mistake": "不测量就说“加 Redis、Kafka 和微服务”，或者把未来方案当已上线能力。",
+    "followup": "通知丢了、消息重复了、用户重连了，各由哪项机制恢复？"
+  },
+  {
+    "id": "q36",
+    "category": "engineering",
+    "lesson": "s04",
+    "title": "被问“最难的点是什么”，怎样讲出技术深度？",
+    "answer": "可以选择自己真正理解并参与的修订竞争：A 提交成功但响应丢失，B 仍拿旧计划，旧 Worker 又刚返回。依次讲请求身份、预期版本、任务事务锁和 generation fencing，再用并发 PG、迟到写入和前端快照验证。难点来自几个时序叠加，而不是某个框架 API。",
+    "mechanism": "用一个具体故障时序串起前后端：原键重试复用结果；B 旧版本 409；旧 Worker 被拒绝；页面收到通知后恢复新快照。个人工作与既有组件的贡献边界应按真实经历说明。",
+    "mistake": "背“高并发、高可用、分布式事务”但画不出一次竞争，也说不出失败断言。",
+    "followup": "如果删掉四个机制中的任意一个，你能举出它对应的故障吗？"
+  }
+]
+</script>
+<script id="lesson-script">
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const all = selector => Array.from(document.querySelectorAll(selector));
+  const questions = JSON.parse($('question-data').textContent);
+  const categories = {frontend:'前端与交互', database:'API 与数据库', reliability:'队列与可靠性', evidence:'数据与证据', security:'安全与成本', engineering:'工程与取舍'};
+  const chapterIds = all('.lesson').map(node => node.id);
+  const checkIds = all('[data-check]').map(node => node.dataset.check);
+  const storageKey = 'wolfbot.fullstack-course.0864b35.v1';
+  let storageAvailable = true;
+  const blankStudy = () => ({chapters:[], ratings:{}, checks:[]});
+  let study = blankStudy();
+  try {
+    const raw = JSON.parse(localStorage.getItem(storageKey) || 'null');
+    if (raw && typeof raw === 'object') {
+      study.chapters = Array.isArray(raw.chapters) ? [...new Set(raw.chapters.filter(id => chapterIds.includes(id)))] : [];
+      study.checks = Array.isArray(raw.checks) ? [...new Set(raw.checks.filter(id => checkIds.includes(id)))] : [];
+      for (const question of questions) {
+        if (raw.ratings && ['weak','mastered'].includes(raw.ratings[question.id])) study.ratings[question.id] = raw.ratings[question.id];
+      }
+    }
+  } catch { storageAvailable = false; }
+
+  function storageMessage() {
+    $('storage-status').textContent = storageAvailable
+      ? '章节、自检与题目自评仅保存在当前浏览器；清理浏览器数据或更换浏览器后不会同步。'
+      : '浏览器未允许本地存储，本次仍可练习；关闭或刷新页面后，记录可能无法保留。';
+  }
+  function saveStudy() {
+    try { localStorage.setItem(storageKey, JSON.stringify(study)); storageAvailable = true; }
+    catch { storageAvailable = false; }
+    storageMessage();
+  }
+  function updateStudy() {
+    $('study-count').textContent = `${study.chapters.length} / ${chapterIds.length} 章已自检`;
+    $('study-bar').style.width = `${study.chapters.length / chapterIds.length * 100}%`;
+    $('weak-count').textContent = `待复习问题：${Object.values(study.ratings).filter(value => value === 'weak').length}`;
+    for (const button of all('[data-learn]')) {
+      const learned = study.chapters.includes(button.dataset.learn);
+      button.setAttribute('aria-pressed', String(learned));
+      button.textContent = learned ? '已自检 · 再点可撤销 ✓' : '我能解释了 ✓';
+    }
+    for (const link of all('.sidebar nav a')) {
+      link.querySelector('.nav-check').textContent = study.chapters.includes(link.hash.slice(1)) ? '✓' : '';
+    }
+    for (const input of all('[data-check]')) input.checked = study.checks.includes(input.dataset.check);
+    $('checklist-status').textContent = `已自检 ${study.checks.length} / ${checkIds.length} 项。勾选只代表你的自评，可随时取消。`;
+    storageMessage();
+  }
+  for (const button of all('[data-learn]')) button.addEventListener('click', () => {
+    const id = button.dataset.learn;
+    study.chapters = study.chapters.includes(id) ? study.chapters.filter(item => item !== id) : [...study.chapters, id];
+    saveStudy(); updateStudy();
+  });
+  for (const input of all('[data-check]')) input.addEventListener('change', () => {
+    const id = input.dataset.check;
+    study.checks = input.checked ? [...new Set([...study.checks, id])] : study.checks.filter(item => item !== id);
+    saveStudy(); updateStudy();
+  });
+  $('reset-study').addEventListener('click', () => {
+    study = blankStudy(); $('qa-weak').checked = false;
+    saveStudy(); updateStudy(); renderQuestions(); updateMockRating();
+    $('storage-status').textContent = storageAvailable ? '本页学习记录已清除，可以重新开始自检。' : '本次学习记录已清除；浏览器仍未允许持久保存。';
+  });
+
+  // Navigation: a single selected chapter, keyboard-operable mobile menu.
+  const menu = $('menu-toggle'), sidebar = $('sidebar');
+  function closeMenu() { sidebar.classList.remove('open'); menu.setAttribute('aria-expanded','false'); }
+  menu.addEventListener('click', () => {
+    const open = !sidebar.classList.contains('open');
+    sidebar.classList.toggle('open', open); menu.setAttribute('aria-expanded', String(open));
+  });
+  document.addEventListener('keydown', event => { if (event.key === 'Escape' && sidebar.classList.contains('open')) { closeMenu(); menu.focus(); } });
+  function selectChapter(id) { for (const link of all('.sidebar nav a')) link.setAttribute('aria-current', String(link.hash === `#${id}`)); }
+  for (const link of all('.sidebar nav a')) link.addEventListener('click', () => { selectChapter(link.hash.slice(1)); closeMenu(); });
+  selectChapter(chapterIds.includes(location.hash.slice(1)) ? location.hash.slice(1) : 's00');
+  if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver(entries => {
+      for (const entry of entries) if (entry.isIntersecting) selectChapter(entry.target.id);
+    }, {rootMargin:'-85px 0px -65% 0px', threshold:0});
+    all('.lesson').forEach(node => observer.observe(node));
+  }
+  function result(id, message, kind = '') { const target = $(id); target.textContent = message; target.dataset.kind = kind; }
+  function log(id, message) {
+    const target = $(id), entries = target.textContent ? target.textContent.split('\n') : [];
+    entries.push(message); target.textContent = entries.slice(-45).join('\n'); target.scrollTop = target.scrollHeight;
+  }
+
+  // Exercise 1: map responsibilities, not a running service diagram.
+  const architecture = {
+    ui:['React 工作台','展示计划、公开进度、报告与原文。处理选择 epoch、请求中断、SSE 清理、表单草稿和错误反馈；权威业务状态来自快照。','输入：用户点击与快照。输出：普通 HTTP 请求和 EventSource 订阅。'],
+    api:['Next.js 任务 API','从可信会话获取 actor，检查动作权限、同源、body 合同与预期版本，然后调用 repository；开始接口返回 202，不在 HTTP 中等待模型。','输入：业务请求。输出：draft / 排队结果 / 快照 / 409 冲突。'],
+    db:['PostgreSQL 状态与版本','任务行保存当前指针、租约相关身份与用量；request、plan、report 和事件追加保存。行锁、唯一约束、外键与事务保护不变量。','输入：受 actor 与执行权约束的事务。输出：权威快照、待领取任务、历史版本。'],
+    worker:['独立研究 Worker','在事务内 SKIP LOCKED 领取任务，持有有限租约与 attempt token。串行执行研究并心跳；崩溃后由新进程自然接管。','输入：数据库任务与公开 checkpoint。输出：受 fencing 约束的检查点与报告。'],
+    agent:['PI 内核 + 财报应用工具','通用 PI 负责模型/工具循环；财报领域负责发现、读取、记录事实、核验、计算、提交。工具与模型请求先登记预算和未知用量。','输入：研究 spec、plan、公开状态。输出：结构化工具调用提议，仍需程序验证。'],
+    parser:['原生解析 / 独立 OCR','原生 PDF/HTML 保留定位；Python Docling + RapidOCR 处理扫描与表格。返回页、块与表格，needs_review 不会被自动当成已核实事实。','输入：受控原件 bytes。输出：版本化解析产物与来源质量。'],
+    publish:['核验与不可变报告提交','重新检查报告版本绑定、来源适用性、引用、数字与语义回执，并在 artifact I/O 后再次 fencing。事务内追加报告、更新指针与事件。','输入：候选报告及审查回执。输出：不可变报告版本，或明确拒绝 / 诚实缺口。'],
+    sse:['SSE 通知 + 完整快照','连接先发快照，再从持久事件表读取变化和最新快照。事件只标记失效；重连 GET 恢复。服务端每轮约等待 1500ms。','输入：已提交事件与状态。输出：浏览器可恢复的任务视图，不是模型 token 流。']
+  };
+  function showArchitecture(key) {
+    for (const node of all('[data-arch]')) node.setAttribute('aria-pressed', String(node.dataset.arch === key));
+    const panel = $('architecture-detail'); panel.replaceChildren();
+    const [title, explanation, io] = architecture[key];
+    for (const [tag, text] of [['h4',title],['p',explanation],['p',io]]) { const node = document.createElement(tag); node.textContent = text; panel.append(node); }
+  }
+  all('[data-arch]').forEach(button => button.addEventListener('click', () => showArchitecture(button.dataset.arch)));
+  showArchitecture('ui');
+
+  // Exercise 2 mirrors acceptSnapshot / acceptResearchEvent; values are synthetic.
+  let stream;
+  function resetStream() { stream = {snapshot:{sequence:10,generation:1}, eventSequence:10, needsSnapshot:false}; $('sse-log').textContent=''; renderStream(); }
+  function renderStream() {
+    $('sse-snapshot').textContent = String(stream.snapshot.sequence);
+    $('sse-event').textContent = String(stream.eventSequence);
+    $('sse-needs').textContent = String(stream.needsSnapshot);
+  }
+  function receiveEvent(event) {
+    if (event.taskId !== 'A') return ['忽略：taskId 不属于当前 A。','warn'];
+    if (event.sequence <= stream.eventSequence) return ['忽略：该 sequence 已经见过或更旧。','warn'];
+    if (event.generation < stream.snapshot.generation) return ['忽略：事件来自旧 generation。','warn'];
+    stream.eventSequence = event.sequence; stream.needsSnapshot = true;
+    return [`接受通知 seq=${event.sequence}；snapshot 仍为 ${stream.snapshot.sequence}，需要权威快照。`,''];
+  }
+  function receiveSnapshot(snapshot) {
+    if (snapshot.sequence < stream.snapshot.sequence || snapshot.generation < stream.snapshot.generation) return ['忽略：旧快照不能让当前状态回退。','warn'];
+    stream.snapshot = snapshot; stream.eventSequence = Math.max(stream.eventSequence, snapshot.sequence);
+    stream.needsSnapshot = snapshot.sequence < stream.eventSequence;
+    return [`接受完整快照 seq=${snapshot.sequence} / gen=${snapshot.generation}；needsSnapshot=${stream.needsSnapshot}。`,''];
+  }
+  all('[data-sse]').forEach(button => button.addEventListener('click', () => {
+    const action = button.dataset.sse; let response;
+    if (action === 'reset') { resetStream(); response=['重置为 A / snapshot=10 / generation=1。','']; }
+    else if (action === 'old-snapshot') response=receiveSnapshot({sequence:9,generation:1});
+    else if (action === 'restore') response=receiveSnapshot({sequence:16,generation:2});
+    else {
+      const event = action === 'gap' ? {taskId:'A',sequence:15,generation:1}
+        : action === 'old-task' ? {taskId:'B',sequence:stream.eventSequence+1,generation:2}
+          : action === 'old-generation' ? {taskId:'A',sequence:stream.eventSequence+5,generation:0}
+            : {taskId:'A',sequence:11,generation:1};
+      response=receiveEvent(event);
+    }
+    result('sse-result',response[0],response[1]); log('sse-log',`${button.textContent} → ${response[0]}`); renderStream();
+  }));
+  resetStream();
+
+  // Exercise 3 serializes teaching transactions. It does not simulate PostgreSQL lock scheduling.
+  let revision;
+  function resetRevision() { revision = {request:1, plan:1, generation:7, bRequest:1, bPlan:1, keys:new Map()}; $('revision-log').textContent=''; renderRevision(); }
+  function renderRevision() {
+    $('rev-server').textContent=`${revision.request} / ${revision.plan}`;
+    $('rev-generation').textContent=String(revision.generation);
+    $('rev-tab-b').textContent=`${revision.bRequest} / ${revision.bPlan}`;
+  }
+  function submitRevision(key, request, plan, change) {
+    const payload = JSON.stringify({expectedRequestRevision:request,expectedPlanRevision:plan,changes:change});
+    const prior = revision.keys.get(key);
+    if (prior) return prior.payload === payload
+      ? [`识别原操作已生成 request=${prior.request} / plan=${prior.plan}，不重复追加；路由返回当前快照 ${revision.request}/${revision.plan}。幂等不要求响应体与首次逐字相同。`,'']
+      : ['409 IDEMPOTENCY_CONFLICT：同一个 key 绑定了不同内容。','error'];
+    if (request !== revision.request || plan !== revision.plan) return ['409 REVISION_CONFLICT：所见版本已旧，必须先读取最新计划。','error'];
+    revision.request++; revision.plan++; revision.generation++;
+    revision.keys.set(key,{payload,request:revision.request,plan:revision.plan});
+    return [`事务成功：追加 request=${revision.request} / plan=${revision.plan}，generation=${revision.generation}，旧 attempt 失效，重新排队。`,''];
+  }
+  all('[data-revision]').forEach(button => button.addEventListener('click', () => {
+    const action=button.dataset.revision; let response;
+    if (action === 'reset') { resetRevision(); response=['已重置；A、B 都基于 v1。','']; }
+    else if (action === 'refresh-b') { revision.bRequest=revision.request; revision.bPlan=revision.plan; response=['B 已读取最新 request / plan；现在可判断并提交自己的修改。','']; }
+    else if (action === 'b') response=submitRevision(`B-${revision.bRequest}-${revision.bPlan}`,revision.bRequest,revision.bPlan,'现金流问题');
+    else response=submitRevision(action === 'new-key' ? 'A-new-key' : 'A-original-key',1,1,action === 'same-key' ? '另一项问题' : '风险问题');
+    result('revision-result',response[0],response[1]); log('revision-log',`${button.textContent} → ${response[0]}`); renderRevision();
+  }));
+  resetRevision();
+
+  // Exercise 4: database clock, finite lease, token fencing; no real processes are started.
+  let lease;
+  function resetLease() { lease={time:0,until:60,owner:'A',generation:1,aAlive:true,bToken:null,cancelled:false,tools:5,deadline:1200}; $('lease-log').textContent=''; renderLease(); }
+  function renderLease() {
+    $('lease-time').textContent=`${lease.time} / ${lease.until}`;
+    $('lease-owner').textContent=lease.cancelled ? `已取消 / ${lease.generation}` : `${lease.owner} / ${lease.generation}${lease.time >= lease.until ? ' · 过期' : ''}`;
+    $('lease-budget').textContent=`${lease.tools}/40 · ${lease.deadline}`;
+  }
+  function validLease(owner,generation) { return !lease.cancelled && lease.owner===owner && lease.generation===generation && lease.time < lease.until; }
+  all('[data-lease]').forEach(button => button.addEventListener('click', () => {
+    const action=button.dataset.lease; let response;
+    if (action === 'reset') { resetLease(); response=['已重置 A 的有效租约；本轮预算 5/40，deadline=1200。','']; }
+    else if (action === 'crash') { lease.aAlive=false; response=['A 心跳停止。数据库租约不会因进程中断立刻到期；等待自然失效。','warn']; }
+    else if (action === 'advance') { lease.time+=65; response=[`数据库时钟到 t=${lease.time}；当前租约${lease.time >= lease.until ? '已经过期' : '仍然有效'}。`,'warn']; }
+    else if (action === 'heartbeat') {
+      if (!lease.aAlive) response=['A 已中断，没有心跳；该按钮不会模拟复活进程。','warn'];
+      else if (!validLease('A',1)) response=['LEASE_LOST：A 无权续期，过期租约不能靠迟到心跳复活。','error'];
+      else { lease.until=lease.time+60; response=[`A 心跳通过，leaseUntil=${lease.until}。`,'']; }
+    } else if (action === 'takeover') {
+      if (lease.cancelled) response=['拒绝领取：任务已取消。','error'];
+      else if (lease.time < lease.until) response=['暂不接管：现有租约仍有效，SKIP LOCKED 本身不撤销执行权。','warn'];
+      else { lease.generation++; lease.owner='B'; lease.until=lease.time+60; lease.bToken=lease.generation; response=[`B 取得新 attempt / gen=${lease.generation}；继承 5/40 与原 deadline。若本轮已耗尽，只能封存 partial。`,'']; }
+    } else if (action === 'cancel') {
+      if (!lease.cancelled) { lease.cancelled=true; lease.generation++; }
+      response=['取消已提交：active attempt 清空并换代；任何旧写入均被拒绝。','warn'];
+    } else if (action === 'old-write') {
+      response=validLease('A',1)
+        ? ['注入 A 回调：token 此刻仍有效，因此可写。进程中断本身不等于立刻失去租约；继续推进时间或取消再比较。','warn']
+        : ['LEASE_LOST：A 的旧 token 在写入入口被拒绝。即使回调到达也不能覆盖新状态。','error'];
+    } else if (action === 'new-write') {
+      response=lease.bToken && validLease('B',lease.bToken)
+        ? ['B 通过当前 attempt / generation / lease 校验，保存公开检查点；保存本身不重置额度或 deadline。','']
+        : ['LEASE_LOST：B 尚未领取、已经过期或任务已取消，不能写检查点。','error'];
+    }
+    result('lease-result',response[0],response[1]); log('lease-log',`${button.textContent} → ${response[0]}`); renderLease();
+  }));
+  resetLease();
+
+  // Exercise 5 follows decimal-v1. All financial values stay in string / BigInt arithmetic.
+  const ten = n => 10n ** BigInt(n);
+  function decimal(value) {
+    if (!/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(value) || value.length > 120) throw new Error('请输入普通十进制：例如 -123.45；不接受千分位、科学计数法或前导零。最长 120 字符。');
+    const scale=value.split('.')[1]?.length || 0;
+    if (scale > 20) throw new Error('小数最多 20 位。');
+    return {coefficient:BigInt(value.replace('.','')),scale};
+  }
+  function decimalText(value,trim=true) {
+    const negative=value.coefficient < 0n, digits=(negative ? -value.coefficient : value.coefficient).toString().padStart(value.scale+1,'0');
+    let text=value.scale ? `${digits.slice(0,-value.scale)}.${digits.slice(-value.scale)}` : digits;
+    if (trim && value.scale) text=text.replace(/0+$/,'').replace(/\.$/,'');
+    return `${negative ? '-' : ''}${text}`;
+  }
+  function subtract(a,b) { const scale=Math.max(a.scale,b.scale); return {coefficient:a.coefficient*ten(scale-a.scale)-b.coefficient*ten(scale-b.scale),scale}; }
+  function toYuan(raw,power) { if (!['0','4','8'].includes(power)) throw new Error('不支持的单位'); const value=decimal(raw); return {coefficient:value.coefficient*ten(Number(power)),scale:value.scale}; }
+  function percent(before,after,places=6) {
+    const delta=subtract(after,before), denominator=before.coefficient < 0n ? -before.coefficient : before.coefficient;
+    if (!denominator) return null;
+    const numerator=delta.coefficient*ten(before.scale)*100n*ten(places), divisor=denominator*ten(delta.scale);
+    const sign=numerator < 0n ? -1n : 1n, absolute=numerator < 0n ? -numerator : numerator;
+    return decimalText({coefficient:sign*((absolute+divisor/2n)/divisor),scale:places},false);
+  }
+  function calculate() {
+    try {
+      const before=toYuan($('amount-before').value.trim(),$('unit-before').value), after=toYuan($('amount-after').value.trim(),$('unit-after').value);
+      const delta=subtract(after,before), percentage=percent(before,after);
+      const rule=before.coefficient===0n ? '零基数：变化率不可计算，不展示 Infinity。' : before.coefficient<0n ? '负基数：按冻结规则使用绝对值作分母。' : '正基数：以标准化上期金额为分母。';
+      result('decimal-result',`差额 ${decimalText(delta)} 元；变化率 ${percentage===null ? '不可计算' : `${percentage}%`}。${rule}`,percentage===null ? 'warn' : '');
+      $('decimal-log').textContent=`上期：${decimalText(before)} 元\n本期：${decimalText(after)} 元\n差额：${decimalText(delta)} 元\n差额内部表示：coefficient=${delta.coefficient} / scale=${delta.scale}\n${rule}\n对照：Number 的 0.3 - 0.2 = ${0.3-0.2}；本演练不使用该结果计算金额。`;
+    } catch(error) { result('decimal-result',error.message,'error'); $('decimal-log').textContent='输入未通过校验，没有产生业务计算结果。'; }
+  }
+  $('calculate-amount').addEventListener('click',calculate);
+  all('[data-decimal]').forEach(button => button.addEventListener('click', () => {
+    const examples={units:['12300','4','1.5','8'],floating:['0.2','0','0.3','0'],zero:['0','0','100','0'],negative:['-100','0','-80','0']};
+    const values=examples[button.dataset.decimal];
+    ['amount-before','unit-before','amount-after','unit-after'].forEach((id,index) => { $(id).value=values[index]; }); calculate();
+  }));
+  for (const id of ['amount-before','amount-after']) $(id).addEventListener('keydown',event => { if (event.key==='Enter') calculate(); });
+  calculate();
+
+  // Exercise 6 compares synthetic versions, keeping the v1 object immutable.
+  const reportV1=Object.freeze({amount:'12300',unit:'4',claimStatus:'supported',claimText:'原料价格上升导致成本增加',source:'demo-document@v1 / sha-demo-1 / p12',asOf:'2025-05-01'});
+  function renderDiff() {
+    const scenario=$('diff-scenario').value, after={...reportV1,amount:'1.23',unit:'8'};
+    if (['amount','all'].includes(scenario)) after.amount='1.5';
+    if (['withdraw','all'].includes(scenario)) { after.claimStatus='evidence_gap'; after.claimText='未找到足以支持原原因解释的证据'; }
+    if (['source','all'].includes(scenario)) after.source='demo-document@v2 / sha-demo-2 / p12';
+    const amountChanged=decimalText(toYuan(reportV1.amount,reportV1.unit))!==decimalText(toYuan(after.amount,after.unit));
+    const claimChanged=reportV1.claimStatus!==after.claimStatus || reportV1.claimText!==after.claimText;
+    const evidenceChanged=reportV1.source!==after.source;
+    const rows=[
+      ['归母净利润 / 合并 / FY2024','12300 万元',`${after.amount} 亿元`,amountChanged ? 'changed · 金额变化' : 'unchanged · 标准金额相同',amountChanged],
+      ['原因结论',`${reportV1.claimStatus}：${reportV1.claimText}`,`${after.claimStatus}：${after.claimText}`,claimChanged ? 'withdrawn · 受支持结论撤回' : 'unchanged',claimChanged],
+      ['引用身份',reportV1.source,after.source,evidenceChanged ? 'removed v1 + added v2' : 'unchanged',evidenceChanged],
+      ['asOf',reportV1.asOf,after.asOf,'unchanged',false]
+    ];
+    const target=$('diff-rows'); target.replaceChildren();
+    for (const row of rows.filter(row => !$('diff-only').checked || row[4])) {
+      const tr=document.createElement('tr'); for (const value of row.slice(0,4)) { const td=document.createElement('td'); td.textContent=value; tr.append(td); } target.append(tr);
+    }
+    if (!target.children.length) { const tr=document.createElement('tr'),td=document.createElement('td'); td.colSpan=4; td.textContent='没有变化项；单位表达变化不会制造金额差异。'; tr.append(td); target.append(tr); }
+    const changed=rows.filter(row=>row[4]).length;
+    result('diff-result',changed ? `整体 changed：${changed} 类对象变化。v1 没被修改；结构差异不等于已经证明业务原因。` : '整体 unchanged：12300 万元 = 1.23 亿元。报告版本号变化本身不代表事实或证据发生变化。');
+  }
+  $('diff-scenario').addEventListener('change',renderDiff); $('diff-only').addEventListener('change',renderDiff); renderDiff();
+
+  // Question bank: render text with DOM APIs; learner input is never inserted as HTML.
+  function element(tag,text,className) { const node=document.createElement(tag); if (text!==undefined) node.textContent=text; if (className) node.className=className; return node; }
+  function filteredQuestions() {
+    const keyword=$('qa-search').value.trim().normalize('NFKC').toLowerCase(), category=$('qa-category').value;
+    return questions.filter(question => (category==='all' || question.category===category)
+      && (!$('qa-weak').checked || study.ratings[question.id]==='weak')
+      && (!keyword || [question.title,question.answer,question.mechanism,question.mistake,question.followup].join(' ').normalize('NFKC').toLowerCase().includes(keyword)));
+  }
+  function answerContent(question) {
+    const fragment=document.createDocumentFragment();
+    for (const [heading,value] of [['30—60 秒参考回答',question.answer],['底层机制',question.mechanism],['常见误区',question.mistake],['继续追问',question.followup]]) fragment.append(element('h4',heading),element('p',value));
+    const link=element('a',`回到对应章节 ${question.lesson.slice(1)}`,'source-link'); link.href=`#${question.lesson}`; fragment.append(link);
+    return fragment;
+  }
+  function renderQuestions(forceAll=false) {
+    const opened=new Set(all('.qa-card[open]').map(node=>node.dataset.qid));
+    const selected=forceAll ? questions : filteredQuestions(), target=$('question-list'); target.replaceChildren();
+    for (const question of selected) {
+      const card=element('details',undefined,'qa-card'); card.id=`qa-${question.id}`; card.dataset.qid=question.id; card.open=opened.has(question.id);
+      const summary=element('summary'); summary.append(element('span',`${question.id.slice(1)} · ${categories[question.category]}`,'qa-category'),document.createTextNode(question.title)); card.append(summary,answerContent(question));
+      const controls=element('div',undefined,'controls');
+      for (const [rating,label] of [['weak','待复习'],['mastered','我能解释'],['none','清除自评']]) {
+        const button=element('button',label,'control'); button.type='button'; button.dataset.questionId=question.id; button.dataset.rating=rating;
+        button.setAttribute('aria-pressed',String((study.ratings[question.id] || 'none')===rating)); controls.append(button);
+      }
+      card.append(controls); target.append(card);
+    }
+    if (!selected.length) target.append(element('p','没有匹配题目。可清空搜索、更换分类，或取消“仅待复习”。','empty'));
+    $('question-count').textContent=`显示 ${selected.length} / ${questions.length} 题 · 自评记录仅供复习，不是能力评分。`;
+  }
+  function rateQuestion(id,rating) {
+    if (rating==='none') delete study.ratings[id]; else study.ratings[id]=rating;
+    saveStudy(); updateStudy(); renderQuestions(); updateMockRating();
+  }
+  $('question-list').addEventListener('click',event => {
+    const button=event.target.closest('button[data-question-id]');
+    if (button) rateQuestion(button.dataset.questionId,button.dataset.rating);
+  });
+  $('qa-search').addEventListener('input',()=>renderQuestions());
+  $('qa-category').addEventListener('change',()=>renderQuestions());
+  $('qa-weak').addEventListener('change',()=>renderQuestions());
+
+  let mock=null, timer=null, remaining=60, timerDeadline=0;
+  function stopTimer() { if (timer!==null) clearInterval(timer); timer=null; $('mock-start').textContent='开始 60 秒'; }
+  function resetTimer() { stopTimer(); remaining=60; $('mock-time').textContent='60s'; }
+  function updateMockRating() {
+    for (const [id,rating] of [['mock-weak','weak'],['mock-mastered','mastered']]) $(id).setAttribute('aria-pressed',String(!!mock && study.ratings[mock.id]===rating));
+  }
+  function mockEnabled(enabled) { for (const id of ['mock-start','mock-reset','mock-reveal','mock-weak','mock-mastered']) $(id).disabled=!enabled; }
+  $('mock-next').addEventListener('click',()=>{
+    const pool=filteredQuestions();
+    if (!pool.length) { $('mock-status').textContent='当前筛选没有题目；调整筛选后再抽题。'; return; }
+    const choices=pool.length>1 ? pool.filter(question=>question.id!==mock?.id) : pool;
+    mock=choices[Math.floor(Math.random()*choices.length)]; resetTimer(); mockEnabled(true); updateMockRating();
+    $('mock-question').textContent=`${mock.id.slice(1)} · ${mock.title}`;
+    $('mock-answer').replaceChildren(answerContent(mock)); $('mock-answer').hidden=true;
+    $('mock-reveal').textContent='展开参考回答'; $('mock-status').textContent='先口述再展开。需要时启动计时，自评由你决定。';
+  });
+  $('mock-start').addEventListener('click',()=>{
+    if (!mock) return; stopTimer(); remaining=60; timerDeadline=Date.now()+60000;
+    $('mock-time').textContent='60s'; $('mock-start').textContent='重新计时 60 秒'; $('mock-status').textContent='计时中。先给结论，再讲机制、反例与验证。';
+    timer=setInterval(()=>{
+      remaining=Math.max(0,Math.ceil((timerDeadline-Date.now())/1000)); $('mock-time').textContent=`${remaining}s`;
+      if (!remaining) { stopTimer(); $('mock-status').textContent='60 秒到。检查有没有说清边界，再展开参考回答。'; }
+    },250);
+  });
+  $('mock-reset').addEventListener('click',()=>{resetTimer(); $('mock-status').textContent='已重置为 60 秒，尚未开始。';});
+  $('mock-reveal').addEventListener('click',()=>{
+    if (!mock) return; $('mock-answer').hidden=!$('mock-answer').hidden;
+    $('mock-reveal').textContent=$('mock-answer').hidden ? '展开参考回答' : '收起参考回答';
+  });
+  $('mock-weak').addEventListener('click',()=>{if (mock) rateQuestion(mock.id,'weak');});
+  $('mock-mastered').addEventListener('click',()=>{if (mock) rateQuestion(mock.id,'mastered');});
+  window.addEventListener('pagehide',stopTimer);
+  mockEnabled(false);
+
+  // Printing includes all 36 questions and expanded source excerpts, then restores the reading state.
+  let printState=null;
+  window.addEventListener('beforeprint',()=>{
+    if (printState) return;
+    all('details').forEach((node,index)=>{if (!node.id) node.id=`course-detail-${index}`;});
+    printState=new Set(all('details[open]').map(node=>node.id));
+    renderQuestions(true); all('details').forEach(node=>{node.open=true;});
+  });
+  window.addEventListener('afterprint',()=>{
+    if (!printState) return; renderQuestions();
+    all('details').forEach(node=>{node.open=printState.has(node.id);}); printState=null;
+  });
+  $('print-page').addEventListener('click',()=>window.print());
+  updateStudy(); renderQuestions();
+})();
+
+</script>
+</body>
+</html>
