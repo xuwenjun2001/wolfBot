@@ -1,244 +1,522 @@
-# QuantPilot / wolfbot：面向面试的 Agent 升级提案
+# QuantPilot / wolfbot：Agent 升级实施计划（U 系列）
 
-日期：2026-10-24（北京时间）
+日期：2026-10-24（北京时间）　版本：v2（据代码评审修订，可直接按工作包派发子 Agent 执行）
 
-状态：供审阅的方案草案；本次仅整理文档，尚未启动下述开发与模型实验。
+现状核对：`26968ff`，分支 `codex/research-agent-s11-s15`。建议新开 `codex/agent-upgrade` 承接本计划。
 
-现状核对：`e79eac2`，分支 `codex/research-agent-s11-s15`。
+本计划承接原 [20 步计划](plan.md) 的后续方向，不替代其状态与验收合同。原计划仍以 [progress.md](progress.md) 为准：18/20，S19/S20 有质量验收阻塞。U 系列的完成**不能**自动把 S19/S20 改为通过；若 U 系列结果足以支持重新验收，另行登记新的未见样本和验收批次。
 
-目标是在现有财报研究项目中，形成一条能演示、能解释取舍、能用实验验证的 Agent 升级路径：**任务拆分与局部重规划 → 有边界的多 Agent 协作 → 同等资源约束下的质量与成本评测**。
+---
 
-建议首先完成单公司、双期财报场景，再扩展同行比较。开发顺序按依赖安排；面试讲述围绕真实失败、设计选择和验证结果展开。
+## 0. 一页纸摘要
 
-本提案承接原 [20 步计划](plan.md) 的后续方向，不替代其状态与验收合同。原计划仍以 [progress.md](progress.md) 为准：18/20，S19/S20 仍有质量验收阻塞。本文新增工作的完成不能自动把原步骤改为通过。
+**目标**：在现有单公司双期财报研究 Agent 上，形成一条可演示、可解释取舍、可用实验验证的升级路径：
 
-## 1. 先看推荐范围
+> 失败归因 → 可执行计划与收尾预算（P0）→ 检索定位改进 → 进程内多 Agent 分工 → 同等资源约束下的消融实验 → 用数据决定多 Agent 的适用范围。
 
-| 优先级 | 升级内容 | 解决的问题 | 可展示的成果 |
-| --- | --- | --- | --- |
-| P0 | 可执行计划、结构化缺口、局部重规划 | 在检索和重复调用上耗尽预算，留下未核验结论 | 一次原因缺证后的定向补查与局部恢复 |
-| P1 | 三个研究 Agent 与协调器 | 不同研究问题争用同一上下文和执行预算 | 分工执行、结构化汇合、冲突处理和父子任务树 |
-| P1 | 全局预算、子任务恢复与权限继承 | 并发后成本、失败和状态写入难以控制 | 子任务超时、取消、接管和晚到写入的故障演示 |
-| P1 | 单 Agent / 多 Agent 对照实验 | 无法判断收益来自分工，还是更多资源 | 有分母的质量、耗时、Token 与失败归因报告 |
-| P2 | 能主动查证的审查 Agent | 一次审查调用只能判断已提供的材料 | 找到反例或缺证后定向检索、核验与停止 |
-| P2 | 上下文保真与人工介入 | 长任务遗忘信息，遇到口径冲突无法继续 | 压缩前后行为对照、等待澄清与恢复 |
-| P3 | 两至三家公司同行比较、模型路由 | 验证更大任务上的并行价值及成本取舍 | 跨公司任务分解与独立路由实验 |
+**相对 v1 的关键修订**（来源：代码评审）：
 
-建议首个可演示版本做到 P0 + 三个研究 Agent + 基础故障治理 + 对照实验。上下文与人工介入的基础边界随主线完成，复杂体验和主动审查在下一阶段扩展。
+| 修订 | 原因 |
+| --- | --- |
+| 新增 U01 失败归因、U02 弃答口径 | v1 的多 Agent 动机缺数据；原指标让“原文未披露”永远不得分，P0 收益会被掩盖 |
+| 实验组拆为 A / B / B′ / C1 / C2 | v1 的 C 组同时改变上下文隔离、并发、预算切分三个变量 |
+| 新增阶段 1.5 检索评测与改进 | 首要失败是“原因证据定位”，而检索为纯 BM25（`zh-context-bm25-v4`），v1 未触及 |
+| 多 Agent 明确为**进程内**实现 | 现有一任务一执行者、整块 checkpoint 覆盖写；分布式子任务接管工作量翻倍，降为后备 |
+| 同行比较提前为 U37（可降级） | 单公司三问任务只需 25–40 次工具，多 Agent 收益只可能在更大任务上体现 |
+| 故障注入全部走 mock provider | 不消耗真实模型预算；真实模型只用于登记过的消融实验 |
+| HITL、主动审查、分布式接管、模型路由移入后备 | 控制范围，先交付可度量的主线 |
 
-## 2. 当前基础与真实缺口
+**主线交付物**：单 Agent 可执行计划（B）、批量工具调用（B′）、三研究员 + 协调器（C1/C2）、故障注入测试集、任务树界面、A/B/B′/C1/C2 消融报告、一条完整演示链路。
 
-以下“已有”指本次检查到的源码或记录；本次没有重新运行产品验收。
+---
 
-| 能力 | 当前事实与依据 | 本轮值得补充的部分 |
+## 1. 主 AI 调度协议
+
+本节写给负责统筹的主 AI。子 Agent 只需阅读 §2 全局约束和被派发的工作包卡片。
+
+### 1.1 角色
+
+| 角色 | 职责 | 禁止 |
 | --- | --- | --- |
-| 研究循环 | [financial-runtime.ts](../../../src/lib/company-research/financial-runtime.ts) 使用一个 PI 执行引擎，每轮最多一次工具调用 | 子任务拆分、有限并发与独立上下文 |
-| 计划与下一步 | [execution-contracts.ts](../../../src/lib/company-research/execution-contracts.ts) 按问题生成步骤；[financial-observation.ts](../../../src/lib/company-research/financial-observation.ts) 提示缺失项和后续动作 | 可校验的依赖、节点完成条件、结构化修复路径 |
-| 证据与核验 | 已有事实、引文、确定性校验和单条结论核验 | 共享事实的版本合并，以及子任务结果的冲突处理 |
-| 独立审查 | [claim-reviewer.ts](../../../src/lib/company-research/claim-reviewer.ts) 是同模型、独立上下文的一次调用 | 带只读检索工具的审查循环；上下文独立不代表模型错误统计独立 |
-| 上下文 | 已有公开 checkpoint、摘要裁剪、按需读取原文 | 按子任务构造上下文，验证压缩后的信息保留与行为变化 |
-| 持久化与恢复 | 已有 Worker 租约、心跳、fencing、版本和预算继承，见 [reliability.md](reliability.md) | 将父任务取消、计划修订、额度和执行权传递到子任务 |
-| 记忆与审批 | 主平台已有 [用户偏好记忆](../../user-memory-integration.md) 和通用工具审批能力 | 验证研究链路的接入与语义；不能将平台已有能力直接写成研究功能已验收 |
+| 主 AI（协调者） | 选取可执行工作包、派发子 Agent、审查差异、运行门禁、集成冲突、更新 `progress.md`/`decisions.md`、提交与推送 | 不在子 Agent 运行时改动其写入范围内的文件 |
+| 实现子 Agent | 在卡片“写入范围”内完成实现与测试，按 §1.5 模板回报 | 不改写入范围外文件；不提交/推送；不改进度文件；不运行 💰 实验 |
+| 验收子 Agent（可选） | 只读，独立按卡片“验收”逐条核对，报告通过/失败与证据 | 不修改代码 |
 
-[最近一次开发回归](evaluation-results.md) 的记录是：数值 36/36，问题完成 9/12，结论支持 9/12，整公司完成 2/4。两个原因问题缺少直接支持材料，另一个风险问题未在预算内完成语义核验。这些是小规模、已见开发样本上的记录，不代表总体准确率。
+### 1.2 派发规则
 
-升级首先针对原因证据定位、调用分配与核验完成度。资料本来没有披露原因时，正确结果仍然可以是明确缺口。
+1. **选取**：只派发依赖全部 `done` 的工作包；按 §3 的并行组同时派发。
+2. **文件独占**：同时运行的子 Agent 写入范围不得重叠。§4 列出热点文件的唯一所有者；热点文件在同一时刻只属于一个工作包。
+3. **标记处理**：
+   - 💰 真实模型费用：主 AI 先向用户报告预计 Token 与次数，获批后才运行。
+   - 👤 需要用户：人工标注、预算审批、样本授权等，主 AI 汇总成一次性问题向用户提出，期间继续其他工作包。
+   - 🗄️ 需要 PostgreSQL：使用 `npm run test:research:postgres` 的隔离库，不能用 mock 宣称 SQL 并发正确。
+4. **集成**：子 Agent 回报后，主 AI 审查 diff → 运行卡片验收命令 → 必要时派验收子 Agent → 更新 `progress.md`（状态、`E-Uxx-n` 证据、交接）→ 提交。一个工作包一个提交，提交信息带 `Uxx`。
+5. **失败**：验收失败的工作包保持 `in_progress`，把失败输出原样回给同一子 Agent 修复；连续两轮失败由主 AI 介入或拆分工作包。
+6. **门禁**：每个阶段结束运行 §3 中的门禁 G0–G3，未通过不进入依赖它的阶段。
 
-## 3. 一个贯穿开发与面试的场景
+### 1.3 状态登记
 
-用户选择一家公司、两期年报和研究截至时间，要求比较收入利润、解释经营现金流变化、识别风险变化，并让每条结论能够定位原文。
+开始执行前（U00），主 AI 在 `progress.md` 新增“U 系列”小节，每个工作包一行：`ID | 状态 pending/in_progress/blocked/done | 负责会话 | 写入范围 | 证据 | 下一动作`。证据编号 `E-Uxx-序号`，规范同 [development.md](development.md) 的证据留存要求。
 
-执行过程应能展示以下行为：
+### 1.4 子 Agent 派发提示模板
 
-1. 读取已有文档快照，复用解析和索引；提取并校验共同需要的两期数值。
-2. 根据问题建立依赖图，按预算调度收入利润、现金流原因和风险变化三个研究任务。
-3. 研究员独立检索、读取、保存结论，返回结构化证据与缺口。
-4. 核验发现原因缺证或证据冲突时，只补查受影响的任务。
-5. 某个子任务超时或进程退出时，其他已提交结果保留；恢复时承接剩余预算。
-6. 输出完整或部分完成的报告，展示缺口、原文定位和各阶段用量。
+```text
+你负责 QuantPilot 仓库的工作包 {Uxx}：{标题}。
+1. 先读 docs/plans/research-agent-upgrade/agent-upgrade-proposal.md 的 §2 全局约束与 {Uxx} 卡片；
+   按需读卡片列出的只读参考。不需要阅读 20 步计划全文。
+2. 只修改卡片“写入范围”中的文件/目录；需要改范围外文件时停下并在回报中说明原因。
+3. 按卡片“合同”实现，按“验收”编写并运行测试；记录每条命令的退出码。
+4. 不提交、不推送、不修改 progress.md / decisions.md，不运行真实模型（💰）实验。
+5. 完成后按 §1.5 回报模板输出。
+```
+
+### 1.5 子 Agent 回报模板
+
+```text
+工作包：Uxx
+结果：完成 / 部分完成 / 阻塞
+改动文件：<路径列表，标注新增/修改>
+合同变化：<对外接口、schema、迁移；无则写“无”>
+验收：<逐条：命令 → 退出码 → 结论>
+未运行项及原因：
+已知限制 / 风险：
+建议的决策记录：<需要写入 decisions.md 的选择；无则写“无”>
+```
+
+---
+
+## 2. 全局约束（所有子 Agent 必读）
+
+1. **分层**：`src/lib/agent/`（PI 内核）保持通用，不加入财报、证券、问题 ID 等业务知识；金融规则留在 `src/lib/company-research/`。新逻辑放新文件，不继续扩张 `financial-runtime.ts`、`financial-tools.ts`、`task-contracts.ts`。
+2. **不放宽**：不改 v1 评分器、v1 rubric、已冻结证据目录和历史实验结果；不提高 40 次工具 / 20 分钟预算来制造提升；预算变化只能作为独立登记的实验变量。
+3. **不编造**：费用未知写 unknown，不写 0；缺失答案留在分母；不把 mock 结果写成真实模型结果。
+4. **安全**：身份、actor、项目、来源范围由服务端绑定，不信任模型填写的值；文档内容按数据处理；不持久化或展示隐藏思维链。
+5. **一致性**：所有状态写入沿用 `assertResearchAttempt` 式的执行权校验（代次、计划版本、租约）；晚到写入必须失败；只对数据库提交声称幂等，不宣称全系统 exactly-once。
+6. **测试**：
+   - 研究 TS：`npm run test:unit -- src/lib/company-research` 与 `npm run type-check`
+   - 评测：`npm run test:unit -- src/lib/eval`
+   - 涉及 `src/lib/agent/` 或跨模块：`npm run check:module-boundaries`
+   - 🗄️：`npm run test:research:postgres`
+   - 文档：`npm run check:docs`
+7. **兼容**：现有 A 变体（当前单 Agent）的行为在默认配置下必须保持不变，已有测试不得删除或弱化。
+
+---
+
+## 3. 阶段、依赖与并行组
 
 ```mermaid
 flowchart TD
-    U[用户问题、两期财报与截止时间] --> P[计划与协调器]
-    P --> D[共享文档索引和已核验数值]
-    D --> A[收入利润研究 Agent]
-    D --> B[现金流原因研究 Agent]
-    D --> C[风险变化研究 Agent]
-    A --> E[结构化结果与证据版本]
-    B --> E
-    C --> E
-    E --> R[确定性校验与结论审查]
-    R --> G{覆盖检查与剩余预算}
-    G -->|可修复且有预算| P
-    G -->|通过或明确缺口| F[报告与执行记录]
+    U00["U00 登记"] --> P0
+    subgraph P0["阶段 0：合同与诊断（可并行）"]
+        U01["U01 失败归因"]
+        U02["U02 评分 v2 弃答"]
+        U03["U03 消融 runner"]
+        U04["U04 样本扩充 👤"]
+        U05["U05 检索评测基线"]
+    end
+    P0 --> G0{"G0"}
+    G0 --> U10["U10 计划图"] & U11["U11 缺口策略"] & U12["U12 预算策略"]
+    U10 & U11 & U12 --> U13["U13 调度器集成 B"]
+    U13 --> U14["U14 批量工具调用 B′"]
+    U14 --> U15["U15 A/B/B′ 实验 💰"]
+    U15 --> G1{"G1"}
+    G0 --> U20["U20 检索改进候选"]
+    U20 --> U21["U21 检索变量实验 💰"]
+    G1 --> U30["U30 子任务合同与合并"]
+    U30 --> U31["U31 子任务持久化 🗄️"] & U32["U32 研究员运行器"]
+    U31 & U32 --> U33["U33 协调器 C1/C2"]
+    U31 --> U35["U35 任务树观测与界面"]
+    U33 --> U34["U34 故障注入 🗄️"]
+    U33 --> U37["U37 同行比较（可降级）"]
+    U34 --> U36["U36 C1/C2 实验 💰"]
+    U37 --> U36
+    U36 --> G2{"G2"}
+    U21 --> U40
+    G2 --> U40["U40 报告、演示与简历证据"]
+    U40 --> G3{"G3"}
 ```
 
-第一版保留已有独立审查调用；主动检索的审查 Agent 是后续单独加入并评测的变量。协调器第一版采用受控调度代码，后续再允许模型提出补查子任务，由服务端验证后执行。
-
-共享准备不设置“所有数值齐全才能研究”的全局门槛。节点只等待自己的必要依赖；某个金额缺失时，风险研究仍可继续，并在汇合时明确缺口。
-
-## 4. P0：把计划变成可执行、可修复的状态
-
-每个任务节点至少表达：要回答什么、依赖哪些节点、允许哪些工具、输入证据版本、怎样算完成、可用预算和当前状态。
-
-建议的节点状态为 `pending / ready / running / waiting_input / completed / partial / failed / cancelled`。这是一份拟议合同，落地时需要与现有任务状态和数据库迁移设计对齐。
-
-### 依赖与完成条件
-
-“现金流解释”需要两期数值和解释性证据；核验需要已保存的结论与原文；最终提交需要完成覆盖检查。模型返回“完成”只是候选状态，服务端还要核对依赖与验收条件。
-
-确定性计算继续由代码负责。数值提取和检索可以调用模型，但单位、期间、口径与金额计算沿用现有校验，避免不同研究员重复计算出不一致的结果。
-
-### 缺口驱动的局部修复
-
-| 缺口类型 | 后续动作 | 停止条件 |
+| 并行组 | 可同时派发 | 前置 |
 | --- | --- | --- |
-| 检索未命中 | 改写关键词、查财报附注或现金流补充资料 | 达到补查轮数上限，或连续无新增证据 |
-| 原文未披露原因 | 标记资料缺口，保留已确认的数值变化 | 无可核查的新来源时停止推断 |
-| 期间、单位或口径冲突 | 找表头、注释、重述说明；必要时请求用户澄清 | 冲突未解时禁止合并为一个确定结论 |
-| 工具暂时失败 | 有界重试，遵守退避和剩余额度 | 非重试错误、期限到达或重试上限 |
-| 结论尚未核验 | 优先安排核验，减少新检索 | 无核验条件或额度时保留未验证状态 |
+| PG-0 | U01、U02、U03、U04、U05 | U00 |
+| PG-1 | U10、U11、U12、U20 | G0 |
+| PG-2 | U13（单独） | U10–U12 |
+| PG-3 | U31、U32 | U30 |
+| PG-4 | U34、U35、U37 | U33（U35 只需 U31） |
 
-局部重规划应记录触发原因、受影响节点、保留节点和新计划版本。复用 [update-dependencies.ts](../../../src/lib/company-research/update-dependencies.ts) 已有的依赖失效思路；同一逻辑请求修订或恢复不重置预算。
+### 门禁
 
-**验收：**已验证节点不因无关缺口重复运行；循环依赖被拒绝；过期证据使相关结论失效；无证据场景能够有界终止；收尾预算能支持核验与交付。
-
-## 5. P1：多 Agent 的实现边界
-
-### 角色与工具权限
-
-| 角色 | 职责 | 权限边界 |
-| --- | --- | --- |
-| 协调器 | 分派节点、核对版本、分配额度、收集结果与安排修复 | 服务端决定权限和预算；模型不能自行授予权限 |
-| 收入利润研究员 | 比较变化并查找支持解释的原文 | 读取当前任务资料，提交本子任务的事实与结论候选 |
-| 现金流研究员 | 核对方向与原因，查找附注或补充资料 | 同上；相关性不能自动写成因果解释 |
-| 风险研究员 | 比较两期风险披露及变化 | 同上；未检索到不能等同于风险消失 |
-| 审查员（P2） | 验证支持关系，主动寻找反例和遗漏 | 只读检索与提交审查结果，不修改原始证据或直接发布报告 |
-
-三个研究员可以使用同一个模型，区别在于独立上下文、任务目标、工具集合和执行状态。并发度由服务端配置，不要求三个任务始终同时运行。
-
-### 结果交换与共享状态
-
-建议子任务结果包含：`parentRunId`、`subtaskId`、`attemptId`、`planRevision`、`status`、事实与结论候选、证据引用、结构化缺口、用量回执。身份与权限由服务端绑定，不能相信模型填写的 actor、项目或来源范围。
-
-子任务分别写入自己的结果版本，再由协调器事务合并到权威研究状态。共享事实使用稳定标识，至少区分公司、期间、科目、报表口径和来源版本。相同来源与读取范围可复用；缓存也需要校验权限、版本和 asOf。
-
-发现冲突时保留两份原始证据，检查重述、合并口径、单位和披露时间，再定向复核。多个模型赞同同一结果不能替代证据验证。
-
-### 父子任务的预算与故障
-
-- **全局额度：**工具次数、模型请求、Token 和截止时间记入父任务。服务端原子预留、执行后结算；子任务额度总和受父任务约束，核验与收尾留有额度。
-- **用量不确定：**请求中断或供应商未返回用量时保留未知状态和保守占额，不能按零成本返还。取消本地任务不代表外部请求一定已停止计费。
-- **失败隔离：**只重试失败子任务，已完成结果按版本复用；恢复承接已消耗额度和原期限。
-- **执行权：**子任务提交同时校验父计划版本和子任务执行代次；用户取消、修订或 Worker 接管后，旧结果不得提交。
-- **一致性：**事件可能重复投递，外部只读请求可能重发；用幂等提交与 fencing 保护状态，不宣称整条系统 exactly-once。
-- **终止：**限制并发、子任务总数、委派深度和补查轮数；第一版只允许协调器派生一层任务。
-
-任务树至少展示每个节点的状态、耗时、用量、引用和失败原因。记录公开决策摘要和工具轨迹，不记录隐藏思维链。
-
-**验收：**注入单子任务超时、并发预算耗尽、重复提交、计划修订、父任务取消和旧进程晚到写入，验证不会重复发布、超额派发或覆盖新版本；允许交付真实的 partial。
-
-## 6. P2：审查、上下文与人工介入
-
-### 主动审查
-
-在已有确定性校验和独立审查基础上，为审查员开放当前任务范围内的只读检索与原文读取。审查员可以返回“支持、缺证、冲突”，并附带可定位的依据；需要补证时申请有限子任务，不能无限往返。
-
-生成器聊天历史不进入审查上下文，核验从问题、候选结论、原始证据和明确规则出发。使用同模型时仍可能存在共同偏差；更换审查模型属于另一个实验变量。产品内审查员与评测评分器应分别版本化，不能通过放宽产品审查或评分规则制造提升。
-
-### 上下文与记忆
-
-| 信息类型 | 保存位置与用途 | 失效或纠正方式 |
-| --- | --- | --- |
-| 任务记忆 | checkpoint：计划、已验证事实、未解决问题、失败查询和预算 | 随计划与证据版本局部失效 |
-| 证据资料 | 文档存储与索引：原文、定位、披露时点和来源版本 | 新文档独立版本；不回写旧 asOf 报告 |
-| 用户偏好 | 复用现有 Memory：关注领域、输出长度等 | 用户可纠正或停用；偏好不能覆盖事实和证据规则 |
-| 方法经验 | 经评测后更新受治理 Skill 或知识条目 | 显式审核、版本发布与回滚；运行失败不直接变成永久记忆 |
-
-压缩上下文时优先保留未完成问题、冲突、单位期间、证据定位和停止条件。已验证金额从结构化状态恢复，长原文按需重读；摘要不能成为事实的唯一依据。
-
-**验收：**设计长文档、跨页单位、否定条件、冲突证据和重复查询场景，比较压缩前后证据找回率、结论支持率与重复调用比例；测试旧版本失效及跨项目隔离。
-
-### 人工介入
-
-适合介入的场景是公司身份歧义、不可比较的报表口径、用户调整问题和明确申请增加研究范围。系统先保存进度，再进入 `waiting_input`，展示具体冲突、可选动作和对结果的影响。
-
-第一版沿用现有同轮次截止时间：等待用户不会偷偷延长期限。回复到达时重新验证版本、执行权和剩余额度；已过期则给出终态与重新发起研究的入口。真正的新研究请求和同轮恢复的预算语义必须分开。
-
-**验收：**刷新和重启后仍可恢复待决事项；重复回复不重复执行；过期决策不能推进新计划；取消能传播到正在运行及等待中的子任务。
-
-## 7. 评测：证明分工带来的收益
-
-在开发前登记样本、基线、评分、预算、允许的实验次数和候选选择规则。旧保留集已经被分析的失败属于已见资料，新验收需要新的未见样本。
-
-| 版本 | 变化 | 想验证什么 |
-| --- | --- | --- |
-| A | 当前单 Agent | 现有行为与失败基线 |
-| B | 单 Agent + 可执行计划 + 收尾预算 | 任务调度本身是否改善质量 |
-| C | 在 B 上加入独立研究员与有限并发 | 上下文分工和并发是否有额外收益 |
-| D（可选） | 在 C 上加入主动审查 Agent | 主动补证的收益是否值得额外成本 |
-
-A/B/C 在同一冻结资料、模型、评分器与总资源约束下配对运行，协调和审查开销一并计入。全局工具和时间上限可参考现有 40 次 / 20 分钟，Token 或成本上限需在实验前根据实测基线登记；这不修改历史实验预算。若新增调用或调度使固定上限不可行，应另立实验并保留相同新上限下的基线。
-
-固定模型、推理配置、解析版本、检索参数、缓存冷热条件与服务并发。总预算相同不意味着实际消耗相同，因此同时报告真实用量。并发耗时下降可能源于更多同时请求，需要记录并发度和供应商限流影响。
-
-建议样本覆盖：简单单问题、三问综合、原因缺证、口径冲突、资料不足、扫描件、长上下文，以及子任务超时与取消。先做小规模开发对照，再对代表场景重复运行；次数和费用提前登记，不能只保留最好一次。
-
-| 指标 | 统计口径 |
+| 门禁 | 通过条件 |
 | --- | --- |
-| 必需问题完成率 | 已正确回答且有证据支持的必需问题 / 全部必需问题；缺答仍在分母 |
-| 结论支持率 | 经冻结规则判为有支持的实质结论 / 全部实质结论，同时报告问题覆盖 |
-| 数值与引用质量 | 必需数值正确数、引用定位正确数及各自完整分母 |
-| 任务成功率 | 完成全部必要要求且通过硬门的任务 / 所有有效任务；partial 单独列出 |
-| 成本与耗时 | 端到端和阶段耗时、模型请求、Token、工具调用、搜索/OCR 成本；未知项明确标注 |
-| 每成功任务成本 | 所有运行总成本 / 成功任务数；零成功时不可计算 |
-| 冗余与稳定性 | 重复检索、重复核验、重试、死循环终止次数，以及多次运行的结果波动 |
-| 恢复与隔离 | 故障后有效结果保留、预算继承、越权和晚到写入是否被阻止 |
+| G0 | U01 归因报告完成；rubric v2 与弃答标签冻结并获用户确认 👤；runner 用 mock provider 完成全部变体空跑；实验登记（样本、重复次数、Token 上限、统计方法）获用户批准 👤 |
+| G1 | U10–U14 单测、类型检查、PG 测试通过；A/B/B′ 真实结果按登记次数全部保存（含失败）；结论写入 `evaluation-results.md` 新小节 |
+| G2 | U30–U35 测试通过；故障注入矩阵全部通过；C1/C2（及 U37 若完成）结果按登记次数保存 |
+| G3 | 消融报告、演示脚本、简历证据可复核；`npm run check:docs` 通过；交接写回 |
 
-每个失败至少能归因到检索、规划、工具、核验、上下文、执行故障或预算。Trace 关联父任务、子任务、attempt 和版本；前端展示任务树，原文正文与敏感数据按现有权限保存。
+---
 
-上线选择先满足既定质量和硬门，再比较成本与耗时。若多 Agent 只在复杂任务上更好，就限定其使用范围；小样本只报告实测结果与不确定性。模型路由在分工效果确认后单独实验。
+## 4. 热点文件所有权
 
-## 8. 实施顺序与代码落点
+同一时刻只有一个工作包可写入下列文件。未列出的新文件归创建它的工作包。
 
-以下均为拟议工作包，尚未开工。表内路径是已存在的复用入口；新合同和调度模块的文件名在实施时确定，避免把所有逻辑堆入现有 runtime。
+| 文件 | 所有者（按时间顺序） |
+| --- | --- |
+| `src/lib/company-research/financial-runtime.ts` | U13 → U14 → U33 |
+| `src/lib/company-research/financial-tools.ts` | U13 → U32 |
+| `src/lib/company-research/execution-contracts.ts` | U13 → U33 |
+| `src/lib/company-research/financial-observation.ts` | U13 |
+| `src/lib/company-research/task-contracts.ts` | U10 → U37 |
+| `src/lib/company-research/observability.ts` | U35 |
+| `src/lib/company-research/evidence-retrieval.ts`、`lexical-index.ts` | U20 |
+| `src/lib/eval/financial-research-score.ts`、`src/lib/eval/statistics.ts` | U02（v1 函数只增不改） |
+| `scripts/research/verify-retrieval.ts` | U05 → U20 |
+| `prisma/migrations/` 新目录 | U31 → U37 |
+| `fixtures/company-research/` 新文件 | U02（标签）、U04（样本）、U05（检索标签） |
+| `progress.md`、`decisions.md`、`README.md` | 仅主 AI |
 
-| 工作包 | 依赖 | 交付物 | 完成标准 |
+---
+
+## 5. 工作包卡片
+
+卡片字段：**目标 / 依赖 / 写入范围 / 只读参考 / 合同 / 验收 / 标记**。
+
+### U00 登记与分支（主 AI）
+
+- **目标**：建立 `codex/agent-upgrade` 分支；在 `progress.md` 新增 U 系列状态表（§1.3）；核对 `git status` 干净与当前 HEAD。
+- **验收**：`npm run check:docs` 通过；状态表包含 U01–U40。
+
+---
+
+### 阶段 0：合同与诊断
+
+#### U01 历史轨迹失败归因
+
+- **目标**：用现有轨迹回答“多 Agent 要解决的问题是否真实存在”，为后续设计和面试提供量化依据。无模型调用。
+- **依赖**：U00
+- **写入范围**：`src/lib/eval/research-failure-attribution.ts`（+ `.test.ts`）、`scripts/research/attribute-failures.ts`、`docs/plans/research-agent-upgrade/failure-attribution.md`
+- **只读参考**：`data/research-agent-upgrade/evidence/S19/` 下各批次的 `<phase>/<case>/tools.jsonl`、`observations.jsonl`、`task.json`、`result.json`；[evaluation-results.md](evaluation-results.md)；[financial-runtime.ts](../../../src/lib/company-research/financial-runtime.ts)
+- **合同**：脚本参数 `--campaign=<目录>`（可多次），输出 JSON + Markdown，逐任务统计：
+  - 各工具调用次数；按问题（由 claim/fact 的 questionId、metric 推断）的工具消耗分布；
+  - 重复检索：相同或高度相似 query 的次数、无新增证据的调用比例；
+  - 跨问题切换次数，以及切换后回到原问题时的重复读取；
+  - compact 上下文触发次数（若轨迹无法判断，标为“不可观测”，不推测）；
+  - 预算耗尽时尚未完成的步骤；
+  - 每个失败问题归入一类：`retrieval_miss / not_disclosed / budget_exhausted / verification_pending / context_loss / tool_error / planning`，并附判定依据。
+- **验收**：单测覆盖解析、归类和“不可观测”分支；在全部已有 S19 批次上运行成功；报告给出明确结论：上下文争用**有 / 无**数据支持。
+- **产出用途**：G0 时主 AI 据此在 `decisions.md` 记录多 Agent 的定位（质量收益 / 延迟与规模收益）。
+
+#### U02 评分器 v2：可回答性与弃答
+
+- **目标**：让“原文确实未披露时正确保留缺口”可以得分，同时防止模型借此偷懒或编造。
+- **依赖**：U00
+- **写入范围**：`src/lib/eval/financial-research-score-v2.ts`（+ `.test.ts`）、`src/lib/eval/statistics.ts`（只增函数）、`fixtures/company-research/rubric-v2.json`、`fixtures/company-research/answerability-dev-v1.json`
+- **只读参考**：[financial-research-score.ts](../../../src/lib/eval/financial-research-score.ts)、`fixtures/company-research/development.json`、`fixtures/company-research/rubric.json`、[human-annotation.md](human-annotation.md)
+- **合同**：
+  - 标签：每个问题标注 `answerable | not_disclosed`；`not_disclosed` 必须附人工核对过的检索范围（章节/页）作为依据。
+  - 指标（全部带分母与 Wilson 区间）：
+    - 可回答题支持率 = 可回答且结论被支持 / 全部可回答题
+    - 正确弃答率 = 未披露题中以 `evidence_gap` 明确说明缺口 / 全部未披露题
+    - 错误断言率 = 未披露题中给出实质性原因断言 / 全部未披露题（硬指标，目标 0）
+    - 漏答率 = 可回答题中以缺口结束 / 全部可回答题
+    - 数值正确率、任务成功率沿用 v1 定义
+  - 配对比较：新增题目级配对 bootstrap 置信区间（或 McNemar），供 A/B/C 比较。
+  - v1 评分函数与 rubric 不变；v2 是并列版本。
+- **验收**：单测覆盖四种组合（可回答×支持/缺口，未披露×缺口/断言）与零分母；用 v2 重算 `repair-validation-20261020-01` 批次的结果并与 v1 并列输出。
+- **标记**：👤 现有 4 个开发案例的弃答标签由主 AI 依据 S19 证据起草（例如五粮液、万华化学现金流原因），用户确认后冻结。
+
+#### U03 消融实验 runner
+
+- **目标**：用一个 runner 在相同资料、模型、评分、预算下配对运行全部变体，并支持 mock 空跑。
+- **依赖**：U00（接入 v2 评分时依赖 U02 的接口；可先以接口桩开发）
+- **写入范围**：`scripts/research/run-agent-ablation.ts`、`scripts/research/ablation-protocol.ts`（+ `.test.ts`）、`docs/plans/research-agent-upgrade/ablation-registration.md`
+- **只读参考**：[run-financial-evaluation.ts](../../../scripts/research/run-financial-evaluation.ts)（沿用其数据库保护、协议 hash、证据目录写法；**不修改**原脚本）
+- **合同**：
+  - 参数：`--variant=A|B|B2|C1|C2|C2-peer`、`--dataset=<路径>`、`--repeats=n`、`--campaign=<data/research-agent-upgrade/evidence/U-ablation/...>`、`--provider=real|mock`、`--max-input-tokens=<总上限>`。
+  - 变体通过 `executeFinancialResearch` 的选项注入（由 U13/U33 实现）；runner 只传参，不自行改运行逻辑。
+  - 协议文件记录模型、推理配置、数据 hash、代码 hash、预算、变体、重复序号、并发度、缓存冷热条件；比较阶段协议不一致即拒绝运行。
+  - 累计 Token 超出上限时停止后续任务，已完成结果保留，汇总标注“提前停止”。
+  - 每次运行输出 `result.json`（含 v1 与 v2 分数、usage、阶段耗时、子任务树摘要），汇总输出 `results.json` 与 Markdown 表。
+- **验收**：mock provider 下 A 变体完整空跑；协议不一致拒绝、Token 上限停止、重复序号目录隔离有单测；`ablation-registration.md` 写好登记模板（样本、变体、重复、Token 上限、统计方法、候选选择规则）。
+
+#### U04 样本扩充
+
+- **目标**：把开发集从 4 家扩到至少 12 家单公司案例，并组成至少 4 组同行对（用于 U37）；另建新的未见保留集。
+- **依赖**：U00
+- **写入范围**：`fixtures/company-research/development-v2.json`、`fixtures/company-research/peer-pairs-v1.json`、`fixtures/company-research/holdout-registration-v2.json`、`data/research-agent-upgrade/evidence/U04/`（受控目录，不提交原始 PDF）
+- **只读参考**：`scripts/research/collect-fixtures.py`、`prepare-fixtures.py`、`extract-fixtures.ts`、[evaluation.md](evaluation.md)、[human-annotation.md](human-annotation.md)
+- **合同**：
+  - 分层覆盖：正常三问、原因未披露、口径/重述冲突、扫描件、长文档；每层至少 2 例。
+  - 同行对优先用同行业、同年度的已有案例组合（如两家白酒企业），以减少新增标注。
+  - 每例记录 PDF hash、解析回执 hash、弃答标签（U02 格式）。
+  - 保留集只登记 hash，内容存放在 `RESEARCH_HOLDOUT_ROOT` 受控目录，不进 Git。
+- **验收**：`node --import tsx scripts/research/verify-fixtures.ts` 对新清单通过；数据集 schema 校验通过；人工标注表生成。
+- **标记**：👤 人工核对数值与弃答标签；Agent 只负责采集、解析和起草。这是**最长路径**，应最先派发。
+
+#### U05 检索评测基线（原因与风险段落）
+
+- **目标**：量化 BM25 能否找到“现金流原因”“风险表述”所在页，判断检索是否是质量瓶颈。
+- **依赖**：U00
+- **写入范围**：`fixtures/company-research/retrieval-labels-v2.json`、`scripts/research/verify-retrieval.ts`（只增 `--labels` 与新报告字段）、`data/research-agent-upgrade/evidence/U05/`
+- **只读参考**：[lexical-index.ts](../../../src/lib/company-research/lexical-index.ts)、[evidence-retrieval.ts](../../../src/lib/company-research/evidence-retrieval.ts)、已有人工标注引文、U01 输出的真实 query
+- **合同**：标签粒度为文件页；每个问题至少 1 条金标页；query 集包含 U01 提取的模型真实 query 和人工编写的规范 query；报告 Recall@1/3/5/10、MRR，按问题类型分列，并记录 k、语料 hash、索引版本。
+- **验收**：报告生成；`--profile=baseline-v1` 原有用法不受影响。
+
+#### G0 主 AI 动作
+
+1. 汇总 U01 结论，在 `decisions.md` 记录多 Agent 的定位。
+2. 起草实验登记（`ablation-registration.md`），向用户确认 👤：样本数、变体、重复次数、Token 上限。参考估算：约 52.6 万输入 Token/任务（据 `repair-validation-20261020-01`：4 任务共 2,104,212）；
+   - 完整方案：5 变体 × 12 例 × 2 次 ≈ 120 次运行，约 6,300 万输入 Token；
+   - 最小方案：A / B / C2 × 12 例 × 2 次 ≈ 72 次运行，约 3,800 万输入 Token。
+3. 冻结 rubric v2 与弃答标签。
+
+---
+
+### 阶段 1：P0 可执行计划（单 Agent，变体 B / B′）
+
+#### U10 计划图合同
+
+- **目标**：把计划步骤从平铺列表升级为带依赖、完成条件和预算份额的 DAG。纯函数，不访问数据库。
+- **依赖**：G0
+- **写入范围**：`src/lib/company-research/plan-graph.ts`（+ `.test.ts`）、`src/lib/company-research/task-contracts.ts`（新增 `researchPlanSchema` 的 `schemaVersion: 2` 分支，v1 继续可解析）
+- **只读参考**：[execution-contracts.ts](../../../src/lib/company-research/execution-contracts.ts) 中 `initialFinancialPlan`；[update-dependencies.ts](../../../src/lib/company-research/update-dependencies.ts)
+- **合同**：
+  - 节点：`id, questionId|null, kind(prepare|retrieve|compare|verify|report), dependsOn[], allowedTools[], completion(规则 ID), budgetShare, role(coordinator|income_profit|cash_flow|risks)`。
+  - 状态：`pending / ready / running / waiting_input / completed / partial / failed / cancelled`（`waiting_input` 本期只保留枚举）。
+  - 函数：`buildFinancialPlanV2(spec)`、`validatePlanGraph(plan)`（拒绝环、悬空依赖、重复 ID）、`readyNodes(plan, states)`、`invalidateDownstream(plan, nodeId)`、`revisePlan(plan, change) → {plan, retained[], invalidated[]}`。
+  - 共享准备节点 `prepare-facts` 只是现金流、收入利润节点的依赖；风险节点不依赖它（不设“全部金额齐全才能研究”的全局门槛）。
+- **验收**：单测覆盖环检测、局部失效只影响下游、已完成节点在无关修订中保留、v1 计划仍能解析。
+
+#### U11 结构化缺口与修复策略
+
+- **目标**：把“缺什么、下一步做什么、何时停止”从提示词文字变成可测试的策略表。纯函数。
+- **依赖**：G0
+- **写入范围**：`src/lib/company-research/gap-policy.ts`（+ `.test.ts`）
+- **合同**：
+  - 缺口类型：`retrieval_miss / not_disclosed / period_unit_conflict / tool_transient / unverified_claim / budget_exhausted`。
+  - `classifyGap(observation, state)` → 缺口；`repairAction(gap, budget)` → `{action, targetNodeId, maxAttempts, stopWhen}`。
+  - 停止规则：同一缺口连续 N 次无新证据（以新增 locator/证据 hash 计，而不只看调用参数是否相同）→ 转为 `not_disclosed` 或 `partial`；冲突未解时禁止合并成确定结论。
+- **验收**：每类缺口至少一个正例和一个停止用例；“换关键词但无新证据”能被识别为停滞（现有 `stalledCalls` 只能识别完全相同的调用）。
+
+#### U12 预算策略与收尾预留
+
+- **目标**：解决“预算耗尽时核验未完成”。纯函数。
+- **依赖**：G0
+- **写入范围**：`src/lib/company-research/budget-policy.ts`（+ `.test.ts`）
+- **合同**：
+  - `reserveForClosure(spec, state)`：按未核验结论数预留 `verify_claim` 次数，再加 `check_coverage` 与 `submit_report` 各 1 次；
+  - `allowedNow(tool, remaining, reserve)`：剩余额度进入预留区后只允许核验与收尾工具；
+  - `nodeSoftCap(plan, nodeId, total)`：按 `budgetShare` 给出软上限，超出时把剩余额度让给未完成节点；
+  - 预算是父任务全局计数，策略只做分配，不改变总额（总额仍由 `reserveResearchToolCall` 原子扣减）。
+- **验收**：单测覆盖万华化学式场景（仍有未核验结论时，第 38 次起只允许核验与收尾）；零剩余、全部已核验、预留超过剩余等边界。
+
+#### U13 调度器集成（变体 B）
+
+- **目标**：把 U10–U12 接入单 Agent 运行时，形成变体 B；默认配置下保持 A 的行为不变。
+- **依赖**：U10、U11、U12
+- **写入范围**：`src/lib/company-research/financial-scheduler.ts`（新，+ 测试）、`financial-runtime.ts`、`financial-tools.ts`、`execution-contracts.ts`、`financial-observation.ts`、`financial-runtime.integration.test.ts`
+- **合同**：
+  - `executeFinancialResearch` 增加 `options.variant: 'A' | 'B' | 'B2' | 'C1' | 'C2'`，默认 `'A'`。
+  - checkpoint `schemaVersion: 2`：新增 `nodes`（节点状态）、`gaps[]`、`planVersion`、`closureReserve`；v1 checkpoint 读取时自动升级，写回仍校验请求/计划版本绑定。
+  - B 变体：`nextAction` 由 `readyNodes` + `repairAction` 生成；工具调用前经 `allowedNow` 检查，被拒绝时返回结构化提示而不扣减额度；局部重规划写一条 `plan.revised` 事件（触发原因、受影响节点、保留节点）。
+  - 同一逻辑请求的修订或恢复不重置预算。
+- **验收**：
+  - 测试 provider 覆盖：原因缺证 → 定向补查 → 有界停止并标记 `not_disclosed`；预算进入预留区后只核验与收尾；已验证节点在无关缺口修复中不重跑。
+  - A 变体的现有单测和集成测试全部通过且不修改断言。
+  - `npm run test:unit -- src/lib/company-research`、`npm run type-check`、🗄️ `npm run test:research:postgres`。
+
+#### U14 批量工具调用（变体 B′）
+
+- **目标**：回答“Agent 和并行工具调用有什么区别”时有数据可依。
+- **依赖**：U13
+- **写入范围**：`financial-runtime.ts`、`financial-scheduler.ts`
+- **事实前提**：PI 内核在同一轮内**顺序**执行工具（`run-engine.ts` 中 `executionMode: 'sequential'`），因此 B′ 的收益是减少模型往返轮数（每轮都要重发上下文），而不是工具并发执行。不修改 PI 内核。
+- **合同**：B2 变体 `maxToolCallsPerTurn` 设为可配置（默认 3）；每次调用仍单独预留额度；同一轮中改变状态的工具（`record_fact / record_claim / verify_claim / check_coverage / submit_report`）最多 1 个，且必须排在只读工具之后，违反时返回结构化错误。
+- **验收**：测试 provider 下一轮多次检索的预算扣减、顺序约束、停滞检测正确；报告字段新增“模型轮数”。
+
+#### U15 A / B / B′ 实验 💰
+
+- **目标**：按登记运行，得出“调度本身”和“批量调用”的收益。
+- **依赖**：U14、U03、G0 登记
+- **执行者**：主 AI（或获批后派给子 Agent），用户批准 Token 上限后运行。
+- **写入范围**：`data/research-agent-upgrade/evidence/U-ablation/`、`evaluation-results.md` 新小节“U 系列 A/B/B′”
+- **验收**：按登记次数全部保存，含失败与提前停止；报告 v1 与 v2 指标、Token、模型轮数、耗时、工具次数、失败归因；不只保留最好的一次。
+
+---
+
+### 阶段 1.5：检索定位（与阶段 2 文件不重叠，可并行）
+
+#### U20 检索改进候选
+
+- **目标**：若 U05 显示原因/风险段落召回不足，按成本从低到高试验改进方案。
+- **依赖**：G0（需要 U05 基线）
+- **写入范围**：`src/lib/company-research/retrieval-expansion.ts`（新，+ 测试）、`evidence-retrieval.ts`、`lexical-index.ts`、`scripts/research/verify-retrieval.ts`
+- **候选（按顺序，有效即停）**：
+  1. 财报同义词与问题模板查询扩展（确定性，零模型成本）；
+  2. 章节感知加权（如“管理层讨论与分析”“现金流量表补充资料”“可能面对的风险”）；
+  3. 混合检索或 rerank——需要新模型/服务时，先按 [development.md](development.md) 要求写决策：具体缺口、替代方案、开发集结果。
+- **合同**：检索结果附 `retrievalVersion`；新版本作为独立变量，默认仍为 `zh-context-bm25-v4`，通过选项切换。
+- **验收**：在 U05 标签上 Recall@5 / MRR 有提升且不降低数值类查询的命中；开发集调参不得当作保留集结果。
+
+#### U21 检索变量实验 💰
+
+- **依赖**：U20、U15
+- **合同**：在最优单 Agent 变体上只切换检索版本，单独报告，不与 B/C 的收益混算。
+- **验收**：同 U15 的保存与报告要求。
+
+---
+
+### 阶段 2：进程内多 Agent（变体 C1 / C2）
+
+**实现路线（已定）**：一个 Worker 持有父任务租约，在进程内运行协调器和 N 个研究员引擎。每个子任务有独立的状态切片、上下文、工具白名单和执行代次；结果先写入子任务表，再由协调器在事务中合并到权威 checkpoint。跨 Worker 认领和接管子任务列入后备 U53。
+
+#### U30 子任务合同与结果合并
+
+- **目标**：定义子任务的输入输出和确定性合并规则。纯函数。
+- **依赖**：G1
+- **写入范围**：`src/lib/company-research/subtask-contracts.ts`、`src/lib/company-research/subtask-merge.ts`（各带测试）
+- **合同**：
+  - `SubtaskResult`：`taskId, parentAttemptId, subtaskId, nodeId, generation, planRevision, status(completed|partial|failed|cancelled), facts[], claims[], gaps[], usage{toolCalls, inputTokens|null, outputTokens|null, unknownRequests}`。身份字段由服务端填写，模型输出中的同名字段丢弃。
+  - 共享事实键：`company + period + metric + scope + documentId:version`。同键同值去重；同键不同值 → 保留两份证据，状态 `conflict`，关联结论降级为缺口。
+  - 合并幂等：同一 `(subtaskId, generation)` 重复合并结果不变；旧 `generation` 或旧 `planRevision` 的结果拒绝。
+  - claim 只能属于该子任务的 `questionId`，越界拒绝。
+- **验收**：单测覆盖去重、冲突、幂等、旧代次拒绝、越界 claim、partial 合并。
+
+#### U31 子任务持久化与执行权 🗄️
+
+- **目标**：把子任务状态、预算、取消和 fencing 落到数据库。
+- **依赖**：U30
+- **写入范围**：`prisma/migrations/<时间戳>_research_subtasks/`、`src/lib/company-research/subtask-store.ts`、`subtask-store.integration.test.ts`
+- **只读参考**：[attempt-store.ts](../../../src/lib/company-research/attempt-store.ts)、[execution-store.ts](../../../src/lib/company-research/execution-store.ts)、[reliability.md](reliability.md)
+- **合同**：
+  - 表 `company_research_subtasks`：`id, task_id, parent_attempt_id, node_id, plan_revision, generation, status, tool_calls, input_tokens, output_tokens, unknown_model_requests, result jsonb, error, started_at, finished_at`；唯一约束 `(task_id, node_id, generation)`。
+  - `startSubtask / commitSubtaskResult / cancelSubtasks / reserveSubtaskToolCall`：每次都先 `assertResearchAttempt`（父执行权），再校验子任务代次与计划版本。
+  - 工具预算：父任务 `tool_calls` 仍是唯一全局计数，`reserveSubtaskToolCall` 在同一事务中同时增加父计数和子任务计数；父任务总额耗尽即全部拒绝。
+  - 父任务取消或计划修订 → 运行中的子任务置为 `cancelled`，其后提交失败。
+  - 子任务不单独持有租约，心跳仍由父 attempt 负责。
+- **验收**：🗄️ 隔离库测试：并发预留不超额、父取消后子提交失败、计划修订后旧子任务提交失败、重复提交幂等、迁移可在空库与现有库上执行。
+
+#### U32 研究员运行器
+
+- **目标**：每个研究员是独立的 PI 引擎实例，拥有自己的上下文、工具白名单和状态切片。
+- **依赖**：U30（U31 提供存储接口；可先用接口桩并行开发）
+- **写入范围**：`src/lib/company-research/financial-researcher.ts`、`src/lib/company-research/researcher-tools.ts`、`src/lib/company-research/researcher-prompts.ts`（均带测试）、`financial-tools.ts`（只做抽取重构：把各工具的执行逻辑拆成可复用处理函数，A/B 行为不变）
+- **合同**：
+  - `runResearcher({ role, node, sharedFacts, budget, signal, store }) → SubtaskResult`。
+  - 工具白名单：只读检索与读取、`record_fact`（仅限本角色相关指标）、`record_claim`（仅限本 questionId）、`verify_claim`、终止工具 `finish_subtask`；不包含 `submit_report`、`discover_filings`、`import_filing`。
+  - 上下文只含本问题、共享已核验数值、本子任务的 checkpoint 切片，不含其他研究员的对话。
+  - 每次工具调用经 U31 `reserveSubtaskToolCall` 扣减；每次模型请求沿用 `reserveResearchModelRequest / settleResearchModelUsage`。
+- **验收**：测试 provider 下三种角色各自跑通；越权工具被拒绝；A/B 变体全部既有测试通过。
+
+#### U33 协调器（变体 C1 / C2）
+
+- **目标**：协调器按计划图调度研究员、合并结果、执行核验与局部重规划、交付报告。
+- **依赖**：U31、U32
+- **写入范围**：`src/lib/company-research/financial-coordinator.ts`（+ 测试）、`financial-runtime.ts`（只增加 C1/C2 分支入口）、`execution-contracts.ts`（checkpoint 增加子任务引用）
+- **合同**：
+  - 第一版协调器是**确定性代码**，不是模型；只派生一层子任务。
+  - 流程：`prepare-facts`（共享数值）→ 按 `readyNodes` 派发研究员 → 合并（U30）→ 覆盖检查 → 可修复缺口且有预算时，只对受影响节点重新派发（新 generation）→ 组装并提交报告（复用 `assembleFinancialReport`、`commitResearchReport`）。
+  - C1：并发度 1（串行，只隔离上下文）；C2：并发度 3。预算分配用 U12 的 `nodeSoftCap` 与收尾预留，协调和核验开销计入同一总预算。
+  - 限制：子任务总数、补查轮数、委派深度 = 1。
+- **验收**：测试 provider 下正常、冲突、单子任务超时（其余结果保留，交付 partial）、补查后成功四种场景跑通；`npm run test:unit -- src/lib/company-research`、`npm run type-check`。
+
+#### U34 故障注入测试 🗄️
+
+- **目标**：证明并发和故障下不会超额、不会重复发布、旧结果不会覆盖新版本。全部使用 mock provider。
+- **依赖**：U33
+- **写入范围**：`src/lib/company-research/multi-agent-faults.integration.test.ts`、必要的测试夹具
+- **故障矩阵**（每项一个用例）：单子任务超时；并发预算耗尽；同一结果重复提交；运行中计划修订；父任务取消；父 attempt 租约丢失后子任务晚到写入；Worker 进程中断后由新 attempt 恢复（已提交的子任务结果复用、预算承接）；文档中嵌入恶意指令（工具和权限不受影响）。
+- **验收**：🗄️ 全部通过；结果写入 `reliability.md` 的新小节由主 AI 负责。
+
+#### U35 任务树观测与界面
+
+- **目标**：前端可看到父子任务树：状态、耗时、用量、引用和失败原因。
+- **依赖**：U31
+- **写入范围**：`src/lib/company-research/observability.ts`（事件增加 `subtaskId / nodeId / role`）、`src/app/api/company-research/` 下快照投影的相关文件、`src/app/company-research/financial/` 下新的任务树组件
+- **合同**：沿用权威快照 + 事件恢复机制；刷新或重连后从快照重建任务树；不展示隐藏思维链，只展示公开决策摘要和工具轨迹。
+- **验收**：状态逻辑单测；类型检查；真实浏览器刷新 / 重连 / 取消的截图证据。
+
+#### U37 两公司同行比较（推荐，可降级）
+
+- **目标**：提供多 Agent 预期占优的“复杂任务”分层。
+- **依赖**：U33、U04 的同行对
+- **写入范围**：`task-contracts.ts`（新增 `kind: 'financial_peer'`：2 家公司 × 相同两期 × 三问 + 1 条跨公司比较结论）、`src/lib/company-research/peer-coordinator.ts`、迁移（如需）、评分 v2 的同行扩展函数
+- **合同**：协调器按公司拆出两组研究员，复用单公司研究员；跨公司比较结论只能引用两侧已核验的事实；总预算单独登记（同一预算同时用于 A 与 C2 的同行任务）。
+- **降级**：时间不足时只做评测 runner 层的“两次单公司运行 + 合并比较”，并如实说明不是同一父任务。
+- **验收**：测试 provider 下跑通；U03 的 `C2-peer` 变体可运行。
+
+#### U36 C1 / C2 实验 💰
+
+- **依赖**：U34、U35；U37（若完成）
+- **合同**：与 U15 相同的样本、模型、评分和总预算；增加同行分层（A vs C2-peer）；记录实际并发度与供应商限流。
+- **验收**：同 U15；报告必须回答：上下文隔离（B→C1）、并发（C1→C2）、任务规模（单公司 vs 同行）各自的收益与成本。
+
+---
+
+### 阶段 3：交付
+
+#### U40 消融报告、演示与简历证据
+
+- **依赖**：G2、U21
+- **写入范围**：`docs/plans/research-agent-upgrade/ablation-report.md`、[delivery.md](delivery.md) 中的演示小节；主 AI 更新 `README.md`
+- **合同**：
+  - 消融报告：分母、区间、配对比较、Token、耗时、失败归因、不适用场景；明确多 Agent 的启用范围，例如“仅同行比较启用”。
+  - 演示脚本：一条任务展示计划图、并行研究员、一次缺证补查、一次子任务失败恢复、最终报告与任务树。
+  - 简历证据：每条描述对应一个证据编号，数字全部来自报告。
+- **验收**：G3。
+
+---
+
+## 6. 后备工作包（主线完成后按需启动）
+
+| ID | 内容 | 前置 | 备注 |
 | --- | --- | --- | --- |
-| R0：冻结实验合同 | 无 | 样本分层、预算、评分、基线和实验登记 | 生成器不接触答案；费用与重复次数有上限 |
-| R1：可执行计划 | R0 | 节点合同、依赖校验、结构化缺口与收尾预算 | 局部修复、无证据停止、预算继承反例通过；完成 B 的对照 |
-| R2：父子任务治理 | R1 | 子任务持久化、额度预留、权限绑定、幂等合并与取消 | 隔离数据库的并发、接管和重复提交验证通过 |
-| R3：三个研究 Agent | R2 | 独立上下文、工具集、任务树与结果汇合 | 正常、冲突、超时和 partial 场景跑通 |
-| R4：对照与展示 | R3 | A/B/C 报告、失败归因和可回放演示 | 固定合同下如实报告质量、成本与并行收益，保留失败 |
-| R5：主动审查与体验 | R4 | D 组实验、上下文保真、澄清等待与恢复 | 主动审查收益单独验证；用户旅程与状态反例通过 |
-| R6：同行比较与路由 | R4，按需要依赖 R5 | 多公司任务拆分或模型路由实验 | 证明新增能力有收益，仍受父任务总预算与范围约束 |
+| U50 | 主动审查 Agent（变体 D）：只读检索、找反例、申请有限补证 | G2 | 作为单独变量实验；审查员与评测评分器分别版本化 |
+| U51 | 上下文保真实验：压缩前后证据找回率、支持率、重复调用比例；测量提示词缓存命中率 | G1 | 把稳定前缀与每轮变化的 checkpoint 分开，可以得到具体的成本数据 |
+| U52 | 人工介入 `waiting_input`：口径冲突澄清、刷新恢复、重复回复幂等、过期决策拒绝 | G2 | 等待用户不延长原截止时间 |
+| U53 | 分布式子任务：子任务独立租约、跨 Worker 认领与接管 | G2 | 工作量大；面试中可作为设计讨论题 |
+| U54 | 模型路由：研究员与核验使用不同模型 | U36 | 分工效果确认后单独实验 |
+| U55 | 只读研究工具 MCP server | U32 | 让“Function Calling / MCP / Agent 协作”三层区分有实物 |
+| U56 | 评审模型与人工标注一致性（κ / 混淆矩阵） | U04 人工标注 | 成本低，回答“LLM 评审是否可信”的追问 |
 
-优先复用的模块：
+---
 
-- 研究合同与循环：`src/lib/company-research/execution-contracts.ts`、`financial-runtime.ts`、`financial-tools.ts`。
-- 持久化与执行权：`src/lib/company-research/attempt-store.ts`、`execution-store.ts`、`update-dependencies.ts`。
-- 上下文与审查：`src/lib/company-research/financial-observation.ts`、`claim-reviewer.ts`、`src/lib/agent/context/context-manager.ts`。
-- 观测与评测：`src/lib/company-research/observability.ts`、`src/lib/eval/`、`scripts/research/run-financial-evaluation.ts`。
-- 工作台：`src/app/company-research/` 与 `src/app/api/company-research/`，沿用权威快照和事件恢复机制。
+## 7. 评测合同摘要
 
-金融规则继续留在研究应用层。可复用的调度机制经边界验证后再下沉到通用层；复用 PI 执行内核和现有服务，不在本提案中要求更换框架、数据库或新增跨服务 Agent 协议。
+完整登记在 U03 的 `ablation-registration.md` 中完成，G0 冻结。
 
-## 9. 面试问题与应准备的证据
-
-| 面试问题 | 项目中的回答抓手 | 应准备的材料 |
+| 变体 | 变化 | 回答的问题 |
 | --- | --- | --- |
-| 为什么用 Agent，哪些步骤适合固定工作流？ | 检索与补证有不确定性，金额计算和权限校验确定执行 | 一次完整执行图与工具轨迹 |
-| ReAct 与 Plan-and-Execute 如何结合？ | 计划约束依赖与预算，研究员内部按观察选择工具 | 缺口触发局部重规划的前后对比 |
-| 为什么需要多 Agent？ | 分离上下文、并行研究与专职核验 | B/C 对照及不适用场景 |
-| 协作方式如何选择？ | 第一版协调器分派、结构化结果汇合；不需要任意互聊 | 父子任务合同与一次冲突处理 |
-| Agent 和并行工具调用有什么区别？ | 子任务具有独立目标、上下文、权限与多轮循环 | 两个研究员不同的执行路径 |
-| 如何防止死循环和成本失控？ | 全局额度、信息增益、委派深度、重试上限与收尾预算 | 重复检索和并发耗尽反例 |
-| 如何处理幻觉与审查偏差？ | 确定性检查、原文核验、校准、缺口和独立评分 | 原因缺证、冲突与 reviewer 误判样例 |
-| RAG、上下文和 Memory 各负责什么？ | 证据索引、当前任务状态、用户偏好分别管理 | 压缩保真及新版本失效演示 |
-| 进程崩溃后如何恢复？ | 持久状态、租约与 fencing，恢复保留预算 | 杀进程接管及旧写入拒绝记录 |
-| Prompt 注入和越权如何防护？ | 来源按数据处理，子权限不超过父权限，服务端绑定范围 | 恶意文档和跨项目读取反例 |
-| 人工介入后怎么继续？ | 持久等待、决策版本、幂等处理与过期校验 | 澄清、刷新、重复点击和取消旅程 |
-| Function Calling、MCP 与 Agent 协作协议如何区分？ | 模型请求工具、工具服务互通、跨 Agent 任务交换是不同层次 | 现有工具合同与本地子任务合同；未实现的协议明确作为设计讨论 |
-| 如何证明优化有效？ | 同题配对、资源约束、消融、未见样本及失败全量统计 | A/B/C 结果表与分母、版本、用量记录 |
+| A | 当前单 Agent | 基线 |
+| B | + 计划图、结构化缺口、收尾预留 | 调度本身是否有用 |
+| B′（B2） | B + 每轮多次工具调用（顺序执行） | 减少模型往返能省多少；与多 Agent 的区别 |
+| C1 | B + 三研究员串行 | 上下文隔离本身的收益 |
+| C2 | C1 + 并发 3 | 并发的耗时收益与限流代价 |
+| C2-peer | 同行比较任务上的 C2，对照同任务 A | 任务规模是否改变结论 |
+| R（U21） | 最优单 Agent + 检索新版本 | 检索改进的独立收益 |
 
-最终演示建议控制在一条研究任务：展示拆分、并行、一次缺证补查、一次失败恢复和最终报告，再用对照数据解释收益。开发完成后依据实际证据撰写简历，不提前填入提升比例或把本提案写成已实现能力。
+- 固定：模型、推理配置、解析版本、检索参数（除 R 外）、缓存冷热条件、总预算（40 次工具 / 20 分钟；Token 上限在 G0 登记）。
+- 指标：U02 的 v2 指标 + 数值正确率 + 任务成功率 + Token / 模型轮数 / 工具次数 / 耗时 / 每成功任务成本 + 失败归因。
+- 统计：单比例用 Wilson 区间，变体比较用题目级配对 bootstrap；小样本只报告实测结果与不确定性，不宣称显著。
+- 选择规则：先满足硬门与质量要求，再比较成本和耗时；多 Agent 只在被证明有收益的分层中启用。
+- 开发集调优后，最终结论需在新登记的未见保留集上验收。
+
+---
+
+## 8. 面试问题与对应证据
+
+| 面试问题 | 项目中的回答抓手 | 证据来源 |
+| --- | --- | --- |
+| 为什么需要多 Agent？ | 先做失败归因，再决定定位 | U01 报告、U36 结果 |
+| 何时不该用多 Agent？ | 单公司三问上的 C vs B 结果 | U36、U40 |
+| Agent 与并行工具调用的区别？ | B′ 与 C 的对照；PI 顺序执行的事实 | U14、U15、U36 |
+| ReAct 与 Plan-and-Execute 如何结合？ | 计划图约束依赖和预算，节点内按观察选择工具 | U10、U13、局部重规划事件 |
+| 如何防止死循环和成本失控？ | 信息增益停滞、收尾预留、全局原子预算、委派深度 1 | U11、U12、U31、U34 |
+| 幻觉与弃答怎么处理？ | 可回答性标签、正确弃答率、错误断言率 | U02、U15 |
+| RAG 检索怎么评估和优化？ | Recall@k / MRR 基线与候选改进 | U05、U20、U21 |
+| 多 Agent 并发写如何保证一致？ | 子任务代次、父执行权 fencing、幂等合并、冲突保留 | U30、U31、U34 |
+| 进程崩溃后如何恢复？ | 租约与 fencing，已提交子任务复用，预算承接 | U34、[reliability.md](reliability.md) |
+| Prompt 注入与越权？ | 服务端绑定身份、角色工具白名单、恶意文档用例 | U32、U34 |
+| LLM 评审是否可信？ | 校准回执、与人工一致性 | 现有校准、U56 |
+| 如何证明优化有效？ | 登记、配对、消融、未见样本、全量保留失败 | U03、U40 |
+
+简历只采用 U40 中有证据编号的结论；开发完成前不预填提升比例，也不把本计划写成已实现能力。

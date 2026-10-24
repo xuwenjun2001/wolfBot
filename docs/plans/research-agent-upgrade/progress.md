@@ -6,25 +6,25 @@
 
 | 字段 | 当前值 |
 | --- | --- |
-| 最后更新 | 2026-10-24（Agent 面试能力升级提案已整理供审阅；原工程与财报质量验收结论保留） |
+| 最后更新 | 2026-10-24（用户授权实现 U 系列板块 1；U00 分支与登记准备，原 S 系列验收结论保留） |
 | 计划版本 | v1 |
 | 总体状态 | S01—S18 已验收（S17 按当前反例修复并重验）；S19/S20 仍有必需验收阻塞。生产部署不在授权范围内 |
 | 已验收步骤 | 18/20；S17 重开与修复过程分别保留 E-REVIEW-03 / E-FIX-R2R3 |
-| 当前待处理步骤 | 本轮入口、预算、重试、测试与 Skill 修复及工程/财报重验已完成；S19/S20 因质量验收仍 blocked，不能标记整体验收通过 |
-| 下一步骤 | 后续质量迭代针对原因证据覆盖、工具预算利用和语义核验完成度另立验证计划；已见开发集不能替代新的未见样本验收 |
-| 下一具体动作 | 本批四个模型任务已经结束，不追加候选、旧保留集重跑或预算。依赖安装/审计仍按用户要求暂缓；若继续发布验收，需分别解决财报质量和既有依赖门问题 |
-| 当前会话登记 | 2026-10-24-agent-interview-proposal：升级草案、两个 README 入口与交接已完成；涵盖执行计划、多 Agent、预算恢复、上下文、人工介入、对照评测与面试证据。文档检查通过，未启动开发；研究功能进度仍为 18/20 |
+| 当前待处理步骤 | U00 登记与分支，随后实现板块 1（阶段 0）的 U01—U05；S19/S20 保持 blocked |
+| 下一步骤 | 完成历史失败归因、并列 v2 评分、消融 runner mock、开发样本扩充及检索基线，再核对 G0；不得跨入未授权的板块 2 |
+| 下一具体动作 | 先完成 U00 文档验证并提交；U01/U02/U04 并行，各自文件独占；U03/U05 随接口和轨迹就绪接入。真实研究模型费用、人工标签和实验登记在交付具体材料后集中请用户确认 |
+| 当前会话登记 | 2026-10-24-u-block1：用户授权板块 1；开发子 Agent 固定 gpt-6.1-sol/max。主 AI 维护进度、决策、文档导航与提交；各工作包负责范围见下方 U 系列表 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
-| 分支 / 本轮实现起点 | codex/research-agent-s11-s15；本次提案起点 `e79eac2`，工作区干净；教学与修复起点保留在原会话记录，当前 HEAD 用 git rev-parse HEAD 核实 |
+| 分支 / 本轮实现起点 | codex/agent-upgrade；起点 `26968ffdb751d3ee0488b608f020be29679780be`，从已核对同步的 origin/codex/research-agent-s11-s15 新建；保留用户修改的 v2 计划和目录 README |
 | 目标仓库 | `https://github.com/xuwenjun2001/wolfBot`，默认分支 `main` |
-| 本轮涉及文件 | docs/plans/research-agent-upgrade/agent-upgrade-proposal.md、该目录 README.md、docs/README.md 与本进度文件；仅文档改动 |
-| 已有改动提醒 | 修复起点工作区干净；仅纳入本轮改动，不提交受控原件、凭据和临时日志 |
+| 本轮涉及文件 | U00：v2 计划、目录 README、docs/README.md、progress.md；U01—U05 的实现、fixture、验证与文档按下方文件范围登记 |
+| 已有改动提醒 | 起点有用户对 agent-upgrade-proposal.md 与目录 README.md 的两份修改；本次按其计划开发并纳入 U00，保留原内容。其余无已有源码改动；受控原件、凭据、临时日志不提交 |
 | 运行环境 / 进程 | Windows 普通文件符号链接仍受 EPERM 限制；Linux 专用容器已完成真实链接/namespace 验证和默认发布检查，导出证据后按 ID 停止并移除。四案例临时 PG 与入口 QA server 已停；保留临时 checkout/依赖 junction，不递归删除。未操作日常服务或生产库 |
 | 模型与数据费用 | 历史 S19 14 次真实任务完整保留；新开发回归四任务/136 工具/12 工具失败、输入 2104212 / 输出 48527 Token。累计 18 任务/626 工具、输入 9458172 / 输出 192453 Token，未知用量请求 0，费用 unknown；未调用付费搜索或 OCR。每任务保持 40 工具/20 分钟 |
 | 阻塞 | S19 旧人工确认与缺答保留；新开发回归数值 36/36，但问题与支持结论均 9/12（75%），未达 80%/90% 门槛。S20 的 Linux 默认 22 项代码检查已通过；原锁文件 npm ci 仍失败，Quality Node 锁文件/Python 审计继续暂缓，未证明完整 CI 或生产发布通过 |
-| 最近验证 | 本次 npm run check:docs 与差异检查通过，仅验证文档。历史两公司入口旅程、46 PG/34 迁移及 a4b5a64 的 Linux 默认 release 22/22 记录见 E-FIX-RELEASE-FINAL；本次未重跑产品测试、模型或完整 CI，工程与财报质量结论分别保留 |
+| 最近验证 | 开工核对 HEAD、远端、工作区、当前单 Agent runtime、BM25 v4 与历史质量证据；新实现验证尚待执行。历史工程与财报质量证据保留，不当作本轮通过 |
 | 受控资料恢复 | 开发资料在 `data/research-agent-upgrade/`；本机 `RESEARCH_HOLDOUT_ROOT=D:/QuantPilot-private-evals/research-v1`，换机须经受控归档恢复并核对登记 hash；这里不记录保留题/答案 |
-| 范围提醒 | 本次仅将升级建议写成 Markdown 供用户审阅；提案 R0—R6 均未开工，不替代原 20 步计划。未修改产品源码、启动模型实验或部署；保留题/答案不得进入 Git 或交接文档 |
+| 范围提醒 | 本轮实现 U00 与板块 1 的 U01—U05，按用户 v2 计划替代旧 R 草案作为后续开发入口；不改变原 S 系列状态。尚无真实模型实验授权，不读取未见保留答案，不部署，不扩展修复暂缓的依赖门 |
 
 ## 步骤状态
 
@@ -55,6 +55,38 @@
 
 `done` 数量与上方完成数一起更新。计划文件不复制状态；一旦状态矛盾，以实际证据核对后修正本文件，不静默选择较乐观的记录。
 
+## U 系列
+
+用户于 2026-10-24 授权实现板块 1（计划阶段 0：U01—U05）及前置 U00。开发子 Agent 使用 gpt-6.1-sol / max，主 AI 负责集成、门禁、进度和 Git 同步。下表只登记计划中存在的 ID；`done` 必须具有本轮证据，人工确认与真实模型验收单列。
+
+| ID | 状态 | 负责会话 | 写入范围 | 证据 | 下一动作 |
+| --- | --- | --- | --- | --- | --- |
+| U00 | done | 2026-10-24-u-block1 / 主 AI | 计划、目录 README、docs/README.md、progress.md；分支 codex/agent-upgrade | E-U00-01；文档检查退出 0（78 Markdown/568 链接）、差异检查通过 | 推进 U01—U05，按文件独占并行 |
+| U01 | pending | 待派发 | src/lib/eval/research-failure-attribution.ts 及测试；scripts/research/attribute-failures.ts；failure-attribution.md | — | 全部历史 S19 批次只读归因 |
+| U02 | pending | 待派发 | financial-research-score-v2.ts 及测试；statistics.ts 只增；rubric-v2.json；answerability-dev-v1.json | — | 实现评分、起草标签；人工确认后冻结 |
+| U03 | pending | 待派发 | scripts/research/run-agent-ablation.ts、ablation-protocol.ts 及测试；ablation-registration.md | — | 安全 runner 与 mock 空跑；登记预算提案 |
+| U04 | pending | 待派发 | development-v2.json、peer-pairs-v1.json、holdout-registration-v2.json；受控 evidence/U04/ | — | 采集解析、生成标注表；不得代替人工核对 |
+| U05 | pending | 待派发 | retrieval-labels-v2.json；verify-retrieval.ts 兼容扩展；受控 evidence/U05/ | — | 原因/风险页标签、真实 query 和 Recall/MRR 基线 |
+| U10 | pending | 未授权 | plan-graph.ts 及测试；task-contracts.ts | — | 等待 G0 及板块 2 授权 |
+| U11 | pending | 未授权 | gap-policy.ts 及测试 | — | 等待 G0 及板块 2 授权 |
+| U12 | pending | 未授权 | budget-policy.ts 及测试 | — | 等待 G0 及板块 2 授权 |
+| U13 | pending | 未授权 | financial-scheduler.ts；runtime/tools/execution-contracts/observation；集成测试 | — | 等待 U10—U12 |
+| U14 | pending | 未授权 | financial-runtime.ts 与批量工具调用测试 | — | 等待 U13 |
+| U15 | pending | 未授权 | 受控消融证据；evaluation-results.md 新小节 | — | 等待 U14、费用审批 |
+| U20 | pending | 未授权 | retrieval-expansion.ts、evidence-retrieval.ts、lexical-index.ts、verify-retrieval.ts | — | 等待 G0 及板块 3 授权 |
+| U21 | pending | 未授权 | 受控检索实验与报告 | — | 等待 U20/U15、费用审批 |
+| U30 | pending | 未授权 | subtask-contracts.ts、subtask-merge.ts 及测试 | — | 等待 G1 及板块 4 授权 |
+| U31 | pending | 未授权 | subtask-store.ts、集成测试与独立迁移目录 | — | 等待 U30 |
+| U32 | pending | 未授权 | financial-researcher.ts、researcher-tools.ts、researcher-prompts.ts、financial-tools.ts 抽取 | — | 等待 U30 和 U31 接口 |
+| U33 | pending | 未授权 | financial-coordinator.ts；financial-runtime.ts；execution-contracts.ts | — | 等待 U31/U32 |
+| U34 | pending | 未授权 | multi-agent-faults.integration.test.ts 与夹具 | — | 等待 U33 |
+| U35 | pending | 未授权 | observability.ts、快照投影、任务树组件 | — | 等待 U31 |
+| U36 | pending | 未授权 | 受控 C1/C2 评测证据 | — | 等待 U34/U35、费用审批 |
+| U37 | pending | 未授权 | task-contracts.ts、peer-coordinator.ts、必要迁移与同行评分 | — | 等待 U33、同行对资料 |
+| U40 | pending | 未授权 | ablation-report.md、delivery.md、README.md | — | 等待 G2/U21 及板块 5 授权 |
+
+G0 尚未执行；弃答标签/评分合同与实验样本、次数、Token 上限尚未获用户确认。实现完成与冻结验收分开记录，不据 U 系列进展改变 S19/S20 的 blocked。
+
 ## 初始核对得到的事实（历史，当前状态见上表）
 
 - 公司研究已使用 DeepSeek Search/Fetch，当前模型与搜索凭据分别配置；旧会话中的 Tavily 描述已过时。
@@ -65,6 +97,13 @@
 - 原 S03 网关基线全部在鉴权时失败；用户指定新模型后另存校准，4 次请求均 200，但提前收尾且无财报来源，不是质量提升证据。后续人工确认按 E-ANNOT-02 单独归档，不能反向把旧模型运行变为通过。
 
 ## 验收证据
+
+### E-U00-01：U 系列分支与开工登记
+
+- 2026-10-24，从 `26968ffdb751d3ee0488b608f020be29679780be` 建立 `codex/agent-upgrade`。创建前 fetch origin，原工作分支与远端为 0/0，目标分支不存在。用户的 v2 计划和目录 README 修改原样保留，并作为本轮开发依据纳入。
+- U 系列表包含全部已定义的 U00—U40 工作包，状态、负责会话、文件范围、证据和下一动作分别登记；未授权的后续板块保持 pending。
+- `npm run check:docs` 退出 0（78 Markdown/568 本地链接），`git diff --check` 退出 0。日志保存在受控目录 `data/research-agent-upgrade/evidence/U00/block1-20261024/docs.log`；本步仅文档与分支，不声称产品或模型验收。
+- 原 S 系列 18/20、S19/S20 blocked 和既有依赖问题暂缓的边界保持原证据；后续 U02 人工标签、U04 标注及 G0 实验审批分别验收。
 
 ### E-FIX-RELEASE-FINAL：工程门与财报门分别收尾
 
@@ -408,6 +447,11 @@ E-Sxx-01 / 日期 / 会话标识：
 ```
 
 ## 会话历史
+
+### 2026-10-24-u-block1 / U00
+
+- 用户授权实现板块 1，开发子 Agent 指定 gpt-6.1-sol/max。核对实际源码、历史质量证据、Git 状态及 origin，同步目标为 wolfBot 新工作分支。
+- 完成 U00 分支、状态表和入口导航；计划中的 U01—U05 开工登记随后单独更新。后续主线与真实模型实验不由本次授权自动展开。
 
 ### 2026-10-20-review-fixes / R1
 
