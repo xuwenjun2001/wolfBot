@@ -50,6 +50,29 @@ node --import tsx scripts/research/verify-fixtures.ts --dataset=fixtures/company
 
 [新保留登记](../../../fixtures/company-research/holdout-registration-v2.json) 只提交 hash 和数量：4 家、8 原件、12 题。身份、题目与原件保持外部隔离；答案尚待独立人工，登记中的准备回执也不能充当生产解析验收。换机须恢复受控根和开发证据，不能仅从 Git 重建原件或重跑盲采来替代恢复。
 
+## 原因与风险页检索基线
+
+[检索标签 v2](../../../fixtures/company-research/retrieval-labels-v2.json) 在旧四家开发资料上包含 12 条规范 query、21 条 U01 历史真实 query，共 33 条查询、66 个预期文件页。真实 query 来自最终归因批次 `history-20261024-05` 的开发轨迹，保留原 documentIds、periodIds、fields、topK 和索引版本。现金流新页标签仍是待人工核对草稿，数值和风险页沿用既有参考。
+
+当前索引 `zh-context-bm25-v4` 在统一两期语料上，不加历史调用过滤的 Recall@5 为 **39/66（59.1%）**、MRR 为 **0.5318**。按严格页证据类型分列如下；同一 query 可含两种证据，不能把问型中的范围页算作因果解释页。
+
+| 页证据类型 | 含该类型的查询数 | Recall@5 命中页/预期页 | MRR |
+| --- | ---: | ---: | ---: |
+| 数值控制 | 10 | 20/20 | 0.8667 |
+| 因果解释 | 9 | 2/15 | 0.1605 |
+| 披露范围 | 6 | 4/9 | 0.3488 |
+| 风险表述 | 11 | 13/22 | 0.5692 |
+
+按 query 问型，直接现金流原因查询命中 0/12；规范 query 为 17/24，真实 query 文本为 22/42。另组 `observedScope` 沿用真实请求的文件、期间和字段过滤：21 条均可评分，2 个范围外金标单独保留，Recall@5 为 19/40、MRR 为 0.4441。它使用当前语料和索引，不复现历史字符截断或模型上下文，不能称为原调用的完整重放。
+
+复验使用明确的解析目录，输出目录另取新名：
+
+```powershell
+node --import tsx scripts/research/verify-retrieval.ts --labels=fixtures/company-research/retrieval-labels-v2.json --parsed-root=data/research-agent-upgrade/evidence/S07/2026-10-18T17-44-58-299Z --output-dir=data/research-agent-upgrade/evidence/U05/<new-run>
+```
+
+报告 `U05/block1-20261024/scope-current-01/report.json` 保存 Recall@1/3/5/10、逐题排名、完整分母、原件/解析/标签/源码 hash；MRR 按完整唯一页排名计算。`--profile=baseline-v1` 的无标签旧用法复验仍为 10/24 页、2 道完整问题。当前结果支持后续调查原因与风险定位，尚未进行检索优化或研究质量对照；未调用模型、embedding 或 reranker。
+
 ## 当前门禁
 
 U02 的评分实现和诊断重算、U04 的机器准备与核对已完成，人工标签、rubric、数值/语义分层及未披露响应审查仍待处理。G0 还需要实验预算登记确认；本页将随 runner 的实际验证补齐。原 S 系列维持 18/20，S19/S20 质量阻塞继续保留。

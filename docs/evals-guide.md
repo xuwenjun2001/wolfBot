@@ -12,6 +12,8 @@ http://localhost:3000/eval-platform
 
 U 系列新增 [板块 1 验收与人工核对](plans/research-agent-upgrade/block1-review.md)：评分 v2 将可回答题、未披露题和待审响应分别保留分母，并附 Wilson 区间与配对 bootstrap。未冻结的标签只用于诊断；同一报告换评分口径不能当作 Agent 质量提升。历史工具轨迹的复验命令见 [U01 归因报告](plans/research-agent-upgrade/failure-attribution.md)。
 
+U05 文件页检索基线同页记录 Recall@1/3/5/10 和完整唯一页 MRR。统一两期文本检索与历史请求过滤分列，因果解释页与披露范围页分列；命中范围页不能证明原因未披露。新增现金流金标仍待人工核对，检索命中也不能代替结论语义验收。
+
 ## 运行时
 
 默认评测运行时：

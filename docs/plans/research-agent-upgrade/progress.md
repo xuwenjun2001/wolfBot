@@ -66,7 +66,7 @@
 | U02 | blocked | 2026-10-24-u-block1 / scoring 子 Agent，主 AI 复核 | financial-research-score-v2.ts 及测试；statistics.ts 只增；rubric-v2.json；answerability-dev-v1.json；主 AI 维护 block1-review.md 与评测导航 | E-U02-01；实现、103 eval 测试和诊断重算已完成 | 人工确认 rubric、3 道现金流标签及未披露响应后冻结；不得代签 |
 | U03 | in_progress | 2026-10-24-u-block1 / scoring 子 Agent 转接 runner | scripts/research/run-agent-ablation.ts、ablation-protocol.ts 及测试；ablation-registration.md | — | 安全 runner 与 mock 空跑；登记预算提案 |
 | U04 | blocked | 2026-10-24-u-block1 / dataset 子 Agent；主 AI 验证接线 | development-v2.json、peer-pairs-v1.json、holdout-registration-v2.json；受控 evidence/U04/；新私有保留目录；verify-fixtures.ts 显式 v2 参数、verify-fixtures-v2.ts 及独立测试；核对文档 | E-U04-01；14 家/30 文档/42 题/7 同行对，84 原值/42 增幅/211 引用通过 | 独立人工复核数值/原因/风险与分层；新保留答案待人工，6 例生产适配限制不得静默绕过 |
-| U05 | in_progress | 2026-10-24-u-block1 / 主 AI | retrieval-labels-v2.json；verify-retrieval.ts 兼容扩展；新增纯评分 research-retrieval-score.ts 及测试；受控 evidence/U05/ | — | 原因/风险页标签、真实 query 和 Recall/MRR 基线 |
+| U05 | done | 2026-10-24-u-block1 / 主 AI | retrieval-labels-v2.json；verify-retrieval.ts 兼容扩展；新增纯评分 research-retrieval-score.ts 及测试；受控 evidence/U05/；评测说明 | E-U05-01；33 query/66 预期页，Recall@5 39/66，MRR 0.5318；旧 baseline-v1 10/24 不变 | 基线报告合同已验证；现金流新金标待人工，后续 U20 的算法改进尚未授权 |
 | U10 | pending | 未授权 | plan-graph.ts 及测试；task-contracts.ts | — | 等待 G0 及板块 2 授权 |
 | U11 | pending | 未授权 | gap-policy.ts 及测试 | — | 等待 G0 及板块 2 授权 |
 | U12 | pending | 未授权 | budget-policy.ts 及测试 | — | 等待 G0 及板块 2 授权 |
@@ -97,6 +97,15 @@ G0 尚未执行；弃答标签/评分合同与实验样本、次数、Token 上�
 - 原 S03 网关基线全部在鉴权时失败；用户指定新模型后另存校准，4 次请求均 200，但提前收尾且无财报来源，不是质量提升证据。后续人工确认按 E-ANNOT-02 单独归档，不能反向把旧模型运行变为通过。
 
 ## 验收证据
+
+### E-U05-01：文件页检索基线与原始过滤范围
+
+- 2026-10-24，`codex/agent-upgrade`；旧四家/八年报语料，12 规范 query 加 21 真实开发 query，共 33 query / 66 预期页。真实 query 绑定 U01 最终 `history-20261024-05`，字段别名修正前的报告保留但不作当前基线。标签 SHA-256 `f84171c33c29c41cb72ee5c080bb33011e572a9945ed8fbb7ed8bdbe9f6f737c`；现金流新引文仍为 pending_review。
+- 主线命令见 [板块 1 核对](block1-review.md)，当前输出 `data/research-agent-upgrade/evidence/U05/block1-20261024/scope-current-01/report.json`，SHA-256 `2cb5975b167af484170faa65ce9ab8ff73f093b8482e0c775284910e84661c8f`。全部原件 hash/长度、解析身份和 gold 原文页检查通过，记录 k=1/3/5/10、索引 zh-context-bm25-v4、原件/解析/fixture/源码 hash；最终复核源码 hash 与当前文件一致。
+- 统一两期无过滤 Recall@5 为 39/66、MRR 0.531753；按问型数值 20/20、直接现金流原因 0/12、风险 13/22、现金流披露范围 6/12。严格页证据类型另报：因果解释 2/15、披露范围 4/9，防止范围页与因果页混算。规范 query 17/24，真实 query 文本 22/42。
+- `observedScope` 保留原 documentIds/periodIds/fields 和 topK：21/21 条可评分，2 个范围外 gold 明示，范围内 Recall@5 19/40、MRR 0.444124。使用当前语料/索引，未重放历史字符截断和模型上下文。旧 baseline-v1 不支持的字段过滤标记 not_scored，不降级成无过滤分数。
+- 5 项文件页评分/范围/schema 单测通过，统一 eval/研究回归见 E-U-BLOCK1-01；定向 ESLint、模块边界通过。`legacy-final-v1.log` 退出 0，旧无标签 baseline-v1 为 10/24 页、2 道完整问题；此前当前无标签 23/24 页、11 道完整问题保留，分母不与新标签混用。
+- 这是固定开发查询的诊断基线，不证明普遍准确率或 Agent 质量提升；未改检索算法，未调用模型/embedding/reranker，未读取新保留内容。U05 的报告生成与兼容合同通过，后续金标冻结和 U20 优化分开处理。
 
 ### E-U04-01：扩展开发集、同行对与新的保留登记
 
@@ -758,3 +767,9 @@ E-Sxx-01 / 日期 / 会话标识：
 - 扩展14家开发、7同行对和新隔离保留登记；主线原件/解析/精确金额/全部211引用及标签schema校验通过，原v1保留。
 - 原披露与重述比较分离，原扫描与人工合成件区分；真实OCR6选页不能代替完整扫描验收。42个新标签和所有分层人工确认未完成，U04保持blocked，六例真实执行限制显式记录。
 - 同步仅清单、v2校验器和必要文档；原始PDF、解析全文、私有保留资料和本地日志不进入Git。
+
+### 2026-10-24-u-block1 / U05
+
+- 完成33条查询的文件页基线、严格页证据类型统计与原始请求过滤范围；Recall@k、完整排名MRR、范围外金标和输入hash保留。U01风险字段修正后重新生成并引用最终基线，旧批次未覆盖。
+- 相关单测、lint与旧baseline-v1兼容复验通过；报告合同验收完成。新现金流金标未冻结，原因页召回不足只作为后续优化依据，不宣称研究质量提升。
+- 同步U05评分模块、脚本、标签和文档；不启动U20、真实模型或生产服务，受控证据继续留本地。
