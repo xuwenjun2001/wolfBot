@@ -124,6 +124,8 @@ OCR 原生环境、模型准备与实际服务验证见 [parser README](../../..
 
 U05 原因/风险页基线增加 `--labels=fixtures/company-research/retrieval-labels-v2.json --parsed-root=<S07解析目录> --output-dir=<新证据目录>`。报告分别记录统一两期文本检索、原请求过滤范围、问型和页证据类型；保留范围外金标，MRR 使用完整唯一页排名。新现金流标签待人审；披露范围页不证明全篇未披露。具体口径和当前结果见 [板块 1 核对](block1-review.md)。
 
+U03 mock 示例：`node --import tsx scripts/research/run-agent-ablation.ts --variant=A --dataset=fixtures/company-research/development.json --repeats=2 --campaign=data/research-agent-upgrade/evidence/U03/<新目录> --provider=mock --max-input-tokens=100000`。生产 adapter 待 U13/U33 等接入，当前 real CLI 关闭执行；mock 只验证框架。登记与真实执行前置条件见 [消融实验登记](ablation-registration.md)，全 campaign 预算跨变体、重复、失败共享，未知用量即停止。
+
 改变 API、配置、数据、页面或运行行为时更新对应专题；本目录只保存计划/实施证据，不复制整套现有使用手册。开发文档使用仓库相对路径便于迁移，面向用户回复使用可点击绝对文件路径。
 
 演示与简历只采用实际实现和可复核结果。保留失败原因、样本量、配置和局限。生产部署或数据同步需遵守对应 release/data 规范；S20 的开发验收不自动触发生产操作。

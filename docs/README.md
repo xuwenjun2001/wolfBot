@@ -17,7 +17,7 @@
 | 想人工复核财报研究参考答案 | [标注手册](plans/research-agent-upgrade/human-annotation.md) / [开发集标注表](plans/research-agent-upgrade/human-annotation-worksheet.md) |
 | 想建立全局学习路线 | [教学 00：项目学习地图](learning/00-project-study-map.md) |
 | 想系统学习 Agent，重点掌握评测设计与改进实验 | [教学 08：Agent 与评测学习手册](learning/08-agent-and-evaluation-handbook.md) |
-| 想继续 U 系列 Agent 升级 | [Agent 升级实施计划：工作包与阶段门](plans/research-agent-upgrade/agent-upgrade-proposal.md)；当前状态见 [进度与交接](plans/research-agent-upgrade/progress.md) 的 U 系列表 |
+| 想继续 U 系列 Agent 升级 | [Agent 升级实施计划：工作包与阶段门](plans/research-agent-upgrade/agent-upgrade-proposal.md)；当前状态见 [进度与交接](plans/research-agent-upgrade/progress.md) 的 U 系列表；[板块 1 核对与 G0 材料](plans/research-agent-upgrade/block1-review.md) |
 | 想用财报研究模块准备全栈面试 | [教学 09：交互式全栈面试课（离线 HTML）](learning/09-financial-research-fullstack.html) |
 | 想快速跑起来 | [教学 01：本地启动与健康检查](learning/01-quick-start.md) |
 | 想配置登录、用户权限或用量配额 | [用户、权限与会话管理](authentication.md) |
