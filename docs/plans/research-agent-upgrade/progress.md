@@ -7,7 +7,7 @@
 | 字段 | 当前值 |
 | --- | --- |
 | 最后更新 | 2026-10-24（用户授权实现 U 系列板块 1；U00 分支与登记准备，原 S 系列验收结论保留） |
-| 计划版本 | v1 |
+| 计划版本 | 原 S 系列 v1；U 系列按 agent-upgrade-proposal.md v2 执行 |
 | 总体状态 | S01—S18 已验收（S17 按当前反例修复并重验）；S19/S20 仍有必需验收阻塞。生产部署不在授权范围内 |
 | 已验收步骤 | 18/20；S17 重开与修复过程分别保留 E-REVIEW-03 / E-FIX-R2R3 |
 | 当前待处理步骤 | U00/U01 已完成；板块 1（阶段 0）的 U02—U05 集成验证中，U03 正在实现；S19/S20 保持 blocked |
@@ -65,7 +65,7 @@
 | U01 | done | 2026-10-24-u-block1 / attribution 子 Agent，主 AI 复核 | src/lib/eval/research-failure-attribution.ts 及测试；scripts/research/attribute-failures.ts；failure-attribution.md | E-U01-01；18 唯一任务/626 调用；81 输入未变；103 eval 测试及类型检查通过 | 结论见 D33；多 Agent 质量收益仍为待检验假设 |
 | U02 | blocked | 2026-10-24-u-block1 / scoring 子 Agent，主 AI 复核 | financial-research-score-v2.ts 及测试；statistics.ts 只增；rubric-v2.json；answerability-dev-v1.json；主 AI 维护 block1-review.md 与评测导航 | E-U02-01；实现、103 eval 测试和诊断重算已完成 | 人工确认 rubric、3 道现金流标签及未披露响应后冻结；不得代签 |
 | U03 | in_progress | 2026-10-24-u-block1 / scoring 子 Agent 转接 runner | scripts/research/run-agent-ablation.ts、ablation-protocol.ts 及测试；ablation-registration.md | — | 安全 runner 与 mock 空跑；登记预算提案 |
-| U04 | in_progress | 2026-10-24-u-block1 / dataset 子 Agent；主 AI 验证接线 | development-v2.json、peer-pairs-v1.json、holdout-registration-v2.json；受控 evidence/U04/；新私有保留目录；主 AI 为 verify-fixtures.ts 增加显式 v2 参数，新增 verify-fixtures-v2.ts 及独立测试 | — | 采集解析、生成标注表；不得代替人工核对 |
+| U04 | blocked | 2026-10-24-u-block1 / dataset 子 Agent；主 AI 验证接线 | development-v2.json、peer-pairs-v1.json、holdout-registration-v2.json；受控 evidence/U04/；新私有保留目录；verify-fixtures.ts 显式 v2 参数、verify-fixtures-v2.ts 及独立测试；核对文档 | E-U04-01；14 家/30 文档/42 题/7 同行对，84 原值/42 增幅/211 引用通过 | 独立人工复核数值/原因/风险与分层；新保留答案待人工，6 例生产适配限制不得静默绕过 |
 | U05 | in_progress | 2026-10-24-u-block1 / 主 AI | retrieval-labels-v2.json；verify-retrieval.ts 兼容扩展；新增纯评分 research-retrieval-score.ts 及测试；受控 evidence/U05/ | — | 原因/风险页标签、真实 query 和 Recall/MRR 基线 |
 | U10 | pending | 未授权 | plan-graph.ts 及测试；task-contracts.ts | — | 等待 G0 及板块 2 授权 |
 | U11 | pending | 未授权 | gap-policy.ts 及测试 | — | 等待 G0 及板块 2 授权 |
@@ -97,6 +97,16 @@ G0 尚未执行；弃答标签/评分合同与实验样本、次数、Token 上�
 - 原 S03 网关基线全部在鉴权时失败；用户指定新模型后另存校准，4 次请求均 200，但提前收尾且无财报来源，不是质量提升证据。后续人工确认按 E-ANNOT-02 单独归档，不能反向把旧模型运行变为通过。
 
 ## 验收证据
+
+### E-U04-01：扩展开发集、同行对与新的保留登记
+
+- 2026-10-24，`codex/agent-upgrade`；新增 14 家/28 年报、2 官方原扫描附件、42 题、84 原披露事实与 42 增幅；7 同行对。原四家/旧清单未改。最终 LF 开发清单 SHA-256 `1e1f3567497ac28f9edef82d0a3b1099004c549ed9f4e34055e0541f5a492024`，同行 `db9f0c970d699fd165bd5020c271c7e83a425f533f558c3ef80050dde095d75f`。
+- 主线 `node --import tsx scripts/research/verify-fixtures.ts --dataset=fixtures/company-research/development-v2.json --output-dir=data/research-agent-upgrade/evidence/U04/root-verification-20261024-04` 退出 0：全部原件与真实 V2 parser 回执 hash/schema、84 金额、42 增幅、211 原文引文、42 个 U02 标签 schema/页范围绑定通过。verification.json SHA-256 `ebd57891ea92730b51ef83dfcd96df43178ce60927525103eda3d9db240d90f2`，绑定最终校验器/领域源码 hash 与 6 例阻塞。4 项 Node 验证器测试与定向 ESLint 通过；统一类型检查在本轮收尾登记。
+- `U04/check-preparation.ts` 补充自检退出 0：人工表 hash、9 重述基期列证据、7 对相同年度/asOf/文档并集、13 家宽行业业务原文、6 OCR 页回执及保留登记脱敏摘要校验。最终 LF 补验在 `U04/lf-normalization/dataset-verification-20261024-01/supplemental-verification.json`，SHA-256 `d918df98d0c3db74cb8f7675f147fe9a824923afa9bfb52e34aca3a261c3d185`，显式检查 UTF-8、LF 与末尾换行。原 `U04/evidence-index.json` / `handoff.md` 对应预规范批次并保留，最终恢复补充见 `U04/lf-normalization/`。
+- 两扫描附件共 199 页，仅 6 选页/41 blocks 实际经本地 Docling/RapidOCR 解析；回执 partial，OCR 均 needs_review，未证明完整文档可用或数值准确。6 案例明确 realExecutionBlocked；重述比较、million_yuan、中文字形与三文档评分未适配，不修改生产合同或删例来获得通过。
+- 新保留 4 家/8 原件/12 题，LF 登记 SHA-256 `c1ccbea29d988e8de2c36dbe42c28447adc74634b85ff6884de88da6a00907a2`；身份/题目/原件保存在新的外部受控根，未打开内容或旧答案。其 parserReceiptSha256 仅为盲采准备回执，生产解析与人工答案仍待完成，和旧保留集交集未检查。
+- 集成发现 Python 在 Windows 写入 CRLF，而 Git 的 JSON 规则固定 LF。已保存三份原字节到 `U04/lf-normalization/pre-*.json`，再规范 LF 并重绑同行 developmentSha256；当前开发/登记字节与 Git 规范字节一致。原私有 manifest/tasks/recovery hash 没有改变；原 b8f017a… 批次证据对应预规范副本，不能与最终 LF hash 混用。
+- 每层候选均 ≥2，人工确认均 0；未披露层机器确认也为 0。humanGoldenCompanies=0，42 新标签均 pending_review。U04 的代码/机器准备已完成，必要独立人工数值/语义/分层核对未完成，因此保持 blocked。细节与人工表入口见 [板块 1 核对](block1-review.md)。
 
 ### E-U02-01：评分 v2 与同报告诊断重算
 
@@ -742,3 +752,9 @@ E-Sxx-01 / 日期 / 会话标识：
 
 - 并列评分v2、可回答性/弃答合同、Wilson及配对bootstrap与103项eval回归通过，诊断重算保留全部四公司和原v1成绩。主线复核新标签不能由模型缺答推导，记录D34。
 - U02代码与诊断证据已就绪；rubric和3道现金流标签、1道未披露响应尚无人审，状态blocked。公开核对入口为block1-review.md，不把待审代理写作质量通过。
+
+### 2026-10-24-u-block1 / U04
+
+- 扩展14家开发、7同行对和新隔离保留登记；主线原件/解析/精确金额/全部211引用及标签schema校验通过，原v1保留。
+- 原披露与重述比较分离，原扫描与人工合成件区分；真实OCR6选页不能代替完整扫描验收。42个新标签和所有分层人工确认未完成，U04保持blocked，六例真实执行限制显式记录。
+- 同步仅清单、v2校验器和必要文档；原始PDF、解析全文、私有保留资料和本地日志不进入Git。

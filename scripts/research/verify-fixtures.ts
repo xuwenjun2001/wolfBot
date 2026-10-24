@@ -5,6 +5,12 @@ import { normalizedPromptHash } from '../../src/lib/eval/dataset-contract';
 const sha = (value: Buffer | string) => createHash('sha256').update(value).digest('hex');
 const normalized = (s: string) => s.normalize('NFKC').replace(/\s+/gu, '');
 async function main() {
+  const args = process.argv.slice(2);
+  const datasetOption = args.find(a => a.startsWith('--dataset='))?.slice('--dataset='.length);
+  if (datasetOption) {
+    const { verifyFixturesV2 } = await import('./verify-fixtures-v2');
+    return verifyFixturesV2(datasetOption, args.find(a => a.startsWith('--output-dir='))?.slice('--output-dir='.length));
+  }
   const directory = 'fixtures/company-research';
   const manifest = JSON.parse(await readFile(`${directory}/documents.json`, 'utf8'));
   const dataset = JSON.parse(await readFile(`${directory}/development.json`, 'utf8'));

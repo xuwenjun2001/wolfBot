@@ -4,6 +4,8 @@
 
 学习财报研究时，先看 [交付架构与演示](../plans/research-agent-upgrade/delivery.md)，再读 [配对实验](../plans/research-agent-upgrade/evaluation-results.md)。重点核对固定资料、失败分母、候选冻结、保留集隔离和未知成本；“有引用”不能单独证明“结论受支持”。
 
+U 系列的 [评分与人工核对](../plans/research-agent-upgrade/block1-review.md) 又区分了两种缺答：原文可以回答却没找到，算漏答；人工查过两期相关范围后确认未披露，才允许评判正确弃答。生成报告写了 evidence_gap 仍可能夹带无依据的解释，所以要绑定整份报告 hash 审查文本。未审结果保留 unknown 和完整分母；诊断状态代理、单元测试及同报告换评分都不能证明研究质量提高。
+
 ![评测平台](assets/eval-platform.png)
 
 ## 评测平台

@@ -116,6 +116,8 @@ S19 的优化器只看到开发样本和失败，不能修改评分器或读取�
 
 研究基础层实跑命令现已登记：`node --import tsx scripts/research/verify-fixtures.ts`、`node --import tsx scripts/research/run-baseline.ts`、`npm run test:research:postgres`。用法分别见 evaluation.md、baseline.md 和公司研究专题；普通单测默认跳过 DB 集成，不能把跳过写成数据库验收通过。
 
+U 系列扩展清单使用 `node --import tsx scripts/research/verify-fixtures.ts --dataset=fixtures/company-research/development-v2.json --output-dir=data/research-agent-upgrade/evidence/U04/<新目录>`；默认无参数用法仍核对旧 v1。v2 检查原件、真实解析回执、原文引用、原值与重述比较的精确复算，并分列机器定位与人工确认。准备数据能算出 million_yuan 不代表生产金额合同支持该单位；未冻结标签和部分扫描不能据此解除真实执行阻塞。人工入口见 [板块 1 核对](block1-review.md)。
+
 OCR 原生环境、模型准备与实际服务验证见 [parser README](../../../services/document-parser/README.md)。确定性财务复算用 `node --import tsx scripts/research/verify-financials.ts`，输出明确为参考输入算术核对，不能替代自动事实抽取或研究模型验收。
 
 检索开发集用 `node --import tsx scripts/research/verify-retrieval.ts <S07解析证据目录>`，`--profile=baseline-v1` 可重放首个词法基线。k、定位分母、语料 hash 和算法版本随报告保存；开发集调参不当作独立保留验收。`test:research:postgres` 默认 Docker，可显式提供 `--native-postgres=<可信工具目录>` 创建专用临时集群，细节与检索 API 见公司研究专题。

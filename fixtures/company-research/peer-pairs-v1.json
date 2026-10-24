@@ -1,0 +1,256 @@
+{
+  "schemaVersion": 1,
+  "datasetVersion": "research-peer-pairs-v1",
+  "developmentDataset": "fixtures/company-research/development-v2.json",
+  "developmentSha256": "1e1f3567497ac28f9edef82d0a3b1099004c549ed9f4e34055e0541f5a492024",
+  "pairs": [
+    {
+      "id": "liquor-maotai-wuliangye",
+      "leftCaseId": "dev-600519",
+      "rightCaseId": "dev-000858",
+      "caseIds": [
+        "dev-600519",
+        "dev-000858"
+      ],
+      "industry": "白酒",
+      "periods": [
+        {
+          "start": "2023-01-01",
+          "end": "2023-12-31",
+          "kind": "annual"
+        },
+        {
+          "start": "2024-01-01",
+          "end": "2024-12-31",
+          "kind": "annual"
+        }
+      ],
+      "asOf": "2025-06-30T15:59:59.999Z",
+      "documentIds": [
+        "600519-2023-annual",
+        "600519-2024-annual",
+        "000858-2023-annual",
+        "000858-2024-annual"
+      ],
+      "questions": [
+        "先统一收入/利润/经营现金流口径，再比较两家变化；不可把规模差异当作经营质量差异。",
+        "分别引用两家公司两期风险和原因原文；未披露与未定位分开说明。"
+      ],
+      "humanReview": "pending_review",
+      "realExecutionBlocked": false
+    },
+    {
+      "id": "liquor-luzhou-yanghe",
+      "leftCaseId": "dev-000568",
+      "rightCaseId": "dev-002304",
+      "caseIds": [
+        "dev-000568",
+        "dev-002304"
+      ],
+      "industry": "白酒",
+      "periods": [
+        {
+          "start": "2023-01-01",
+          "end": "2023-12-31",
+          "kind": "annual"
+        },
+        {
+          "start": "2024-01-01",
+          "end": "2024-12-31",
+          "kind": "annual"
+        }
+      ],
+      "asOf": "2025-06-30T15:59:59.999Z",
+      "documentIds": [
+        "000568-2023-annual",
+        "000568-2024-annual",
+        "002304-2023-annual",
+        "002304-2024-annual",
+        "002304-2024-audit"
+      ],
+      "questions": [
+        "先统一收入/利润/经营现金流口径，再比较两家变化；不可把规模差异当作经营质量差异。",
+        "分别引用两家公司两期风险和原因原文；未披露与未定位分开说明。"
+      ],
+      "humanReview": "pending_review",
+      "realExecutionBlocked": true
+    },
+    {
+      "id": "appliance-midea-gree",
+      "leftCaseId": "dev-000333",
+      "rightCaseId": "dev-000651",
+      "caseIds": [
+        "dev-000333",
+        "dev-000651"
+      ],
+      "industry": "家用电器",
+      "periods": [
+        {
+          "start": "2023-01-01",
+          "end": "2023-12-31",
+          "kind": "annual"
+        },
+        {
+          "start": "2024-01-01",
+          "end": "2024-12-31",
+          "kind": "annual"
+        }
+      ],
+      "asOf": "2025-06-30T15:59:59.999Z",
+      "documentIds": [
+        "000333-2023-annual",
+        "000333-2024-annual",
+        "000651-2023-annual",
+        "000651-2024-annual"
+      ],
+      "questions": [
+        "先统一收入/利润/经营现金流口径，再比较两家变化；不可把规模差异当作经营质量差异。",
+        "分别引用两家公司两期风险和原因原文；未披露与未定位分开说明。"
+      ],
+      "humanReview": "pending_review",
+      "realExecutionBlocked": false
+    },
+    {
+      "id": "appliance-midea-haier",
+      "leftCaseId": "dev-000333",
+      "rightCaseId": "dev-600690",
+      "caseIds": [
+        "dev-000333",
+        "dev-600690"
+      ],
+      "industry": "家用电器",
+      "periods": [
+        {
+          "start": "2023-01-01",
+          "end": "2023-12-31",
+          "kind": "annual"
+        },
+        {
+          "start": "2024-01-01",
+          "end": "2024-12-31",
+          "kind": "annual"
+        }
+      ],
+      "asOf": "2025-06-30T15:59:59.999Z",
+      "documentIds": [
+        "000333-2023-annual",
+        "000333-2024-annual",
+        "600690-2023-annual",
+        "600690-2024-annual"
+      ],
+      "questions": [
+        "先统一收入/利润/经营现金流口径，再比较两家变化；不可把规模差异当作经营质量差异。",
+        "分别引用两家公司两期风险和原因原文；未披露与未定位分开说明。"
+      ],
+      "humanReview": "pending_review",
+      "realExecutionBlocked": true
+    },
+    {
+      "id": "chemical-wanhua-hualu",
+      "leftCaseId": "dev-600309",
+      "rightCaseId": "dev-600426",
+      "caseIds": [
+        "dev-600309",
+        "dev-600426"
+      ],
+      "industry": "基础化工；细分产品和一体化程度不同，须说明可比限制",
+      "periods": [
+        {
+          "start": "2023-01-01",
+          "end": "2023-12-31",
+          "kind": "annual"
+        },
+        {
+          "start": "2024-01-01",
+          "end": "2024-12-31",
+          "kind": "annual"
+        }
+      ],
+      "asOf": "2025-06-30T15:59:59.999Z",
+      "documentIds": [
+        "600309-2023-annual",
+        "600309-2024-annual",
+        "600426-2023-annual",
+        "600426-2024-annual",
+        "600426-2024-audit"
+      ],
+      "questions": [
+        "先统一收入/利润/经营现金流口径，再比较两家变化；不可把规模差异当作经营质量差异。",
+        "分别引用两家公司两期风险和原因原文；未披露与未定位分开说明。"
+      ],
+      "humanReview": "pending_review",
+      "realExecutionBlocked": true
+    },
+    {
+      "id": "insurance-pingan-cpic",
+      "leftCaseId": "dev-601318",
+      "rightCaseId": "dev-601601",
+      "caseIds": [
+        "dev-601318",
+        "dev-601601"
+      ],
+      "industry": "保险；新准则与投资业务过渡差异须先确认",
+      "periods": [
+        {
+          "start": "2022-01-01",
+          "end": "2022-12-31",
+          "kind": "annual"
+        },
+        {
+          "start": "2023-01-01",
+          "end": "2023-12-31",
+          "kind": "annual"
+        }
+      ],
+      "asOf": "2025-06-30T15:59:59.999Z",
+      "documentIds": [
+        "601318-2022-annual",
+        "601318-2023-annual",
+        "601601-2022-annual",
+        "601601-2023-annual"
+      ],
+      "questions": [
+        "先统一收入/利润/经营现金流口径，再比较两家变化；不可把规模差异当作经营质量差异。",
+        "分别引用两家公司两期风险和原因原文；未披露与未定位分开说明。"
+      ],
+      "humanReview": "pending_review",
+      "realExecutionBlocked": true
+    },
+    {
+      "id": "dairy-yili-bright",
+      "leftCaseId": "dev-600887",
+      "rightCaseId": "dev-600597",
+      "caseIds": [
+        "dev-600887",
+        "dev-600597"
+      ],
+      "industry": "乳制品",
+      "periods": [
+        {
+          "start": "2023-01-01",
+          "end": "2023-12-31",
+          "kind": "annual"
+        },
+        {
+          "start": "2024-01-01",
+          "end": "2024-12-31",
+          "kind": "annual"
+        }
+      ],
+      "asOf": "2025-06-30T15:59:59.999Z",
+      "documentIds": [
+        "600887-2023-annual",
+        "600887-2024-annual",
+        "600597-2023-annual",
+        "600597-2024-annual"
+      ],
+      "questions": [
+        "先统一收入/利润/经营现金流口径，再比较两家变化；不可把规模差异当作经营质量差异。",
+        "分别引用两家公司两期风险和原因原文；未披露与未定位分开说明。"
+      ],
+      "humanReview": "pending_review",
+      "realExecutionBlocked": false
+    }
+  ],
+  "humanReview": "pending_independent_human"
+}

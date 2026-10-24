@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 2,
+  "datasetVersion": "research-holdout-u-v2",
+  "visibility": "hidden",
+  "companyCount": 4,
+  "documentCount": 8,
+  "questionCount": 12,
+  "locationEnv": "RESEARCH_HOLDOUT_ROOT",
+  "manifestSha256": "68a55ff4a19d92af3dc06cc89b1b442382c27b89198a8fd4df086b6c400f2b2b",
+  "tasksSha256": "3b5b7dfdabca8ea1996aabfdc7ae851d9e74624025723f5636e4508ab727df0d",
+  "originalSha256": [
+    "04872895505b2fab42678edeb7551b6341ca9da451f706e9c6a0727b67a4a50a",
+    "2981215c13841e93786152d2b5b0c2ec5d82b16d391ac3c4cb3812a1f921f577",
+    "3d4b62651d107ef5d8b89e2b806f09eb5fd631301fee8588f5a0a6c6d6dd7d16",
+    "5c6aea9fce0e0354f993ea84b2e68a0267f582d5f2e086412d6eef6291e2f9fb",
+    "6cc92ca5e3941773ccb2b79989ef566b8af2c10de0e844ac6b0ae532cd09fe39",
+    "967c7a9dd09aecb7448ee87df188e3167e3becde7bc94ff50afb4e6313b92dba",
+    "a547d1089d331f79ea75cfceab67e4791c9a82feb7cd50c43ede736c1d5ca5ac",
+    "bd70d9870fb4ef1abbd375f4e465431d1f713c471ebadaee4029dff6cd2cd3f4"
+  ],
+  "parserReceiptSha256": [
+    "1fb79b8a26dcbb5cf98d28406d2901777e18f7e80081128c100689d6eba47ba7",
+    "1fbac27377c5918355bc7e75714a2ce647a0fa3c89bc6b73b31adb76f1e4f17e",
+    "32221fa5bd6a20c2914ad95b071bfbb386ca2e19450758363af6bb42c7e7b94b",
+    "3304080b2ea776a2ac107206872e12dede5bcfd15a396ecf26fc8ae4d15178dd",
+    "46d99113b10585a566f82ee5dc1363b018fd41eed1fdac3ad395564781383777",
+    "6a1cdab5726f9765b3a2e13b4edb0721eed00635ada4535173e0b0bf12401047",
+    "6b74645ffd49af1972020b6042a59e21005430bd198c8bb225744d73394118de",
+    "c0d9ad8fde1c7a3372ea3748205910e7c86c357281c35661021483c495d1eb52"
+  ],
+  "recoveryIndexSha256": "d8bfbe6e5273afe0e653217d1aaa0e00e9b4e2760ab9b23f3885c989319255e0",
+  "annotations": "pending_independent_human",
+  "openedForOptimization": false,
+  "oldHoldoutRead": false,
+  "identityDisclosure": "none; blind local collection; private contents not opened by the coordinating agent",
+  "isolation": {
+    "developmentCompanyOverlap": 0,
+    "developmentOriginalOverlap": 0,
+    "priorHoldoutOverlap": "not_checked; old unseen manifests were not read"
+  }
+}
