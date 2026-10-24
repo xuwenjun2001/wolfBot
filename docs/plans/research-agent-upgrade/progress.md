@@ -63,7 +63,7 @@
 | --- | --- | --- | --- | --- | --- |
 | U00 | done | 2026-10-24-u-block1 / 主 AI | 计划、目录 README、docs/README.md、progress.md；分支 codex/agent-upgrade | E-U00-01；文档检查退出 0（78 Markdown/568 链接）、差异检查通过 | 推进 U01—U05，按文件独占并行 |
 | U01 | done | 2026-10-24-u-block1 / attribution 子 Agent，主 AI 复核 | src/lib/eval/research-failure-attribution.ts 及测试；scripts/research/attribute-failures.ts；failure-attribution.md | E-U01-01；18 唯一任务/626 调用；81 输入未变；103 eval 测试及类型检查通过 | 结论见 D33；多 Agent 质量收益仍为待检验假设 |
-| U02 | in_progress | 2026-10-24-u-block1 / scoring 子 Agent | financial-research-score-v2.ts 及测试；statistics.ts 只增；rubric-v2.json；answerability-dev-v1.json | — | 实现评分、起草标签；人工确认后冻结 |
+| U02 | blocked | 2026-10-24-u-block1 / scoring 子 Agent，主 AI 复核 | financial-research-score-v2.ts 及测试；statistics.ts 只增；rubric-v2.json；answerability-dev-v1.json；主 AI 维护 block1-review.md 与评测导航 | E-U02-01；实现、103 eval 测试和诊断重算已完成 | 人工确认 rubric、3 道现金流标签及未披露响应后冻结；不得代签 |
 | U03 | in_progress | 2026-10-24-u-block1 / scoring 子 Agent 转接 runner | scripts/research/run-agent-ablation.ts、ablation-protocol.ts 及测试；ablation-registration.md | — | 安全 runner 与 mock 空跑；登记预算提案 |
 | U04 | in_progress | 2026-10-24-u-block1 / dataset 子 Agent；主 AI 验证接线 | development-v2.json、peer-pairs-v1.json、holdout-registration-v2.json；受控 evidence/U04/；新私有保留目录；主 AI 为 verify-fixtures.ts 增加显式 v2 参数，新增 verify-fixtures-v2.ts 及独立测试 | — | 采集解析、生成标注表；不得代替人工核对 |
 | U05 | in_progress | 2026-10-24-u-block1 / 主 AI | retrieval-labels-v2.json；verify-retrieval.ts 兼容扩展；新增纯评分 research-retrieval-score.ts 及测试；受控 evidence/U05/ | — | 原因/风险页标签、真实 query 和 Recall/MRR 基线 |
@@ -97,6 +97,14 @@ G0 尚未执行；弃答标签/评分合同与实验样本、次数、Token 上�
 - 原 S03 网关基线全部在鉴权时失败；用户指定新模型后另存校准，4 次请求均 200，但提前收尾且无财报来源，不是质量提升证据。后续人工确认按 E-ANNOT-02 单独归档，不能反向把旧模型运行变为通过。
 
 ## 验收证据
+
+### E-U02-01：评分 v2 与同报告诊断重算
+
+- 2026-10-24，`codex/agent-upgrade`；并列新增可回答/未披露合同、整报告 hash 绑定的响应审查、题级配对 bootstrap；v1 scorer/rubric/development 原文件未改。受控 `U02/handoff.json` 保存全部命令、初次脚本读错 Markdown 的失败及修复、最终结果和未运行项。
+- `npm run test:unit -- src/lib/eval` 主线复验 21 文件 / 103 测试通过；U02 定向 ESLint、模块边界通过，统一类型检查在本轮集成收尾完成。没有数据库或真实模型调用。
+- 重算 `repair-validation-20261020-01` 四报告：v1 数值 36/36、完成/支持 9/12；按草稿标签 v2 支持 9/11、漏答 2/11。1 道未披露候选题的响应未审，错误断言与弃答的正式语义结论均未建立；不得把结构代理 1/1 记作人工通过。
+- 最终受控目录 `data/research-agent-upgrade/evidence/U02/rescore-repair-validation-20261024-02/`；results.json SHA-256 `61ae31e3e591067bac3678b581aa15d6400b0b64dbc4c1fa58a05c7a579226ff`，reproduction.json `0b030570a1cae7ed47c1e5756288dc2d0da7bd2c5c9b981854ecc1b3f5672073`，绑定所有原始输入与实现，输出后输入 hash 未变。
+- rubric 草稿 SHA-256 `74d3575c3d415ace15fb6af393613a79630056274f35da3a812a1038adf3acfa`；四案例可回答性草稿 `5e7b6d1217c1258e66a382cd4767afa226db818d7d3a12a694a89f17e195dd0d`。9 道完整参考题沿用既有确认，3 道现金流题等待新裁定。officialEligible=false、gatePassed=null；U02 因人工确认保持 blocked，详见 [核对材料](block1-review.md)。
 
 ### E-U01-01：历史失败归因与开发查询导出
 
@@ -728,3 +736,8 @@ E-Sxx-01 / 日期 / 会话标识：
 - 完成历史轨迹归因、真实开发 query 导出和独立输入 hash 核对；18 个任务去重、81 份输入未变，没有新增模型或数据库调用。
 - 记录 D33：先改进检索、调用分配与核验预算，多 Agent 的质量及延迟收益分别实验；原 S19/S20 blocked 和 18/20 不变。
 - 本次仅同步 U01 实现、测试、公开报告及相关交接。U02—U05 的并行改动继续保留，待各自验证后分包同步。
+
+### 2026-10-24-u-block1 / U02
+
+- 并列评分v2、可回答性/弃答合同、Wilson及配对bootstrap与103项eval回归通过，诊断重算保留全部四公司和原v1成绩。主线复核新标签不能由模型缺答推导，记录D34。
+- U02代码与诊断证据已就绪；rubric和3道现金流标签、1道未披露响应尚无人审，状态blocked。公开核对入口为block1-review.md，不把待审代理写作质量通过。

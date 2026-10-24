@@ -44,3 +44,61 @@ export function populationStandardDeviation(values: readonly number[]): number {
   ) / finite.length;
   return roundTo(Math.sqrt(variance));
 }
+
+export interface PairedBinaryObservation {
+  /** One registered question (include the repeat ID when there are repeats). */
+  key: string;
+  baseline: boolean;
+  candidate: boolean;
+}
+
+/**
+ * Resample whole question pairs, never the two arms independently. The interval
+ * and difference use proportions (-1..1), unlike Wilson's percentage output.
+ * Company/repeat correlation is not removed by question-level resampling.
+ */
+export function pairedBootstrapInterval(
+  observations: readonly PairedBinaryObservation[],
+  options: { iterations?: number; seed?: number; confidence?: number } = {},
+) {
+  const iterations = options.iterations ?? 10_000;
+  const seed = options.seed ?? 20261024;
+  const confidence = options.confidence ?? .95;
+  if (!Number.isSafeInteger(iterations) || iterations < 100 || iterations > 1_000_000) throw new Error('PAIRED_BOOTSTRAP_ITERATIONS');
+  if (!Number.isSafeInteger(seed) || seed < 0 || seed > 0xffffffff) throw new Error('PAIRED_BOOTSTRAP_SEED');
+  if (!Number.isFinite(confidence) || confidence <= 0 || confidence >= 1) throw new Error('PAIRED_BOOTSTRAP_CONFIDENCE');
+  const keys = new Set<string>();
+  for (const pair of observations) {
+    if (!pair.key.trim() || keys.has(pair.key)) throw new Error('PAIRED_BOOTSTRAP_QUESTION_KEY');
+    if (typeof pair.baseline !== 'boolean' || typeof pair.candidate !== 'boolean') throw new Error('PAIRED_BOOTSTRAP_BINARY_REQUIRED');
+    keys.add(pair.key);
+  }
+  const total = observations.length;
+  const metadata = { method: 'question_paired_percentile_bootstrap' as const, total, iterations, seed, confidence, units: 'proportion_difference' as const };
+  if (!total) return { ...metadata, baselinePassed: 0, candidatePassed: 0, difference: null, interval: null };
+  const baselinePassed = observations.filter(pair => pair.baseline).length;
+  const candidatePassed = observations.filter(pair => pair.candidate).length;
+  const deltas = observations.map(pair => Number(pair.candidate) - Number(pair.baseline));
+  let state = seed >>> 0;
+  // Mulberry32 accepts every uint32 seed, including zero.
+  const random = () => {
+    state = (state + 0x6d2b79f5) >>> 0;
+    let value = state;
+    value = Math.imul(value ^ (value >>> 15), value | 1);
+    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+  };
+  const sampled = Array.from({ length: iterations }, () => {
+    let delta = 0;
+    for (let i = 0; i < total; i++) delta += deltas[Math.floor(random() * total)];
+    return delta / total;
+  }).sort((a, b) => a - b);
+  const quantile = (probability: number) => {
+    const index = (sampled.length - 1) * probability;
+    const lower = Math.floor(index), weight = index - lower;
+    return sampled[lower] * (1 - weight) + sampled[Math.ceil(index)] * weight;
+  };
+  const tail = (1 - confidence) / 2;
+  return { ...metadata, baselinePassed, candidatePassed, difference: (candidatePassed - baselinePassed) / total,
+    interval: { lower: quantile(tail), upper: quantile(1 - tail) } };
+}

@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 2,
+  "version": "research-rubric-v2",
+  "status": "pending_review",
+  "confirmation": null,
+  "v1Version": "research-rubric-v1",
+  "v1DefinitionsUnchanged": true,
+  "thresholds": {
+    "numericAccuracy": 0.95,
+    "taskCompletionRate": 0.8,
+    "answerableSupport": 0.9,
+    "correctAbstention": 1,
+    "erroneousAssertion": 0
+  },
+  "definitions": {
+    "status": "Proposed rubric only. User confirmation is still required before freezing or making a formal v2 quality conclusion.",
+    "answerableSupport": "Supported complete questions among every answerable question. Completion and numeric checks use the unmodified v1 scorer; missing, unsupported and unresolved questions remain in the denominator.",
+    "correctAbstention": "Every not_disclosed question is in the denominator. Credit requires an explicit evidence_gap, correct required numeric items, no hard errors, and a trusted report-hash-bound review confirming no substantive assertion about the undisclosed requirement. A partial answer may still present supported arithmetic or direction comparisons.",
+    "erroneousAssertion": "Not_disclosed questions with a trusted report-hash-bound finding of a substantive assertion about the undisclosed requirement, divided by every not_disclosed question. Target zero. Claim status alone cannot settle semantic assertion content.",
+    "omission": "Answerable questions ending with an explicit evidence_gap divided by every answerable question. Missing reports are retained as unsupported failures and are also reported as missing; silence is not explicit abstention.",
+    "numeric": "Exactly v1 numericPassed / numericTotal, including every required original amount and change. Missing answers count as wrong and original exact-decimal tolerances remain unchanged.",
+    "completion": "Exactly v1 completedQuestions / questionTotal (three registered questions per company). Correct abstention does not rewrite v1 completion or report status. Whole-company completion is reported separately.",
+    "answerability": "Answerable means the required question can be supported from the registered documents. Not_disclosed applies to a required disclosure or explanation after human review of both reports and explicit checked chapter/page ranges. A generated evidence gap, incomplete search or absence in two selected passages does not establish non-disclosure.",
+    "review": "Only existing complete human-approved reference questions may inherit answerable confirmation. Partial-reference approval cannot establish not_disclosed. New non-disclosure decisions require their own scoped human receipt; rubric approval is separate.",
+    "unreviewed": "Semantic response outcomes without a trusted response review are unknown. Confirmed-count metrics retain their full denominator and report unreviewed counts. The diagnostic subsection separately shows conditional estimates from structured statuses, never accepted semantic findings.",
+    "intervals": "Every proportion has passed, total, rate (0..1) and Wilson 95% interval in percentage units (0..100). Empty denominators produce null rate and null interval, never zero or 100%.",
+    "pairedComparison": "Question-level paired percentile bootstrap, default 10000 resamples, seed 20261024, confidence 0.95. Both arms of each question are resampled together. Differences and percentile intervals use proportions (-1..1). Exact question and label/rubric contracts must match; no incomplete pairs may be dropped.",
+    "proposedGate": "Pending user review: v1 numeric >=95% and question completion >=80%; answerable support >=90% when applicable; correct abstention 100% when applicable; erroneous assertions zero; all hard gates pass and all labels/rubric/required semantic response judgments are confirmed. Undefined applicable quality metrics cannot pass. No overall v2 gate result is issued in diagnostic mode."
+  },
+  "limitations": [
+    "The rubric and three development cash-flow answerability labels are pending review. Existing v1 results, tasks, references and thresholds are preserved.",
+    "Structured claim status does not prove absence of substantive assertions in its text. Diagnostic proxies are clearly separated from reviewed outcomes.",
+    "Wilson and question-level bootstrap intervals are descriptive; company and repeat correlation remains. Four development companies do not support general improvement or significance claims.",
+    "Same-report rescoring changes the measurement definition and does not demonstrate an Agent quality improvement or replace a fresh registered holdout evaluation.",
+    "Scoring validates receipt structure and report bindings; the caller must verify receipt hashes and authorization against actual human review records before official use."
+  ]
+}

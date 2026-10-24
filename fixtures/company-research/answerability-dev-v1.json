@@ -1,0 +1,536 @@
+{
+  "schemaVersion": 1,
+  "datasetVersion": "research-answerability-dev-v1",
+  "sourceDatasetVersion": "research-dev-v1",
+  "sourceDatasetSha256": "000f1fdbdaad9f48d98c632bbe6afa3f602a5c550a3ffc8b95e2f0a35d101cf8",
+  "rubricVersion": "research-rubric-v2",
+  "status": "pending_review",
+  "note": "12题全部保留。9个既有完整人工参考题继承answerable确认；3个现金流标签为S19证据起草，均待人工裁定，只有万华暂列not_disclosed候选。有限章节缺证不等于全篇未披露。rubric v2也待确认；禁止据草稿作正式v2质量结论。",
+  "cases": [
+    {
+      "caseId": "dev-600519",
+      "documentIds": [
+        "600519-2023-annual",
+        "600519-2024-annual"
+      ],
+      "questions": [
+        {
+          "questionId": "income_profit",
+          "answerability": "answerable",
+          "reviewStatus": "confirmed",
+          "rationale": "既有人工批次 2026-10-19-ai-assisted-01 已将 dev-600519/q1 确认为完整 approved 参考题，因此可继承 answerable；不代表本次新模型报告已经人工验收。",
+          "evidenceRefs": [
+            {
+              "path": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/acceptance.json",
+              "sha256": "2995da80c309a7852ad9a866f1db26b0808c63ed336eb1f68e29699eb16ff427"
+            },
+            {
+              "path": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/review.md",
+              "sha256": "02479bdb7d080300143a6870d8835fe6064cef8bfd5da27a770996be50054746"
+            }
+          ],
+          "checkedRanges": [
+            {
+              "documentId": "600519-2023-annual",
+              "bytesSha256": "2125ff97a452ea79b0d784e2432f7d224b6aecc330b644b593477d69e22f4ed1",
+              "filePageStart": 5,
+              "filePageEnd": 5,
+              "section": "主要会计数据和财务指标（既有人审）",
+              "humanChecked": true
+            },
+            {
+              "documentId": "600519-2024-annual",
+              "bytesSha256": "5299f4940e2ce4e91084b73dc457d558b9d335fa76fbfee6227e4254eb7f4a30",
+              "filePageStart": 5,
+              "filePageEnd": 5,
+              "section": "主要会计数据和财务指标（既有人审）",
+              "humanChecked": true
+            }
+          ],
+          "confirmation": {
+            "receiptPath": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/acceptance.json",
+            "receiptSha256": "2995da80c309a7852ad9a866f1db26b0808c63ed336eb1f68e29699eb16ff427",
+            "kind": "complete_reference",
+            "scope": "Existing approved complete reference: dev-600519/q1; only answerability is inherited."
+          }
+        },
+        {
+          "questionId": "cash_flow",
+          "answerability": "answerable",
+          "reviewStatus": "confirmed",
+          "rationale": "既有人工批次 2026-10-19-ai-assisted-01 已将 dev-600519/q2 确认为完整 approved 参考题，因此可继承 answerable；不代表本次新模型报告已经人工验收。",
+          "evidenceRefs": [
+            {
+              "path": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/acceptance.json",
+              "sha256": "2995da80c309a7852ad9a866f1db26b0808c63ed336eb1f68e29699eb16ff427"
+            },
+            {
+              "path": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/review.md",
+              "sha256": "02479bdb7d080300143a6870d8835fe6064cef8bfd5da27a770996be50054746"
+            }
+          ],
+          "checkedRanges": [
+            {
+              "documentId": "600519-2023-annual",
+              "bytesSha256": "2125ff97a452ea79b0d784e2432f7d224b6aecc330b644b593477d69e22f4ed1",
+              "filePageStart": 9,
+              "filePageEnd": 9,
+              "section": "现金流分析/变动说明（既有人审的有限范围；不证明全篇缺失）",
+              "humanChecked": true
+            },
+            {
+              "documentId": "600519-2024-annual",
+              "bytesSha256": "5299f4940e2ce4e91084b73dc457d558b9d335fa76fbfee6227e4254eb7f4a30",
+              "filePageStart": 9,
+              "filePageEnd": 9,
+              "section": "现金流分析/变动说明（既有人审的有限范围；不证明全篇缺失）",
+              "humanChecked": true
+            }
+          ],
+          "confirmation": {
+            "receiptPath": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/acceptance.json",
+            "receiptSha256": "2995da80c309a7852ad9a866f1db26b0808c63ed336eb1f68e29699eb16ff427",
+            "kind": "complete_reference",
+            "scope": "Existing approved complete reference: dev-600519/q2; only answerability is inherited."
+          }
+        },
+        {
+          "questionId": "risks",
+          "answerability": "answerable",
+          "reviewStatus": "confirmed",
+          "rationale": "既有人工批次 2026-10-19-ai-assisted-01 已将 dev-600519/q3 确认为完整 approved 参考题，因此可继承 answerable；不代表本次新模型报告已经人工验收。",
+          "evidenceRefs": [
+            {
+              "path": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/acceptance.json",
+              "sha256": "2995da80c309a7852ad9a866f1db26b0808c63ed336eb1f68e29699eb16ff427"
+            },
+            {
+              "path": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/review.md",
+              "sha256": "02479bdb7d080300143a6870d8835fe6064cef8bfd5da27a770996be50054746"
+            }
+          ],
+          "checkedRanges": [
+            {
+              "documentId": "600519-2023-annual",
+              "bytesSha256": "2125ff97a452ea79b0d784e2432f7d224b6aecc330b644b593477d69e22f4ed1",
+              "filePageStart": 21,
+              "filePageEnd": 21,
+              "section": "主要风险完整段落（既有人审）",
+              "humanChecked": true
+            },
+            {
+              "documentId": "600519-2024-annual",
+              "bytesSha256": "5299f4940e2ce4e91084b73dc457d558b9d335fa76fbfee6227e4254eb7f4a30",
+              "filePageStart": 22,
+              "filePageEnd": 22,
+              "section": "主要风险完整段落（既有人审）",
+              "humanChecked": true
+            }
+          ],
+          "confirmation": {
+            "receiptPath": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/acceptance.json",
+            "receiptSha256": "2995da80c309a7852ad9a866f1db26b0808c63ed336eb1f68e29699eb16ff427",
+            "kind": "complete_reference",
+            "scope": "Existing approved complete reference: dev-600519/q3; only answerability is inherited."
+          }
+        }
+      ]
+    },
+    {
+      "caseId": "dev-000858",
+      "documentIds": [
+        "000858-2023-annual",
+        "000858-2024-annual"
+      ],
+      "questions": [
+        {
+          "questionId": "income_profit",
+          "answerability": "answerable",
+          "reviewStatus": "confirmed",
+          "rationale": "既有人工批次 2026-10-19-ai-assisted-01 已将 dev-000858/q1 确认为完整 approved 参考题，因此可继承 answerable；不代表本次新模型报告已经人工验收。",
+          "evidenceRefs": [
+            {
+              "path": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/acceptance.json",
+              "sha256": "2995da80c309a7852ad9a866f1db26b0808c63ed336eb1f68e29699eb16ff427"
+            },
+            {
+              "path": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/review.md",
+              "sha256": "02479bdb7d080300143a6870d8835fe6064cef8bfd5da27a770996be50054746"
+            }
+          ],
+          "checkedRanges": [
+            {
+              "documentId": "000858-2023-annual",
+              "bytesSha256": "1aab0efbe751c145990ac9652c3aff165452ee060bf22a0fe0412996a55e8566",
+              "filePageStart": 7,
+              "filePageEnd": 7,
+              "section": "主要会计数据和财务指标（既有人审）",
+              "humanChecked": true
+            },
+            {
+              "documentId": "000858-2024-annual",
+              "bytesSha256": "b737191a758994a35e9442d46847de771fe48b758feb9a7f35601def922435e7",
+              "filePageStart": 7,
+              "filePageEnd": 7,
+              "section": "主要会计数据和财务指标（既有人审）",
+              "humanChecked": true
+            }
+          ],
+          "confirmation": {
+            "receiptPath": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/acceptance.json",
+            "receiptSha256": "2995da80c309a7852ad9a866f1db26b0808c63ed336eb1f68e29699eb16ff427",
+            "kind": "complete_reference",
+            "scope": "Existing approved complete reference: dev-000858/q1; only answerability is inherited."
+          }
+        },
+        {
+          "questionId": "cash_flow",
+          "answerability": "answerable",
+          "reviewStatus": "pending_review",
+          "rationale": "待人工确认的 answerable 候选。2026-10-19 原参考 q2 为 partial，而 S19 paired-20261020-02/baseline 已在 2024 年报文件第120—121页找到净利润调节为经营现金流的应收/应付变动，并形成 supported 会计解释；这与本批管理层章节原因缺证不同。须人工核对固定题允许的解释范围，不能把 repair-validation 两处缺证视为原文未披露。",
+          "evidenceRefs": [
+            {
+              "path": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/acceptance.json",
+              "sha256": "2995da80c309a7852ad9a866f1db26b0808c63ed336eb1f68e29699eb16ff427"
+            },
+            {
+              "path": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/review.md",
+              "sha256": "02479bdb7d080300143a6870d8835fe6064cef8bfd5da27a770996be50054746"
+            },
+            {
+              "path": "data/research-agent-upgrade/evidence/S19/repair-validation-20261020-01/baseline/dev-000858/task.json",
+              "sha256": "197abca3ba6136b0adb171841f20a52573f81fb565f88f150adb622df23ead1b"
+            },
+            {
+              "path": "data/research-agent-upgrade/evidence/S19/paired-20261020-02/baseline/dev-000858/task.json",
+              "sha256": "febb86214de7e3c22b3ee78eb7f5696a0c01632e85e8f6ca0d84a4a8f8bdcb4f"
+            }
+          ],
+          "checkedRanges": [
+            {
+              "documentId": "000858-2023-annual",
+              "bytesSha256": "1aab0efbe751c145990ac9652c3aff165452ee060bf22a0fe0412996a55e8566",
+              "filePageStart": 19,
+              "filePageEnd": 19,
+              "section": "现金流分析/变动说明（既有人审的有限范围；不证明全篇缺失）",
+              "humanChecked": true
+            },
+            {
+              "documentId": "000858-2024-annual",
+              "bytesSha256": "b737191a758994a35e9442d46847de771fe48b758feb9a7f35601def922435e7",
+              "filePageStart": 18,
+              "filePageEnd": 18,
+              "section": "现金流分析/变动说明（既有人审的有限范围；不证明全篇缺失）",
+              "humanChecked": true
+            },
+            {
+              "documentId": "000858-2024-annual",
+              "bytesSha256": "b737191a758994a35e9442d46847de771fe48b758feb9a7f35601def922435e7",
+              "filePageStart": 120,
+              "filePageEnd": 121,
+              "section": "现金流量表补充资料（S19已定位，新的可回答性裁定待人工）",
+              "humanChecked": false
+            }
+          ],
+          "confirmation": null
+        },
+        {
+          "questionId": "risks",
+          "answerability": "answerable",
+          "reviewStatus": "confirmed",
+          "rationale": "既有人工批次 2026-10-19-ai-assisted-01 已将 dev-000858/q3 确认为完整 approved 参考题，因此可继承 answerable；不代表本次新模型报告已经人工验收。",
+          "evidenceRefs": [
+            {
+              "path": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/acceptance.json",
+              "sha256": "2995da80c309a7852ad9a866f1db26b0808c63ed336eb1f68e29699eb16ff427"
+            },
+            {
+              "path": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/review.md",
+              "sha256": "02479bdb7d080300143a6870d8835fe6064cef8bfd5da27a770996be50054746"
+            }
+          ],
+          "checkedRanges": [
+            {
+              "documentId": "000858-2023-annual",
+              "bytesSha256": "1aab0efbe751c145990ac9652c3aff165452ee060bf22a0fe0412996a55e8566",
+              "filePageStart": 22,
+              "filePageEnd": 22,
+              "section": "主要风险完整段落（既有人审）",
+              "humanChecked": true
+            },
+            {
+              "documentId": "000858-2024-annual",
+              "bytesSha256": "b737191a758994a35e9442d46847de771fe48b758feb9a7f35601def922435e7",
+              "filePageStart": 21,
+              "filePageEnd": 21,
+              "section": "主要风险完整段落（既有人审）",
+              "humanChecked": true
+            }
+          ],
+          "confirmation": {
+            "receiptPath": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/acceptance.json",
+            "receiptSha256": "2995da80c309a7852ad9a866f1db26b0808c63ed336eb1f68e29699eb16ff427",
+            "kind": "complete_reference",
+            "scope": "Existing approved complete reference: dev-000858/q3; only answerability is inherited."
+          }
+        }
+      ]
+    },
+    {
+      "caseId": "dev-000333",
+      "documentIds": [
+        "000333-2023-annual",
+        "000333-2024-annual"
+      ],
+      "questions": [
+        {
+          "questionId": "income_profit",
+          "answerability": "answerable",
+          "reviewStatus": "confirmed",
+          "rationale": "既有人工批次 2026-10-19-ai-assisted-01 已将 dev-000333/q1 确认为完整 approved 参考题，因此可继承 answerable；不代表本次新模型报告已经人工验收。",
+          "evidenceRefs": [
+            {
+              "path": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/acceptance.json",
+              "sha256": "2995da80c309a7852ad9a866f1db26b0808c63ed336eb1f68e29699eb16ff427"
+            },
+            {
+              "path": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/review.md",
+              "sha256": "02479bdb7d080300143a6870d8835fe6064cef8bfd5da27a770996be50054746"
+            }
+          ],
+          "checkedRanges": [
+            {
+              "documentId": "000333-2023-annual",
+              "bytesSha256": "22f4915d91ada74a37eab8d074aef4c15420f3b1a8b5f5bd5777c00f97d58b86",
+              "filePageStart": 10,
+              "filePageEnd": 10,
+              "section": "主要会计数据和财务指标（既有人审）",
+              "humanChecked": true
+            },
+            {
+              "documentId": "000333-2024-annual",
+              "bytesSha256": "b17a9b9b84bca1d2a4e4a3cadc5dd5ba5c85e3f1fd2d758acd3315b5b040ecd9",
+              "filePageStart": 9,
+              "filePageEnd": 9,
+              "section": "主要会计数据和财务指标（既有人审）",
+              "humanChecked": true
+            }
+          ],
+          "confirmation": {
+            "receiptPath": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/acceptance.json",
+            "receiptSha256": "2995da80c309a7852ad9a866f1db26b0808c63ed336eb1f68e29699eb16ff427",
+            "kind": "complete_reference",
+            "scope": "Existing approved complete reference: dev-000333/q1; only answerability is inherited."
+          }
+        },
+        {
+          "questionId": "cash_flow",
+          "answerability": "answerable",
+          "reviewStatus": "pending_review",
+          "rationale": "待人工确认的 answerable 候选。原参考 q2 的同比原因证据保留 partial；S19 repair-validation 报告引用 2024 年报现金流与净利润差异的经营性应付解释，明确限定不证明同比原因，结构化语义审查为 supported。须人工裁定其是否满足固定题；不能用模型审查替代人工标签。",
+          "evidenceRefs": [
+            {
+              "path": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/acceptance.json",
+              "sha256": "2995da80c309a7852ad9a866f1db26b0808c63ed336eb1f68e29699eb16ff427"
+            },
+            {
+              "path": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/review.md",
+              "sha256": "02479bdb7d080300143a6870d8835fe6064cef8bfd5da27a770996be50054746"
+            },
+            {
+              "path": "data/research-agent-upgrade/evidence/S19/repair-validation-20261020-01/baseline/dev-000333/task.json",
+              "sha256": "fd3c7df3a39cb2411af30c1f8bcc523ac12e8b6071e118c3e5c8462f2fa7180d"
+            }
+          ],
+          "checkedRanges": [
+            {
+              "documentId": "000333-2023-annual",
+              "bytesSha256": "22f4915d91ada74a37eab8d074aef4c15420f3b1a8b5f5bd5777c00f97d58b86",
+              "filePageStart": 55,
+              "filePageEnd": 56,
+              "section": "现金流分析/变动说明（既有人审的有限范围；不证明全篇缺失）",
+              "humanChecked": true
+            },
+            {
+              "documentId": "000333-2024-annual",
+              "bytesSha256": "b17a9b9b84bca1d2a4e4a3cadc5dd5ba5c85e3f1fd2d758acd3315b5b040ecd9",
+              "filePageStart": 53,
+              "filePageEnd": 54,
+              "section": "现金流分析/变动说明（既有人审的有限范围；不证明全篇缺失）",
+              "humanChecked": true
+            }
+          ],
+          "confirmation": null
+        },
+        {
+          "questionId": "risks",
+          "answerability": "answerable",
+          "reviewStatus": "confirmed",
+          "rationale": "既有人工批次 2026-10-19-ai-assisted-01 已将 dev-000333/q3 确认为完整 approved 参考题，因此可继承 answerable；不代表本次新模型报告已经人工验收。",
+          "evidenceRefs": [
+            {
+              "path": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/acceptance.json",
+              "sha256": "2995da80c309a7852ad9a866f1db26b0808c63ed336eb1f68e29699eb16ff427"
+            },
+            {
+              "path": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/review.md",
+              "sha256": "02479bdb7d080300143a6870d8835fe6064cef8bfd5da27a770996be50054746"
+            }
+          ],
+          "checkedRanges": [
+            {
+              "documentId": "000333-2023-annual",
+              "bytesSha256": "22f4915d91ada74a37eab8d074aef4c15420f3b1a8b5f5bd5777c00f97d58b86",
+              "filePageStart": 68,
+              "filePageEnd": 68,
+              "section": "主要风险完整段落（既有人审）",
+              "humanChecked": true
+            },
+            {
+              "documentId": "000333-2024-annual",
+              "bytesSha256": "b17a9b9b84bca1d2a4e4a3cadc5dd5ba5c85e3f1fd2d758acd3315b5b040ecd9",
+              "filePageStart": 65,
+              "filePageEnd": 65,
+              "section": "主要风险完整段落（既有人审）",
+              "humanChecked": true
+            }
+          ],
+          "confirmation": {
+            "receiptPath": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/acceptance.json",
+            "receiptSha256": "2995da80c309a7852ad9a866f1db26b0808c63ed336eb1f68e29699eb16ff427",
+            "kind": "complete_reference",
+            "scope": "Existing approved complete reference: dev-000333/q3; only answerability is inherited."
+          }
+        }
+      ]
+    },
+    {
+      "caseId": "dev-600309",
+      "documentIds": [
+        "600309-2023-annual",
+        "600309-2024-annual"
+      ],
+      "questions": [
+        {
+          "questionId": "income_profit",
+          "answerability": "answerable",
+          "reviewStatus": "confirmed",
+          "rationale": "既有人工批次 2026-10-19-ai-assisted-01 已将 dev-600309/q1 确认为完整 approved 参考题，因此可继承 answerable；不代表本次新模型报告已经人工验收。",
+          "evidenceRefs": [
+            {
+              "path": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/acceptance.json",
+              "sha256": "2995da80c309a7852ad9a866f1db26b0808c63ed336eb1f68e29699eb16ff427"
+            },
+            {
+              "path": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/review.md",
+              "sha256": "02479bdb7d080300143a6870d8835fe6064cef8bfd5da27a770996be50054746"
+            }
+          ],
+          "checkedRanges": [
+            {
+              "documentId": "600309-2023-annual",
+              "bytesSha256": "64eb90a55396add030faaa7a05996fdd5f0095c1c26f0f1309ab6f19522991f1",
+              "filePageStart": 7,
+              "filePageEnd": 7,
+              "section": "主要会计数据和财务指标（既有人审）",
+              "humanChecked": true
+            },
+            {
+              "documentId": "600309-2024-annual",
+              "bytesSha256": "0c37e70c554609f4a22990fd97f3da4ee92bb717e44d641ac7800083789d4df7",
+              "filePageStart": 7,
+              "filePageEnd": 7,
+              "section": "主要会计数据和财务指标（既有人审）",
+              "humanChecked": true
+            }
+          ],
+          "confirmation": {
+            "receiptPath": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/acceptance.json",
+            "receiptSha256": "2995da80c309a7852ad9a866f1db26b0808c63ed336eb1f68e29699eb16ff427",
+            "kind": "complete_reference",
+            "scope": "Existing approved complete reference: dev-600309/q1; only answerability is inherited."
+          }
+        },
+        {
+          "questionId": "cash_flow",
+          "answerability": "not_disclosed",
+          "reviewStatus": "pending_review",
+          "rationale": "待人工核对的 not_disclosed 候选，仅指本题要求的现金流增长及与利润背离的原因解释，不否定数字和方向可答。已确认的 P16 仅称未发生重大变动；S19 本批仍缺原因证据。此前确认只覆盖 partial 缺口，不是原文未披露确认；两期现金流补充资料、财务附注及其他相关章节仍需人工核对并登记完整范围。",
+          "evidenceRefs": [
+            {
+              "path": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/acceptance.json",
+              "sha256": "2995da80c309a7852ad9a866f1db26b0808c63ed336eb1f68e29699eb16ff427"
+            },
+            {
+              "path": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/review.md",
+              "sha256": "02479bdb7d080300143a6870d8835fe6064cef8bfd5da27a770996be50054746"
+            },
+            {
+              "path": "data/research-agent-upgrade/evidence/S19/repair-validation-20261020-01/baseline/dev-600309/task.json",
+              "sha256": "a91ade205f68c80796ac50f26cc1965ab48b313fa6ed943dd05e5e5b69cc1874"
+            }
+          ],
+          "checkedRanges": [
+            {
+              "documentId": "600309-2023-annual",
+              "bytesSha256": "64eb90a55396add030faaa7a05996fdd5f0095c1c26f0f1309ab6f19522991f1",
+              "filePageStart": 16,
+              "filePageEnd": 16,
+              "section": "现金流分析/变动说明（既有人审的有限范围；不证明全篇缺失）",
+              "humanChecked": true
+            },
+            {
+              "documentId": "600309-2024-annual",
+              "bytesSha256": "0c37e70c554609f4a22990fd97f3da4ee92bb717e44d641ac7800083789d4df7",
+              "filePageStart": 16,
+              "filePageEnd": 16,
+              "section": "现金流分析/变动说明（既有人审的有限范围；不证明全篇缺失）",
+              "humanChecked": true
+            }
+          ],
+          "confirmation": null
+        },
+        {
+          "questionId": "risks",
+          "answerability": "answerable",
+          "reviewStatus": "confirmed",
+          "rationale": "既有人工批次 2026-10-19-ai-assisted-01 已将 dev-600309/q3 确认为完整 approved 参考题，因此可继承 answerable；不代表本次新模型报告已经人工验收。",
+          "evidenceRefs": [
+            {
+              "path": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/acceptance.json",
+              "sha256": "2995da80c309a7852ad9a866f1db26b0808c63ed336eb1f68e29699eb16ff427"
+            },
+            {
+              "path": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/review.md",
+              "sha256": "02479bdb7d080300143a6870d8835fe6064cef8bfd5da27a770996be50054746"
+            }
+          ],
+          "checkedRanges": [
+            {
+              "documentId": "600309-2023-annual",
+              "bytesSha256": "64eb90a55396add030faaa7a05996fdd5f0095c1c26f0f1309ab6f19522991f1",
+              "filePageStart": 32,
+              "filePageEnd": 32,
+              "section": "主要风险完整段落（既有人审）",
+              "humanChecked": true
+            },
+            {
+              "documentId": "600309-2024-annual",
+              "bytesSha256": "0c37e70c554609f4a22990fd97f3da4ee92bb717e44d641ac7800083789d4df7",
+              "filePageStart": 33,
+              "filePageEnd": 33,
+              "section": "主要风险完整段落（既有人审）",
+              "humanChecked": true
+            }
+          ],
+          "confirmation": {
+            "receiptPath": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/acceptance.json",
+            "receiptSha256": "2995da80c309a7852ad9a866f1db26b0808c63ed336eb1f68e29699eb16ff427",
+            "kind": "complete_reference",
+            "scope": "Existing approved complete reference: dev-600309/q3; only answerability is inherited."
+          }
+        }
+      ]
+    }
+  ]
+}

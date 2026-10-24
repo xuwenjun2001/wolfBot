@@ -10,6 +10,8 @@ http://localhost:3000/eval-platform
 
 双期财报研究使用独立的 [配对评测合同与结果](plans/research-agent-upgrade/evaluation-results.md)。它的金额/结论/三问完成率不与下方看板 benchmark 汇总；单元测试、同模型独立审查和用户人工确认分别记录。
 
+U 系列新增 [板块 1 验收与人工核对](plans/research-agent-upgrade/block1-review.md)：评分 v2 将可回答题、未披露题和待审响应分别保留分母，并附 Wilson 区间与配对 bootstrap。未冻结的标签只用于诊断；同一报告换评分口径不能当作 Agent 质量提升。历史工具轨迹的复验命令见 [U01 归因报告](plans/research-agent-upgrade/failure-attribution.md)。
+
 ## 运行时
 
 默认评测运行时：

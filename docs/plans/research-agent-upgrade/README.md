@@ -35,6 +35,7 @@
 | [reliability.md](reliability.md) | S18 故障矩阵、实际进程中断、观测字段与恢复操作 |
 | [evaluation-results.md](evaluation-results.md) | S19 冻结合同、真实配对结果、失败、候选取舍与保留集边界 |
 | [failure-attribution.md](failure-attribution.md) | U01 历史工具轨迹、问题失败类别、重复检索与上下文争用假设的证据边界 |
+| [block1-review.md](block1-review.md) | 阶段 0 的可复验产物、评分合同、待人工确认项目及 G0 阻塞 |
 | [delivery.md](delivery.md) | S20 架构、演示脚本、环境恢复与可核对项目描述 |
 | [release-failures.md](release-failures.md) | S20 原完整发布门 35 个失败用例、实际报错与原始定位 |
 | [review-s16-s20.md](review-s16-s20.md) | S16—S20 Review：证券解析入口、更新截止时间与失败来源重试反例 |
