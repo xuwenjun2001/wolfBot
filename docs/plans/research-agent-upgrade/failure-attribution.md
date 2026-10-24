@@ -6,27 +6,27 @@
 
 各工具调用：check_coverage=19，read_evidence=152，record_claim=94，record_fact=174，search_evidence=117，submit_report=18，verify_claim=52。总计 626，失败调用 82。相同 query 重复 5，高度相似 query 重复 6；成功检索/读取中无新定位内容 75/269（27.88%）。
 
-跨问题切换 142，返回原问题后重复读取 11。相同 claim 输入重复保存 17，同 claimHash 重复核验 6；它们说明调用分配可优化，不直接证明质量收益。18/18 任务的 compact 次数不可观测；8 个任务额度到顶且仍有未完成问题。
+跨问题切换 141，返回原问题后重复读取 11。相同 claim 输入重复保存 17，同 claimHash 重复核验 6；它们说明调用分配可优化，不直接证明质量收益。18/18 任务的 compact 次数不可观测；8 个任务额度到顶且仍有未完成问题。
 
 | 任务 | 资料 | 状态 | 观察/账本工具 | 问题调用分布 | 同/相似 query | 无新证据/成功检索读取 | 切换/返回重读 | 到顶未完成 | 失败问题归类 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | T01 | dev-000333 | partial | 40/40 | cash_flow+income_profit=8；income_profit=29；cash_flow=1；global=2 | 0/0 | 6/9 | 2/0 | 是 | cash_flow:budget_exhausted；income_profit:tool_error；risks:budget_exhausted |
 | T02 | dev-000858 | partial | 40/40 | cash_flow+income_profit=1；income_profit=37；global=2 | 0/0 | 7/10 | 0/0 | 是 | cash_flow:budget_exhausted；income_profit:tool_error；risks:budget_exhausted |
-| T03 | dev-600309 | partial | 40/40 | cash_flow+income_profit=3；income_profit=6；cash_flow=17；risks=11；unassigned=1；global=2 | 1/0 | 5/17 | 17/3 | 是 | cash_flow:retrieval_miss；risks:verification_pending |
+| T03 | dev-600309 | partial | 40/40 | cash_flow+income_profit=3；income_profit=6；cash_flow=16；cash_flow+risks=1；risks=11；unassigned=1；global=2 | 1/0 | 5/17 | 17/3 | 是 | cash_flow:retrieval_miss；risks:verification_pending |
 | T04 | dev-600519 | completed | 31/31 | cash_flow+income_profit=6；income_profit=7；cash_flow=11；risks=5；global=2 | 0/0 | 3/12 | 6/0 | 否 | — |
-| T05 | dev-000333 | completed | 39/39 | cash_flow+income_profit=4；income_profit=8；cash_flow=12；unassigned=5；risks=7；cash_flow+risks=1；global=2 | 0/0 | 8/20 | 8/1 | 否 | — |
-| T06 | dev-000858 | completed | 39/39 | cash_flow+income_profit=4；income_profit=9；cash_flow=19；risks=5；global=2 | 0/0 | 4/19 | 11/1 | 否 | — |
+| T05 | dev-000333 | completed | 39/39 | cash_flow+income_profit=4；income_profit=8；cash_flow=9；cash_flow+risks=4；unassigned=5；risks=7；global=2 | 0/0 | 8/20 | 7/1 | 否 | — |
+| T06 | dev-000858 | completed | 39/39 | cash_flow+income_profit=4；income_profit=9；cash_flow=18；cash_flow+risks=1；risks=5；global=2 | 0/0 | 4/19 | 11/1 | 否 | — |
 | T07 | dev-600309 | partial | 40/40 | cash_flow+income_profit=3；income_profit=7；cash_flow=15；unassigned=1；risks=12；global=2 | 1/0 | 7/18 | 14/4 | 是 | cash_flow:retrieval_miss |
 | T08 | dev-600519 | completed | 28/28 | cash_flow+income_profit=3；income_profit=8；cash_flow=10；risks=5；global=2 | 0/0 | 1/10 | 6/0 | 否 | — |
 | T09 | dev-000333 | completed | 25/25 | cash_flow+income_profit=3；income_profit=6；cash_flow=8；risks=5；unassigned=1；global=2 | 0/0 | 0/11 | 6/0 | 否 | — |
-| T10 | dev-000858 | partial | 39/39 | cash_flow+income_profit=3；income_profit=6；cash_flow=18；unassigned=3；cash_flow+risks=1；risks=5；global=3 | 0/0 | 7/23 | 9/0 | 否 | cash_flow:retrieval_miss |
+| T10 | dev-000858 | partial | 39/39 | cash_flow+income_profit=3；income_profit=6；cash_flow=17；unassigned=3；cash_flow+risks=2；risks=5；global=3 | 0/0 | 7/23 | 9/0 | 否 | cash_flow:retrieval_miss |
 | T11 | dev-600309 | partial | 40/40 | cash_flow+income_profit=5；income_profit=6；cash_flow=11；unassigned=2；risks=14；global=2 | 0/1 | 5/21 | 10/2 | 是 | cash_flow:retrieval_miss；risks:verification_pending |
 | T12 | dev-600519 | completed | 23/23 | cash_flow+income_profit=3；income_profit=6；cash_flow=7；risks=5；global=2 | 0/0 | 0/9 | 6/0 | 否 | — |
-| T13 | 历史保留 | partial | 40/40 | cash_flow+income_profit=9；income_profit=4；unassigned=16；cash_flow+income_profit+risks=3；cash_flow=4；risks=2；global=2 | 3/4 | 15/32 | 7/0 | 是 | cash_flow:retrieval_miss；income_profit:retrieval_miss；risks:retrieval_miss |
+| T13 | 历史保留 | partial | 40/40 | cash_flow+income_profit=6；income_profit=4；unassigned=16；cash_flow+income_profit+risks=6；cash_flow=3；cash_flow+risks=1；risks=2；global=2 | 3/4 | 15/32 | 7/0 | 是 | cash_flow:retrieval_miss；income_profit:retrieval_miss；risks:retrieval_miss |
 | T14 | 历史保留 | completed | 26/26 | cash_flow+income_profit=3；income_profit=6；cash_flow=9；risks=6；global=2 | 0/0 | 0/9 | 6/0 | 否 | — |
 | T15 | dev-000333 | completed | 31/31 | cash_flow+income_profit=4；income_profit=9；cash_flow=9；unassigned=2；risks=5；global=2 | 0/0 | 1/11 | 6/0 | 否 | — |
-| T16 | dev-000858 | partial | 40/40 | cash_flow+income_profit=4；income_profit=10；cash_flow=16；risks=6；unassigned=2；global=2 | 0/1 | 5/18 | 12/0 | 是 | cash_flow:retrieval_miss |
-| T17 | dev-600309 | partial | 40/40 | cash_flow+income_profit=3；income_profit=6；cash_flow=8；risks=21；global=2 | 0/0 | 1/11 | 10/0 | 是 | cash_flow:retrieval_miss；risks:verification_pending |
+| T16 | dev-000858 | partial | 40/40 | cash_flow+income_profit=4；income_profit=10；cash_flow=15；cash_flow+risks=1；risks=6；unassigned=2；global=2 | 0/1 | 5/18 | 12/0 | 是 | cash_flow:retrieval_miss |
+| T17 | dev-600309 | partial | 40/40 | cash_flow+income_profit=3；income_profit=6；cash_flow=6；cash_flow+risks=2；risks=21；global=2 | 0/0 | 1/11 | 10/0 | 是 | cash_flow:retrieval_miss；risks:verification_pending |
 | T18 | dev-600519 | completed | 25/25 | cash_flow+income_profit=3；income_profit=7；cash_flow=7；unassigned=1；risks=5；global=2 | 0/0 | 0/9 | 6/0 | 否 | — |
 
 | 失败类别 | 问题数 | 依据代码 |
@@ -85,8 +85,8 @@ not_disclosed 的零计数表示这批轨迹没有完整文档人工核查回执
 node --import tsx scripts/research/attribute-failures.ts --campaign=data/research-agent-upgrade/evidence/S19/paired-20261020-01 --campaign=data/research-agent-upgrade/evidence/S19/paired-20261020-02 --campaign=data/research-agent-upgrade/evidence/S19/repair-validation-20261020-01 --campaign=data/research-agent-upgrade/evidence/S19/human-review-20261020-01 --output=data/research-agent-upgrade/evidence/U01/<new-run>
 ```
 
-本轮最终原件位于受控目录 data/research-agent-upgrade/evidence/U01/history-20261024-04/：attribution.json 保存逐任务、逐问题及逐调用依据，failure-attribution.md 为脱敏自动汇总，manifest.json 绑定 81 份输入和实现文件的 SHA-256，并在输出前复核输入未变。目录使用独占创建，历史目录只读。
+本轮最终原件位于受控目录 data/research-agent-upgrade/evidence/U01/history-20261024-05/：attribution.json 保存逐任务、逐问题及逐调用依据，failure-attribution.md 为脱敏自动汇总，manifest.json 绑定 81 份输入和实现文件的 SHA-256，并在输出前复核输入未变。目录使用独占创建，历史目录只读。04 原件完整保留；05 修复了检索字段 risk 与问题标识 risks 的别名归属，混合 cash_flow/risk 的搜索进入共享桶并按 1/n 分摊。可观察切换由 142 修订为 141，其余总体统计与主要失败类别不变。
 
 real-queries.json 包含 117 条真实 search_evidence 输入；development-real-queries.json 仅含 16 个开发任务的 95 条。两者 schemaVersion=1，queries 条目包含 campaign、phase、caseId、taskId、visibility、callId、ordinal、line、query、fields、questionIds、documentIds、periodIds、topK、indexVersion。questionIds 使用 income_profit、cash_flow、risks，可为多问题共享；U05 只消费 development-real-queries.json。JSON 不复制来源正文、参考答案或模型隐藏推理。
 
-单元测试覆盖解析与损坏输入、结果重复、任务身份冲突、共享调用、返回重读、query 相似度、证据指纹、七类归因、恢复后的旧错误、不可观测 compact、预算步骤和公开 Markdown 脱敏。实际命令、退出码与日志见受控 validation-20261024-01/；[升级进度](progress.md) 由主 AI 集成后登记。原历史质量结果仍见 [S19 配对评测](evaluation-results.md)。
+单元测试覆盖 risk 字段共享归属、解析与损坏输入、结果重复、任务身份冲突、共享调用、返回重读、query 相似度、证据指纹、七类归因、恢复后的旧错误、不可观测 compact、预算步骤和公开 Markdown 脱敏。初始命令、退出码与日志见受控 validation-20261024-01/，别名补修与 05 审计见 validation-20261024-02/；[升级进度](progress.md) 由主 AI 集成后登记。原历史质量结果仍见 [S19 配对评测](evaluation-results.md)。

@@ -116,7 +116,7 @@ export type ResearchRealQuery = {
 };
 
 function metricQuestion(metric: string): string | null {
-  return ['revenue', 'parent_net_profit', 'parent_profit'].includes(metric) ? 'income_profit' : ['operating_cash_flow', 'cash_flow'].includes(metric) ? 'cash_flow' : metric === 'risks' ? 'risks' : null;
+  return ['revenue', 'parent_net_profit', 'parent_profit'].includes(metric) ? 'income_profit' : ['operating_cash_flow', 'cash_flow'].includes(metric) ? 'cash_flow' : ['risk', 'risks'].includes(metric) ? 'risks' : null;
 }
 const questionMetrics = (id: string) => id === 'income_profit' ? ['revenue', 'parent_net_profit'] : id === 'cash_flow' ? ['operating_cash_flow'] : [];
 function locatorKey(document: string, version: unknown, locator: unknown, pageOnly = false) {

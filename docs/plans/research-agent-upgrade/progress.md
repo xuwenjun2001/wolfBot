@@ -113,6 +113,7 @@ G0 尚未执行；弃答标签/评分合同与实验样本、次数、Token 上�
 - 实跑命令、输出保护拒绝、首次类型错误及修复后通过完整保存在 `data/research-agent-upgrade/evidence/U01/validation-20261024-01/validation.json`。`npm run test:unit -- src/lib/eval` 主线复验退出 0（21 文件 / 103 测试）；子 Agent 定向 23 测试、类型检查、边界检查通过。主线文档检查退出 0（79 Markdown / 573 本地链接），差异检查通过。
 - 最终目录 `data/research-agent-upgrade/evidence/U01/history-20261024-04/`；manifest SHA-256 `887da114e0c4e8a5344a517ba2735b8a5a2dbd24fbc9b726f1e1f322739ff64b`，attribution.json 为 `bcd373ac436533bfa427e157651aed5f8d65a6387d84e68b96798a3b1edd6c82`。最终源码 hash 与 manifest 一致；独立核对 81 份历史输入相对首轮未变，18 份观察调用与账本一致。
 - 导出 117 条真实 query，其中 `development-real-queries.json` 的 95 条仅来自开发任务，供 U05 使用；历史保留查询不进入新开发集。历史批次跨版本，只用于诊断，不报告质量改善。
+- U05 复核后补修检索字段 `risk`/`risks` 别名：24 项定向测试及 fresh type-check、独立审计通过。最终使用 `history-20261024-05/`：manifest SHA-256 `b8e09010b255f1f64845d7ad2cb48665cc0c04de1e47989f5b4901b5b6a35605`，attribution.json `b5e3b4a1317607b2d05844e4a9a0d0b11622f866848b21afbd5c8b21e3eef8a2`。13 条 query 推断归属修正（开发 9 条），可观察切换 142→141；主要失败类别、调用数、原 query 文本及过滤条件不变。81 输入及 04 原证据未变；修补验证在 `U01/validation-20261024-02/`。
 
 ### E-U00-01：U 系列分支与开工登记
 

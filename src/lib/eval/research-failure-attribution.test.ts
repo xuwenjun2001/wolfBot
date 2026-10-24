@@ -81,6 +81,18 @@ describe('research call allocation and repetition', () => {
     expect(value.calls[1]).toMatchObject({ questionIds: ['risks'], basis: 'claimId_questionId' });
     expect(value.observedToolCalls).toBe(4);
   });
+  it('allocates a shared cash-flow/risk search equally when the tool uses the singular risk field', () => {
+    const value = attributeResearchTask(input({ toolsText: trace([
+      { name: 'search_evidence', args: { fields: ['cash_flow', 'risk'], query: '经营活动现金流量净额 可能面对的风险' }, data: { hits: [] } },
+    ]) }));
+    expect(value.calls[0]).toMatchObject({ questionIds: ['cash_flow', 'risks'], basis: 'retrieval_fields' });
+    expect(value.queries[0].questionIds).toEqual(['cash_flow', 'risks']);
+    expect(value.distribution.buckets['cash_flow+risks']).toEqual({ calls: 1, tools: { search_evidence: 1 } });
+    expect(value.distribution.perQuestion.cash_flow.allocatedCalls).toBe(.5);
+    expect(value.distribution.perQuestion.risks.allocatedCalls).toBe(.5);
+    expect(value.distribution.perQuestion.income_profit.allocatedCalls).toBe(0);
+    expect(value.observedToolCalls).toBe(1);
+  });
   it('uses citation locators to expose returns and re-reads, while offsets distinguish continuation', () => {
     const read = (page: number, offset = 0): Action => ({ name: 'read_evidence', args: { documentId: 'public-document', documentVersion: 1, locator: { kind: 'page', filePage: page }, offset },
       data: { sourceId: 'public-document', documentVersion: 1, locator: { kind: 'page', filePage: page }, offset, text: `page-${page}-${offset}` } });
