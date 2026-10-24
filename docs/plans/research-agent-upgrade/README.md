@@ -37,6 +37,7 @@
 | [delivery.md](delivery.md) | S20 架构、演示脚本、环境恢复与可核对项目描述 |
 | [release-failures.md](release-failures.md) | S20 原完整发布门 35 个失败用例、实际报错与原始定位 |
 | [review-s16-s20.md](review-s16-s20.md) | S16—S20 Review：证券解析入口、更新截止时间与失败来源重试反例 |
+| [agent-upgrade-proposal.md](agent-upgrade-proposal.md) | 面向面试的后续升级草案：执行计划、多 Agent、上下文、人工介入与对照评测；尚未启动开发，不替代原 20 步状态 |
 
 会话历史直接追加在 `progress.md`，避免再维护一份不同步的日志。详细测试原件保存在受控证据目录，进度文件保留脱敏摘要、位置、版本和 hash。
 
