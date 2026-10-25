@@ -2,6 +2,8 @@
 
 这里汇总阶段 0 的可复验产物和仍需人工判断的项目。实现进度以 [progress.md](progress.md) 为准，实验配置以 [实施计划](agent-upgrade-proposal.md) 的 G0 为准。本轮开发不运行真实研究模型。
 
+2026-10-25 剩余验收已整理为 [五项选择卡](block1-acceptance-choices.md)：三道现金流题、实验设计及代码开发与扩展样本人审的先后顺序。选择尚未到达；该材料不构成新的确认，也不改变本页门禁状态。
+
 ## 评分合同和四个原开发案例
 
 [rubric v2](../../../fixtures/company-research/rubric-v2.json) 和 [可回答性草稿](../../../fixtures/company-research/answerability-dev-v1.json) 与 v1 并列保存。v1 评分、参考答案、原报告和预算没有改写。用户于 2026-10-25 回复“1.A 2.A”，确认接受限定范围的会计分解及现有评分门槛，rubric 已按 [真实确认回执](rubric-v2-confirmation-20261025.md) 冻结。逐题标签仍需各自原件范围与确认，生成报告的 evidence_gap 不能作为原文未披露的证明。
