@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
+import { researchPlanStepSchema, researchPlanV2Schema } from './plan-graph';
 
 export const revisionSchema = z.number().int().min(1);
 export const sha256Schema = z.string().regex(/^[a-f0-9]{64}$/);
@@ -49,13 +50,14 @@ export const researchTaskRevisionChangesSchema = z.object({
   asOf: timestampSchema.optional(),
 }).strict().refine(value => Object.keys(value).length > 0, 'At least one request field must change');
 export type ResearchTaskRevisionChanges = z.infer<typeof researchTaskRevisionChangesSchema>;
-export const researchPlanSchema = z.object({
+export const researchPlanV1Schema = z.object({
   schemaVersion: z.literal(1), taskId: z.uuid(), requestRevision: revisionSchema, revision: revisionSchema,
-  createdAt: timestampSchema, steps: z.array(z.object({
-    id: researchIdSchema, questionId: researchQuestionSchema.shape.id,
-    kind: z.enum(['acquire', 'parse', 'retrieve', 'compare', 'verify', 'report']), title: z.string().min(1).max(300),
-  }).strict()).min(1).max(40),
+  createdAt: timestampSchema, steps: z.array(researchPlanStepSchema).min(1).max(40),
 }).strict().refine(p => new Set(p.steps.map(s => s.id)).size === p.steps.length, 'Duplicate plan step IDs');
+export const researchPlanSchema = z.discriminatedUnion('schemaVersion', [researchPlanV1Schema, researchPlanV2Schema]);
+export { researchPlanV2Schema, planNodeSchema, planNodeStateSchema } from './plan-graph';
+export type { ResearchPlanV2, PlanNode, PlanNodeState, PlanNodeStates } from './plan-graph';
+export type ResearchPlanV1 = z.infer<typeof researchPlanV1Schema>;
 export type ResearchPlan = z.infer<typeof researchPlanSchema>;
 export const taskStatusSchema = z.enum(['draft', 'queued', 'running', 'partial', 'completed', 'failed', 'cancelled']);
 export const executionAttemptSchema = z.object({
@@ -79,5 +81,6 @@ export function researchRequestHash(input: unknown) {
   return createHash('sha256').update(canonicalResearchJson(researchTaskSpecSchema.parse(input))).digest('hex');
 }
 export function assertPlanForSpec(plan: ResearchPlan, spec: ResearchTaskSpec) {
-  if (plan.requestRevision !== spec.requestRevision || plan.steps.some(s => !spec.questions.some(q => q.id === s.questionId))) throw new Error('PLAN_REQUEST_MISMATCH');
+  if (plan.requestRevision !== spec.requestRevision || plan.steps.some(s => !spec.questions.some(q => q.id === s.questionId))
+    || (plan.schemaVersion === 2 && plan.nodes.some(node => node.questionId !== null && !spec.questions.some(q => q.id === node.questionId)))) throw new Error('PLAN_REQUEST_MISMATCH');
 }
