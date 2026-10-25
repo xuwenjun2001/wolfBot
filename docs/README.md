@@ -19,6 +19,7 @@
 | 想系统学习 Agent，重点掌握评测设计与改进实验 | [教学 08：Agent 与评测学习手册](learning/08-agent-and-evaluation-handbook.md) |
 | 想继续 U 系列 Agent 升级 | [Agent 升级实施计划：工作包与阶段门](plans/research-agent-upgrade/agent-upgrade-proposal.md)；当前状态见 [进度与交接](plans/research-agent-upgrade/progress.md) 的 U 系列表；[板块 1 核对与 G0 材料](plans/research-agent-upgrade/block1-review.md) |
 | 想用财报研究模块准备全栈面试 | [教学 09：交互式全栈面试课（离线 HTML）](learning/09-financial-research-fullstack.html) |
+| 想详细学习板块 2 的 U10—U14 实现 | [教学 10：研究计划、缺口、预算、调度与批量工具（离线 HTML）](learning/10-research-agent-block2.html) |
 | 想快速跑起来 | [教学 01：本地启动与健康检查](learning/01-quick-start.md) |
 | 想配置登录、用户权限或用量配额 | [用户、权限与会话管理](authentication.md) |
 | 想接入、使用或验证用户记忆服务 | [用户记忆服务接入、使用与效果验证](user-memory-integration.md) |
