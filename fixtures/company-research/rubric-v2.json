@@ -1,8 +1,13 @@
 {
   "schemaVersion": 2,
   "version": "research-rubric-v2",
-  "status": "pending_review",
-  "confirmation": null,
+  "status": "frozen",
+  "confirmation": {
+    "receiptPath": "docs/plans/research-agent-upgrade/rubric-v2-confirmation-20261025.md",
+    "receiptSha256": "f8afc62e60e35eb9136ee543944c31db9815e1a30c53143e306a2a351b03e794",
+    "kind": "rubric",
+    "scope": "User reply 1.A 2.A on 2026-10-25 (Asia/Shanghai): approve evidence-backed, reproducible and bounded accounting decomposition for the fixed cash-flow question and all existing v2 thresholds/definitions. Question labels, reference answers, response reviews and experiment approvals remain separate."
+  },
   "v1Version": "research-rubric-v1",
   "v1DefinitionsUnchanged": true,
   "thresholds": {
@@ -13,7 +18,7 @@
     "erroneousAssertion": 0
   },
   "definitions": {
-    "status": "Proposed rubric only. User confirmation is still required before freezing or making a formal v2 quality conclusion.",
+    "status": "User-confirmed rubric frozen on 2026-10-25. The bound receipt approves accounting decomposition and existing thresholds; it does not approve individual labels, reference answers, model responses or experiments.",
     "answerableSupport": "Supported complete questions among every answerable question. Completion and numeric checks use the unmodified v1 scorer; missing, unsupported and unresolved questions remain in the denominator.",
     "correctAbstention": "Every not_disclosed question is in the denominator. Credit requires an explicit evidence_gap, correct required numeric items, no hard errors, and a trusted report-hash-bound review confirming no substantive assertion about the undisclosed requirement. A partial answer may still present supported arithmetic or direction comparisons.",
     "erroneousAssertion": "Not_disclosed questions with a trusted report-hash-bound finding of a substantive assertion about the undisclosed requirement, divided by every not_disclosed question. Target zero. Claim status alone cannot settle semantic assertion content.",
@@ -25,10 +30,11 @@
     "unreviewed": "Semantic response outcomes without a trusted response review are unknown. Confirmed-count metrics retain their full denominator and report unreviewed counts. The diagnostic subsection separately shows conditional estimates from structured statuses, never accepted semantic findings.",
     "intervals": "Every proportion has passed, total, rate (0..1) and Wilson 95% interval in percentage units (0..100). Empty denominators produce null rate and null interval, never zero or 100%.",
     "pairedComparison": "Question-level paired percentile bootstrap, default 10000 resamples, seed 20261024, confidence 0.95. Both arms of each question are resampled together. Differences and percentile intervals use proportions (-1..1). Exact question and label/rubric contracts must match; no incomplete pairs may be dropped.",
-    "proposedGate": "Pending user review: v1 numeric >=95% and question completion >=80%; answerable support >=90% when applicable; correct abstention 100% when applicable; erroneous assertions zero; all hard gates pass and all labels/rubric/required semantic response judgments are confirmed. Undefined applicable quality metrics cannot pass. No overall v2 gate result is issued in diagnostic mode."
+    "proposedGate": "User-confirmed on 2026-10-25: v1 numeric >=95% and question completion >=80%; answerable support >=90% when applicable; correct abstention 100% when applicable; erroneous assertions zero; all hard gates pass and all labels/rubric/required semantic response judgments are confirmed. Undefined applicable quality metrics cannot pass. No overall v2 gate result is issued in diagnostic mode.",
+    "cashFlowExplanation": "The fixed cash-flow question accepts evidence-backed and reproducible accounting contributions from comparable two-year reconciliation tables, with period, unit and consolidation/parent-attributable basis stated. A same-year cash-flow/profit difference statement alone cannot explain year-on-year changes. Accounting contributions do not establish business causes such as demand or customer collections without additional evidence. Source review and per-question label confirmation remain required."
   },
   "limitations": [
-    "The rubric and three development cash-flow answerability labels are pending review. Existing v1 results, tasks, references and thresholds are preserved.",
+    "The rubric is user-confirmed; three development cash-flow answerability labels remain pending separate source review. The earlier Wanhua non-disclosure candidate must be reassessed using the newly located reconciliation evidence. Existing v1 results, tasks, references and thresholds are preserved.",
     "Structured claim status does not prove absence of substantive assertions in its text. Diagnostic proxies are clearly separated from reviewed outcomes.",
     "Wilson and question-level bootstrap intervals are descriptive; company and repeat correlation remains. Four development companies do not support general improvement or significance claims.",
     "Same-report rescoring changes the measurement definition and does not demonstrate an Agent quality improvement or replace a fresh registered holdout evaluation.",

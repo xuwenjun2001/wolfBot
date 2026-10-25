@@ -1,6 +1,6 @@
 # 消融实验登记
 
-> 状态：`pending_review`。本页是 U03 的登记提案和框架验证记录，未获得真实模型实验授权。G0 的 rubric、可回答性标签、样本与预算确认仍待完成。
+> 状态：`pending_review`。本页是 U03 的登记提案和框架验证记录，未获得真实模型实验授权。rubric 已按 [2026-10-25 确认回执](rubric-v2-confirmation-20261025.md) 冻结；G0 的可回答性标签、样本、实验设计与预算确认仍待完成。
 
 ## 本次交付范围
 
@@ -35,7 +35,7 @@
 | --- | --- |
 | `development-v2.json` | `1e1f3567497ac28f9edef82d0a3b1099004c549ed9f4e34055e0541f5a492024` |
 | `peer-pairs-v1.json` | `db9f0c970d699fd165bd5020c271c7e83a425f533f558c3ef80050dde095d75f` |
-| `rubric-v2.json` | `74d3575c3d415ace15fb6af393613a79630056274f35da3a812a1038adf3acfa` |
+| `rubric-v2.json` | `59cb710f1c7f8f4cea35b4c7aba662585dd0a642d35e70a6a2e98b234637a748` |
 | `rubric.json`（v1） | `81df0d53f38650a955957896c6c9883030588dc455cb482b95eff2ac7e0f0d45` |
 | `answerability-dev-v1.json`（仅旧 4 家） | `5e7b6d1217c1258e66a382cd4767afa226db818d7d3a12a694a89f17e195dd0d` |
 | `development.json`（旧 4 家） | `000f1fdbdaad9f48d98c632bbe6afa3f602a5c550a3ffc8b95e2f0a35d101cf8` |

@@ -143,7 +143,7 @@ describe('parallel financial rubric v2', () => {
     expect(caseAnswerabilitySchema.safeParse(candidate).success).toBe(false);
     candidate.questions[1].checkedRanges.pop();
     expect(caseAnswerabilitySchema.safeParse(candidate).success).toBe(false);
-    expect(financialResearchRubricV2Schema.safeParse({ ...rubricFixture, status: 'frozen' }).success).toBe(false);
+    expect(financialResearchRubricV2Schema.safeParse({ ...rubricFixture, status: 'frozen', confirmation: null }).success).toBe(false);
     expect(answerabilityDatasetSchema.safeParse({ ...answerabilityFixture, status: 'frozen' }).success).toBe(false);
     expect(answerabilityDatasetSchema.parse(answerabilityFixture).cases).toHaveLength(4);
     const parsed = answerabilityDatasetSchema.parse(answerabilityFixture);
@@ -156,7 +156,7 @@ describe('parallel financial rubric v2', () => {
     pending.questions[1].reviewStatus = 'pending_review';
     pending.questions[1].confirmation = null;
     expect(() => scoreFinancialCaseV2(sample, response(false), [], pending, { rubric: frozenRubric })).toThrow('LABEL_PENDING_REVIEW');
-    const rubric = financialResearchRubricV2Schema.parse(rubricFixture);
+    const rubric = financialResearchRubricV2Schema.parse({ ...rubricFixture, status: 'pending_review', confirmation: null });
     expect(() => scoreFinancialCaseV2(sample, response(false), [], labels(), { rubric })).toThrow('RUBRIC_PENDING_REVIEW');
     expect(scoreFinancialCaseV2(sample, response(false), [], pending, { rubric, mode: 'diagnostic' }).officialEligible).toBe(false);
   });

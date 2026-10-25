@@ -6,23 +6,23 @@
 
 | 字段 | 当前值 |
 | --- | --- |
-| 最后更新 | 2026-10-24 18:50（板块 1 实现与整合验证收尾；G0 等待人工核对与设计确认，原 S 系列验收保留） |
+| 最后更新 | 2026-10-25 14:18（用户确认会计解释口径与现有 v2 门槛，rubric 已冻结；G0 仍待逐题标签、扩展样本和设计确认） |
 | 计划版本 | 原 S 系列 v1；U 系列按 agent-upgrade-proposal.md v2 执行 |
 | 总体状态 | S01—S18 已验收（S17 按当前反例修复并重验）；S19/S20 仍有必需验收阻塞。生产部署不在授权范围内 |
 | 已验收步骤 | 18/20；S17 重开与修复过程分别保留 E-REVIEW-03 / E-FIX-R2R3 |
 | 当前待处理步骤 | U00/U01/U03/U05 done；U02/U04 实现与机器准备完成、人工验收 blocked；G0 未通过；S19/S20 保持 blocked |
 | 下一步骤 | 按 block1-review.md 完成人工标签、样本与设计确认，冻结 G0；板块 2 尚未授权 |
-| 下一具体动作 | 人工核对 rubric、旧 3 道现金流标签/未披露响应、新 14 家/42 题与分层，确认最小 3 变体或完整 5 变体设计及输入上限；真实 adapter 与 6 例执行限制在后续真实实验前解决 |
-| 当前会话登记 | 2026-10-24-u-block1：用户授权板块 1；开发子 Agent 固定 gpt-6.1-sol/max。主 AI 维护进度、决策、文档导航与提交；各工作包负责范围见下方 U 系列表 |
+| 下一具体动作 | rubric 无需重复确认；按已确认口径核对旧 3 道现金流标签与适用响应、新 14 家/42 题及分层，确认最小 3 变体或完整 5 变体设计及输入上限；真实 adapter 与 6 例执行限制在后续真实实验前解决 |
+| 当前会话登记 | 2026-10-25-u02-confirmation：用户回复“1.A 2.A”，确认会计分解解释口径及现有 v2 门槛；本会话登记真实规则回执、冻结 rubric 并核对当前题库。逐题标签、扩展样本和实验设计仍分别验收 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
 | 分支 / 本轮实现起点 | codex/agent-upgrade；起点 `26968ffdb751d3ee0488b608f020be29679780be`，从已核对同步的 origin/codex/research-agent-s11-s15 新建；保留用户修改的 v2 计划和目录 README |
 | 目标仓库 | `https://github.com/xuwenjun2001/wolfBot`，默认分支 `main` |
-| 本轮涉及文件 | U00：v2 计划、目录 README、docs/README.md、progress.md；U01—U05 的实现、fixture、验证与文档按下方文件范围登记 |
+| 本轮涉及文件 | 本次 U02 确认：rubric-v2.json、financial-research-score-v2.test.ts、rubric-v2-confirmation-20261025.md、human-annotation.md、block1-review.md、ablation-registration.md、decisions.md、progress.md；板块 1 原实现范围保留在下方步骤与历史记录 |
 | 已有改动提醒 | 起点有用户对 agent-upgrade-proposal.md 与目录 README.md 的两份修改；本次按其计划开发并纳入 U00，保留原内容。其余无已有源码改动；受控原件、凭据、临时日志不提交 |
 | 运行环境 / 进程 | 本轮脚本、单测、类型检查及本地 6 页 OCR 探针均已退出；无新增持久服务、Worker 或数据库。日常服务和历史受控 checkout/junction 保留，未部署或操作生产库；普通文件 symlink 仍受 Windows 权限限制，runner 的 junction 拒绝用例已通过 |
 | 模型与数据费用 | 本轮真实研究模型调用 0；U03 mock 用量为模拟值，真实费用 unknown；U04 使用已有本地 OCR 模型。历史 18 个真实任务/626 工具、输入 9458172 / 输出 192453 Token 仅作 U01 归因，未重开预算；后续父任务仍为 40 工具/20 分钟 |
-| 阻塞 | G0 等待 rubric/标签/样本人工核对与实验设计确认；6 例新样本真实执行和评分兼容限制保留，真实 adapter 按后续步骤实现。S19 问题/支持 9/12、旧保留缺答及 S20 完整 CI 阻塞不变，Node 锁文件/Python 审计继续暂缓 |
-| 最近验证 | E-U-BLOCK1-01：229 项 eval/研究单测和 26 项脚本测试通过；46 DB-only 跳过；类型、定向 ESLint、模块边界及文档检查通过。U03 最终 12 CLI/9 arm、U04 211 引用、U05 33 query 均保存可复验证据；无真实模型质量提升结论 |
+| 阻塞 | rubric 已冻结；G0 等待逐题标签/样本人工核对与实验设计确认。6 例新样本真实执行和评分兼容限制保留，真实 adapter 按后续步骤实现。S19 问题/支持 9/12、旧保留缺答及 S20 完整 CI 阻塞不变，Node 锁文件/Python 审计继续暂缓 |
+| 最近验证 | E-U02-02：16 项评分 v2 回归通过，确认回执与登记 hash 核对通过，文档检查 82 Markdown/612 链接通过；未运行真实模型或新评分。板块 1 原 255 项通过、46 DB-only 跳过及其他验证保留在 E-U-BLOCK1-01 |
 | 受控资料恢复 | 开发资料在 `data/research-agent-upgrade/`；旧保留根 `D:/QuantPilot-private-evals/research-v1` 已消费，新保留根 `D:/QuantPilot-private-evals/research-u-v2` 仅登记 hash、未打开内容。换机恢复受控归档并核对最终 LF 清单；这里不记录保留题/答案 |
 | 范围提醒 | 本轮实现 U00 与板块 1 的 U01—U05，按用户 v2 计划替代旧 R 草案作为后续开发入口；不改变原 S 系列状态。尚无真实模型实验授权，不读取未见保留答案，不部署，不扩展修复暂缓的依赖门 |
 
@@ -63,7 +63,7 @@
 | --- | --- | --- | --- | --- | --- |
 | U00 | done | 2026-10-24-u-block1 / 主 AI | 计划、目录 README、docs/README.md、progress.md；分支 codex/agent-upgrade | E-U00-01；文档检查退出 0（78 Markdown/568 链接）、差异检查通过 | 推进 U01—U05，按文件独占并行 |
 | U01 | done | 2026-10-24-u-block1 / attribution 子 Agent，主 AI 复核 | src/lib/eval/research-failure-attribution.ts 及测试；scripts/research/attribute-failures.ts；failure-attribution.md | E-U01-01；18 唯一任务/626 调用；81 输入未变；103 eval 测试及类型检查通过 | 结论见 D33；多 Agent 质量收益仍为待检验假设 |
-| U02 | blocked | 2026-10-24-u-block1 / scoring 子 Agent，主 AI 复核 | financial-research-score-v2.ts 及测试；statistics.ts 只增；rubric-v2.json；answerability-dev-v1.json；主 AI 维护 block1-review.md 与评测导航 | E-U02-01；实现、103 eval 测试和诊断重算已完成 | 人工确认 rubric、3 道现金流标签及未披露响应后冻结；不得代签 |
+| U02 | blocked | 2026-10-24-u-block1 / scoring 子 Agent，主 AI 复核；2026-10-25 主 AI 登记用户确认 | financial-research-score-v2.ts 及测试；statistics.ts 只增；rubric-v2.json；answerability-dev-v1.json；确认回执与核对文档 | E-U02-01 / E-U02-02；rubric 按用户“1.A 2.A”冻结，16 项回归及回执 hash 通过 | rubric 无需重复确认；3 道现金流逐题标签及适用响应仍需核对，不以规则确认代签样本 |
 | U03 | done | 2026-10-24-u-block1 / scoring 子 Agent；attribution 独立审查，主 AI 整合 | scripts/research/run-agent-ablation.ts、ablation-protocol.ts 及测试；ablation-registration.md | E-U03-01；22 项协议测试、12 CLI/9 mock arm、96 保存/94 启动/0 真实模型调用；登记提案完成 | 按 U13/U33 等接入真实 adapter；G0 人审与预算另行确认；mock 不构成生产变体验收 |
 | U04 | blocked | 2026-10-24-u-block1 / dataset 子 Agent；主 AI 验证接线 | development-v2.json、peer-pairs-v1.json、holdout-registration-v2.json；受控 evidence/U04/；新私有保留目录；verify-fixtures.ts 显式 v2 参数、verify-fixtures-v2.ts 及独立测试；核对文档 | E-U04-01；14 家/30 文档/42 题/7 同行对，84 原值/42 增幅/211 引用通过 | 独立人工复核数值/原因/风险与分层；新保留答案待人工，6 例生产适配限制不得静默绕过 |
 | U05 | done | 2026-10-24-u-block1 / 主 AI | retrieval-labels-v2.json；verify-retrieval.ts 兼容扩展；新增纯评分 research-retrieval-score.ts 及测试；受控 evidence/U05/；评测说明 | E-U05-01；33 query/66 预期页，Recall@5 39/66，MRR 0.5318；旧 baseline-v1 10/24 不变 | 基线报告合同已验证；现金流新金标待人工，后续 U20 的算法改进尚未授权 |
@@ -803,3 +803,11 @@ E-Sxx-01 / 日期 / 会话标识：
 - E-U-BLOCK1-01 汇总最终255项通过、46项DB-only跳过、types/lint/边界/文档检查和协议/账本/原件一致性；失败与换行修复前批次保留。U00/U01/U03/U05已完成各自合同，U02/U04保留人工阻塞。
 - 人工材料集中到block1-review.md；计划U02/U04/G0要求真人确认，下一动作是实际核对标签/样本及选择登记设计。最小3变体与完整5变体为待审提案，确认设计后仍需后续adapter和完整协议批准才能真实执行。
 - 所有本轮相关源码、fixture和交接按包同步wolfBot的codex/agent-upgrade；原件、私有保留和临时证据按忽略规则留在受控目录。没有部署、调用真实研究模型、开启U10或修复暂缓CI依赖；S系列18/20与原阻塞不变。
+
+### E-U02-02 / 2026-10-25-u02-confirmation：评分口径确认与题库说明
+
+- 用户原话“1.A 2.A”确认限定范围的会计分解和现有 v2 门槛。[真实规则回执](rubric-v2-confirmation-20261025.md) SHA-256 为 `f8afc62e60e35eb9136ee543944c31db9815e1a30c53143e306a2a351b03e794`；rubric 状态改为 frozen，绑定该回执；当前 rubric SHA-256 为 `59cb710f1c7f8f4cea35b4c7aba662585dd0a642d35e70a6a2e98b234637a748`，待审实验登记同步该版本。D36 记录解释边界，human-annotation.md 和 block1-review.md 同步当前状态。
+- `npm run test:unit -- src/lib/eval/financial-research-score-v2.test.ts` 退出 0，1 文件/16 项通过；既有负例显式构造缺回执和 pending rubric，不再依赖真实 fixture 恰好处于待审状态。`npm run check:docs` 退出 0，82 Markdown/612 本地链接通过；独立 schema/hash 核对确认回执、登记 hash 一致，旧标签仍为 9 confirmed/3 pending。未改生产运行时，未重复 PG、全量类型或真实模型检查；无新评测质量结论。
+- 题库现状核对：扩展开发集 14 家/42 题，包含原 4 家/12 题；每家三类固定题，洋河/华鲁的收入利润题增加原始扫描核对要求。平安/太保使用 2022—2023 年，其余 12 家使用 2023—2024 年。另有 7 组同行任务草案和新未见 4 家/12 题登记；只读公开登记与开发清单，未打开新保留内容。
+- 规则冻结不确认旧三道题、新 14 家样本或实际响应。万华 2024 文件页 174—175、美的文件页 256 的新增会计证据已在核对入口注明，万华旧未披露候选待重判；受控 2026-10-24 待审表和诊断原件不覆盖。U02/U04 仍 blocked、G0 未通过；下一动作按已确认规则逐题核对并确认实验设计，不重复请求 rubric 同意。
+- 本次起点 `e4d75b0cc36a1196f57ae926a4c2e94368abe3e7`，分支 `codex/agent-upgrade`，工作区初始干净；仅同步本次规则、回执、回归适配和交接。未运行真实研究模型、读取新保留题、部署或处理暂缓 CI 依赖问题。
