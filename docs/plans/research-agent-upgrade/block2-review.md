@@ -1,6 +1,6 @@
 # 板块 2（U10—U14）实现审查
 
-2026-10-25（北京时间），审查 `codex/agent-upgrade` 的 `8af165565a30f04c829cfc3909f7ff0ebc71100f`，范围为 U10—U14 的纯策略、运行时、批次及持久化调用链。起点工作区干净。本轮只提交审查和交接文档，未修改产品实现。
+2026-10-25（北京时间），首次审查 `codex/agent-upgrade` 的 `8af165565a30f04c829cfc3909f7ff0ebc71100f`，范围为 U10—U14 的纯策略、运行时、批次及持久化调用链。起点工作区干净。首次审查只提交文档；用户随后要求直接修复，修复说明与验证追加在文末，保留原反例。
 
 发现 3 个可复现问题，均影响 B/B2。U13 需要修复，U14 依赖同一调度器，需要补回归；U10—U12 的纯函数验收记录保留。既有测试通过不能覆盖下列状态转换反例。
 
@@ -52,4 +52,22 @@ PG 通过本地 `review-pg-launch.cjs` 在现有 runner 中追加复现脚本；
 
 PG 清单：`data/research-agent-upgrade/evidence/S05/rehearsal-4a18233c-94aa-47cc-a0ac-b8532b48b3e8/manifest.json`，SHA-256 `03bfea3775d46ac8c45e52cfe0bdd75563eafd660ea8c38a1c9a234defe68b1e`，`outcome=passed`、`nativeClusterStopped=true`。同目录的 `review-u10-u14-repro.log` 保存 R1 原始结果，`database-tests.log` 保存 64 项现有测试结果。原件留本地，不加入 Git。
 
-后续先修复 R1—R3 并补充真实调用链回归，再恢复 U13/U14 的验收状态。G0/U04、CLI 真实 adapter、样本和实验执行协议等原阻塞保持；本审查没有启动其他板块或生产操作。
+首次审查的交接动作是修复 R1—R3 并补充真实调用链回归，再恢复 U13/U14 的验收状态。G0/U04、CLI 真实 adapter、样本和实验执行协议等原阻塞保持。
+
+## 用户授权后的修复
+
+修复起点为审查文档提交 `2ca0466b4480578b103fa8db2cb389e3c30d4b0d`，工作区干净。实现选择见 D40，当前状态见 [进度与交接](progress.md) 的 E-FIX-U-BLOCK2。
+
+| 原问题 | 修复行为 | 回归范围 |
+| --- | --- | --- |
+| R1 | 更新 retry 重开 report 节点，清除旧提交/覆盖状态，保留停止的缺口、证据及计数 | B/B2 经真实排队、更新、partial 提交、重试再提交；预算轮次和 deadline 不变；旧 attempt 写入被拒绝；未读来源仍 pending |
+| R2 | record_claim 只保存一条；本问材料可继续补录，通过 complete_comparison 显式结束，明确缺口可 partial | 首条结论后补四个金额和第二条结论；缺金额不能完成，显式缺口可结束；checkpoint 重载后继续；旧过早完成的 compare 可局部修复且保留无关核验 |
+| R3 | 准入先投影写入后的 claim/fact 和 review hash，再计算核验与收尾预留 | 新结论在剩余 3 次时拒绝、4 次时可完成核验收尾；事实变化导致两个 review 失效的边界；B2 批内写入不足则连同前置读取一起拒绝，不扣额 |
+
+complete_comparison 仅供 B/B2，每问正常增加一次父预算内工具调用，总额不增加；B2 将它纳入最多一个且最后的状态工具。原 A 断言保留，事实冲突语义和原文校验不放宽。合成 provider 验证协议和持久化，不代表真实模型能遵循新工具协议，也不证明成本收益。
+
+首轮新增 PG 用例把上一期金额引用到本期报表，期间校验如实拒绝，69 passed / 2 failed。修正测试夹具为两期各自的合成原文后重跑；失败原件保留在 `data/research-agent-upgrade/evidence/U14/fix-review-20261025/postgres-01.log`，对应隔离 PG 清单 `data/research-agent-upgrade/evidence/S05/rehearsal-4507f25e-2c29-4851-8dbb-652e38b48040/manifest.json`。没有修改期间校验或评分门槛。
+
+最终研究单测 246 passed / 71 DB-only skipped；同轮真实 PG 71/71、34 个迁移、重复部署和旧读写兼容通过。PG 使用标准命令 `npm run test:research:postgres -- --native-postgres=data/research-agent-upgrade/evidence/S05/native-postgres-16.14/package/native/bin`，没有模型参数。成功清单 `data/research-agent-upgrade/evidence/S05/rehearsal-26c5c732-0597-4631-9698-8a8f92deaf09/manifest.json` SHA-256 为 `ba28d3d8c604d1fc7cf779d270b612f617f69608250eb8370394d693eb9dfb65`，`outcome=passed`、`nativeClusterStopped=true`。
+
+日志位于 `data/research-agent-upgrade/evidence/U14/fix-review-20261025/`；159 份源码 hash 核对中，158 份与成功 PG 清单一致，唯一后续差异是单测 `longSpec` 补上 `typeof spec` 类型标注，未改变执行代码或 PG 用例；该文件的 14 项回归已单独重跑通过。源身份差异保存在 `source-verification.json`，完整检查结果与修复状态以 E-FIX-U-BLOCK2 为准。证据沿用本次研究修复所有权及受控保留策略，不自动清理，不纳入 Git。

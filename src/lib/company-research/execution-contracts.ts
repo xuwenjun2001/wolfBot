@@ -54,6 +54,9 @@ export function rebindFinancialCheckpoint(previous: ResearchCheckpoint | null, b
     ...(modelTurns === undefined ? {} : { modelTurns }) });
   if (retry) return checkpointV2Schema.parse({ ...previous, requestRevision: base.requestRevision, planRevision: base.planRevision,
     planVersion: Math.max(previous.planVersion + 1, base.planRevision), phase: 'researching', submitted: false, checkedHash: null, stopReason: null,
+    currentNodeId: null,
+    nodes: Object.fromEntries(Object.entries(previous.nodes).map(([id, status]) => [id, id.endsWith('-report') ? 'pending' : status])),
+    steps: Object.fromEntries(Object.entries(previous.steps).map(([id, status]) => [id, id.endsWith('-report') ? 'pending' : status])),
     ...(modelTurns === undefined ? {} : { modelTurns }) });
   const ids = ['prepare-facts', ...(['income_profit', 'cash_flow', 'risks'] as const).flatMap(question => ['retrieve', 'compare', 'verify', 'report'].map(kind => `${question}-${kind}`))];
   return checkpointV2Schema.parse({ ...base, schemaVersion: 2, variant: previous.variant,

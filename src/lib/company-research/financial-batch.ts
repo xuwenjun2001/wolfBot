@@ -4,7 +4,7 @@ import { allowedNow } from './budget-policy';
 
 export const financialBatchHardLimit = 8;
 export const financialBatchDefaultLimit = 3;
-const stateTools = new Set(['record_fact', 'record_claim', 'verify_claim', 'check_coverage', 'submit_report', 'import_filing', 'parse_document']);
+const stateTools = new Set(['record_fact', 'record_claim', 'complete_comparison', 'verify_claim', 'check_coverage', 'submit_report', 'import_filing', 'parse_document']);
 export type ValidatedFinancialCall = { id: string; name: string; input: Record<string, unknown> };
 type BatchPolicy = { maxToolCallsPerTurn: number; remaining: number; reserve: number };
 

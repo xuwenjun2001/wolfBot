@@ -9,6 +9,7 @@ import { canonicalResearchJson, researchIdSchema, type ResearchTaskSpec } from '
 import { researchLocatorSchema } from './document-contracts';
 import type { FinancialPlanRevisionEvent } from './execution-store';
 import type { ValidatedFinancialCall } from './financial-batch';
+import { comparisonCompletion, projectFinancialWrite } from './financial-material';
 
 type SourcePeriod = { id: string; version: number; period: { id: string } };
 type SchedulerOptions = { taskId: string; spec: ResearchTaskSpec; state: ResearchCheckpointV2; createdAt: string; reviews: SemanticReview[] };
@@ -63,10 +64,10 @@ export class FinancialScheduler {
   }
   get graph() { return this.plan; }
   get claimReviews() { return this.reviews; }
-  private hashes() {
-    const binding = { taskId: this.taskId, requestRevision: this.state.requestRevision, planRevision: this.state.planRevision,
-      asOf: this.spec.asOf, facts: this.state.facts, supportingFacts: this.state.supportingFacts };
-    return Object.fromEntries(this.state.claims.map(claim => [claim.id, claimReviewHash(binding, claim)]));
+  private hashes(state: ResearchCheckpoint = this.state) {
+    const binding = { taskId: this.taskId, requestRevision: state.requestRevision, planRevision: state.planRevision,
+      asOf: this.spec.asOf, facts: state.facts, supportingFacts: state.supportingFacts };
+    return Object.fromEntries(state.claims.map(claim => [claim.id, claimReviewHash(binding, claim)]));
   }
   private materialHash() {
     const byId = <T extends { id: string }>(values: readonly T[]) => [...values].sort((a, b) => a.id.localeCompare(b.id));
@@ -128,7 +129,7 @@ export class FinancialScheduler {
       : node.questionId === 'risks' ? '查两期风险清单，缺证不能断言风险消失。' : '核对两期收入、归母利润及口径。';
     const instruction = node.kind === 'prepare' ? '完成一次有界资料准备；缺失金额记录缺口后继续三问，不等全部金额齐全。'
       : node.kind === 'retrieve' ? `${focus} 搜索命中后 read_evidence 核对原文；换词但无新定位/内容不算进展。`
-      : node.kind === 'compare' ? `${focus} 使用 record_fact/record_claim 保存本问；修复已有结论时沿用原 id，缺证保留 evidence_gap。`
+      : node.kind === 'compare' ? `${focus} 使用 record_fact/record_claim 逐条保存本问的金额和全部结论；修复沿用原 id，缺证保留 evidence_gap。全部保存后 complete_comparison({questionId}) 才结束本问比较。`
       : node.kind === 'verify' ? `只核验当前结论 ${claimId || ''}；同题其他结论分别核验。` : 'check_coverage 后 submit_report，缺口如实 partial。';
     return { nodeId: node.id, questionId: node.questionId, kind: node.kind, action: repair?.action || node.kind,
       allowedTools: [...node.allowedTools], ...(claimId ? { claimId } : {}), instruction, ...(repair ? { repair } : {}) };
@@ -177,6 +178,12 @@ export class FinancialScheduler {
     if (tool === 'record_claim' && (args.questionId !== action.questionId
       || this.state.claims.some(claim => claim.id === args.id && claim.questionId !== action.questionId))) return denied('SCHEDULER_NODE_MISMATCH', '只能修改当前问题的结论；不能复用其他问题的结论 id');
     if (tool === 'record_fact' && action.kind !== 'prepare' && (args.metric === 'operating_cash_flow' ? 'cash_flow' : 'income_profit') !== action.questionId) return denied('SCHEDULER_NODE_MISMATCH', '只能修改当前问题的事实');
+    if (tool === 'complete_comparison' && args.questionId !== action.questionId) return denied('SCHEDULER_NODE_MISMATCH', '只能结束当前问题的比较');
+    const projected = projectFinancialWrite(this.spec, this.state, tool, input);
+    if (projected !== this.state) {
+      const reserve = reserveForClosure(this.spec, { ...projected, claimHashes: this.hashes(projected), reviews: this.reviews });
+      if (remaining - 1 < reserve) return denied('SCHEDULER_WRITE_RESERVE', `本次写入后需保留 ${reserve} 次核验和收尾；额度不足，未保存或扣额。保留现有材料，缺证可记录 evidence_gap 后收尾`);
+    }
     if (tool === 'verify_claim' && args.claimId !== action.claimId) return denied('SCHEDULER_NODE_MISMATCH', '必须核验 nextAction 指定的当前结论');
     if (tool === 'submit_report' && !this.state.checkedHash) return denied('SCHEDULER_COVERAGE_REQUIRED', '先 check_coverage，未扣减工具预算');
     return null;
@@ -257,15 +264,21 @@ export class FinancialScheduler {
         if (gap?.status !== 'open') this.state.nodes[node.id] = 'partial';
       }
     }
-    if (tool === 'record_fact') {
+    if (tool === 'record_fact' || tool === 'record_claim') {
       const hash = this.materialHash();
       if (hash !== this.beforeMaterial) this.materialProgress(node.id, hash);
       else {
-        const gap = this.gap(node, 'retrieval_miss', '重复保存相同事实没有新增材料', tool, []);
+        const gap = this.gap(node, 'retrieval_miss', '重复保存相同材料没有新增进展', tool, []);
         if (gap?.status !== 'open') this.state.nodes[node.id] = 'partial';
       }
     }
-    if (tool === 'record_claim') { this.state.nodes[node.id] = 'completed'; this.resolve(node.id); this.state.nodes[`${node.questionId}-verify`] = 'pending'; }
+    if (tool === 'record_claim') this.state.nodes[`${node.questionId}-verify`] = 'pending';
+    if (tool === 'complete_comparison') {
+      const completion = comparisonCompletion(this.spec, this.state, node.questionId!);
+      if (completion.status === 'incomplete') throw new Error('SCHEDULER_COMPARISON_INCOMPLETE');
+      this.state.nodes[node.id] = completion.status;
+      this.resolve(node.id); this.state.nodes[`${node.questionId}-verify`] = 'pending';
+    }
     if (tool === 'record_fact' && data.fact && record(data.fact).value && record(record(data.fact).value).status === 'conflict') {
       this.gap(node, 'period_unit_conflict', '同期间原始金额冲突未解决，禁止合并为确定结论', tool);
       return this.revise(node.id, '财务事实冲突，局部重规划');
@@ -282,7 +295,16 @@ export class FinancialScheduler {
         this.state.nodes[node.id] = 'partial';
       }
     }
-    if (tool === 'check_coverage') this.state.nodes[node.id] = 'pending';
+    if (tool === 'check_coverage') {
+      this.state.nodes[node.id] = 'pending';
+      // Old checkpoints could close comparison on the first claim. Repair that
+      // local stage without reopening a stopped gap or invalidating other questions.
+      if (remaining > this.state.closureReserve) for (const question of this.spec.questions) {
+        const id = `${question.id}-compare`;
+        if (this.state.nodes[id] === 'completed' && comparisonCompletion(this.spec, this.state, question.id).status === 'incomplete'
+          && !this.activeGaps(id).some(gap => gap.status !== 'open')) return this.revise(id, '覆盖检查发现本问必需金额或结论缺失，继续局部保存');
+      }
+    }
     if (tool === 'submit_report') for (const other of this.plan.nodes.filter(other => other.kind === 'report')) this.state.nodes[other.id] = 'completed';
     this.refresh();
     return null;

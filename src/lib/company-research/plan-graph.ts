@@ -17,7 +17,7 @@ export const researchPlanStepSchema = z.object({
 const retrievalTools = ['list_documents', 'discover_filings', 'import_filing', 'parse_document', 'search_evidence', 'read_evidence'] as const;
 export const financialPlanToolsByKind = {
   prepare: [...retrievalTools, 'record_fact'], retrieve: retrievalTools,
-  compare: ['search_evidence', 'read_evidence', 'record_fact', 'record_claim'],
+  compare: ['search_evidence', 'read_evidence', 'record_fact', 'record_claim', 'complete_comparison'],
   verify: ['read_evidence', 'verify_claim'], report: ['check_coverage', 'submit_report'],
 } as const;
 export const financialPlanCompletionByKind = {
@@ -25,7 +25,7 @@ export const financialPlanCompletionByKind = {
   prepare: 'facts_prepared', retrieve: 'evidence_retrieved', compare: 'comparison_recorded',
   verify: 'claims_verified', report: 'report_submitted',
 } as const;
-const financialPlanToolSchema = z.enum([...retrievalTools, 'record_fact', 'record_claim', 'verify_claim', 'check_coverage', 'submit_report']);
+const financialPlanToolSchema = z.enum([...retrievalTools, 'record_fact', 'record_claim', 'complete_comparison', 'verify_claim', 'check_coverage', 'submit_report']);
 export const planNodeSchema = z.object({
   id: nodeIdSchema, questionId: questionIdSchema.nullable(),
   kind: z.enum(['prepare', 'retrieve', 'compare', 'verify', 'report']), title: z.string().min(1).max(300),

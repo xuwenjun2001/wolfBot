@@ -8,7 +8,7 @@ import { specFixture } from './version-test-fixtures';
 
 const schema = { type: 'object', properties: { query: { type: 'string', minLength: 1 } }, required: ['query'], additionalProperties: false };
 const tool = (name: string, terminal = false): PiAgentTool => ({ name, description: 'Protocol fixture', inputSchema: schema, terminal, effect: 'read', execute() { throw new Error('Preflight must never execute'); } });
-const tools = ['search_evidence', 'read_evidence', 'record_fact', 'record_claim', 'verify_claim', 'check_coverage', 'import_filing', 'parse_document'].map(name => tool(name));
+const tools = ['search_evidence', 'read_evidence', 'record_fact', 'record_claim', 'complete_comparison', 'verify_claim', 'check_coverage', 'import_filing', 'parse_document'].map(name => tool(name));
 tools.push(tool('submit_report', true));
 const call = (name: string, id = name, input: unknown = { query: '原文' }): PiAgentToolCall => ({ id, name, arguments: JSON.stringify(input) });
 const policy = { maxToolCallsPerTurn: 3, remaining: 40, reserve: 2 };
@@ -21,7 +21,7 @@ describe('financial B2 complete-turn preflight', () => {
     expect(calls).toEqual(before);
   });
 
-  it.each(['record_fact', 'record_claim', 'verify_claim', 'check_coverage', 'import_filing', 'parse_document'])('allows exactly one %s after readonly calls', async name => {
+  it.each(['record_fact', 'record_claim', 'complete_comparison', 'verify_claim', 'check_coverage', 'import_filing', 'parse_document'])('allows exactly one %s after readonly calls', async name => {
     expect(await validateFinancialBatch([call('search_evidence'), call(name)], tools, policy)).toMatchObject({ ok: true });
     expect(await validateFinancialBatch([call(name), call('search_evidence')], tools, policy)).toMatchObject({ ok: false, error: { code: 'FINANCIAL_BATCH_STATE_ORDER' } });
     expect(await validateFinancialBatch([call('record_fact', 'first'), call(name, 'last')], tools, policy)).toMatchObject({ ok: false, error: { code: 'FINANCIAL_BATCH_STATE_COUNT' } });

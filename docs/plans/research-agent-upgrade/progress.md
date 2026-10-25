@@ -6,25 +6,25 @@
 
 | 字段 | 当前值 |
 | --- | --- |
-| 最后更新 | 2026-10-25 16:32（U10—U14 review 完成；3 个反例确认，U13/U14 重新打开） |
+| 最后更新 | 2026-10-25 17:09（R1—R3 修复与工程回归完成，U13/U14 恢复 done） |
 | 计划版本 | 原 S 系列 v1；U 系列按 agent-upgrade-proposal.md v2 执行 |
 | 总体状态 | S01—S18 已验收（S17 按当前反例修复并重验）；S19/S20 仍有必需验收阻塞。生产部署不在授权范围内 |
 | 已验收步骤 | 18/20；S17 重开与修复过程分别保留 E-REVIEW-03 / E-FIX-R2R3 |
-| 当前待处理步骤 | U02/U10—U12 done；U13/U14 因 E-REVIEW-U-BLOCK2 重新打开；U04 人审 blocked；G0 未通过；S19/S20 保持 blocked |
-| 下一步骤 | 修复板块 2 review 的 R1—R3 并补回归；正式实验仍待扩展样本、分层、六例兼容、可信 adapter 与完整执行协议 |
-| 下一具体动作 | 后续修复更新 retry 的终态节点、首条结论过早完成 compare、写入增加核验义务时的预算准入；本轮仅 review，未修改实现 |
-| 当前会话登记 | 2026-10-25-review-u10-u14：review 完成，起点 `8af1655`、工作区干净；发现 1 个 P1、2 个 P2。仅写入 block2-review.md、目录 README 和本进度；复现脚本与日志留受控本地目录 |
+| 当前待处理步骤 | U02/U10—U14 done；U04 人审 blocked；G0 未通过；S19/S20 保持 blocked |
+| 下一步骤 | 正式实验仍待扩展样本、分层、六例兼容、可信 adapter 与完整执行协议 |
+| 下一具体动作 | 按后续授权补齐 G0/U04 与 U15 前置；本次修复不启动其他板块或真实实验 |
+| 当前会话登记 | 2026-10-25-fix-u10-u14：用户授权直接修复 R1—R3；实现及对应单测、真实 PG 回归完成，证据 E-FIX-U-BLOCK2，更新交接后同步 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
-| 分支 / 本轮实现起点 | codex/agent-upgrade；起点 `26968ffdb751d3ee0488b608f020be29679780be`，从已核对同步的 origin/codex/research-agent-s11-s15 新建；保留用户修改的 v2 计划和目录 README |
+| 分支 / 本轮实现起点 | codex/agent-upgrade；修复起点 `2ca0466b4480578b103fa8db2cb389e3c30d4b0d`，初始工作区干净 |
 | 目标仓库 | `https://github.com/xuwenjun2001/wolfBot`，默认分支 `main` |
-| 本轮涉及文件 | block2-review.md、目录 README.md、progress.md；审查涵盖 U10—U14 实现与持久化调用链，产品文件未修改 |
-| 已有改动提醒 | 本轮 review 起点工作区干净；受控原件、复现脚本和日志不提交；历史开发会话记录保留 |
-| 运行环境 / 进程 | 本轮单测、types、PG 演练已退出；审查自建 PG 的 manifest 确认 nativeClusterStopped=true。没有新增持久服务或真实模型调用 |
+| 本轮涉及文件 | execution-contracts、financial-scheduler/tools/material、plan-graph、financial-batch 及对应单测和 runtime PG 测试；公司研究专题、U 卡片、D40、block2-review、progress |
+| 已有改动提醒 | 仅同步本轮源码、测试和必要文档；受控原件、复现脚本和日志不提交；原 review 反例与首轮失败日志保留 |
+| 运行环境 / 进程 | 本轮单测、types、两次隔离 PG 演练已退出；成功清单 nativeClusterStopped=true。没有新增持久服务或真实模型调用 |
 | 模型与数据费用 | 本轮真实研究模型调用 0；U03 mock 用量为模拟值，真实费用 unknown；U04 使用已有本地 OCR 模型。历史 18 个真实任务/626 工具、输入 9458172 / 输出 192453 Token 仅作 U01 归因，未重开预算；后续父任务仍为 40 工具/20 分钟 |
 | 阻塞 | rubric及旧四家12题标签冻结，完整设计已确认；G0仍待扩展样本人审/分层。六例执行和评分兼容限制、真实adapter/最终协议继续保留。Q5A允许先工程开发U10—U14。S19问题/支持9/12、旧保留缺答及S20原阻塞不变，Node锁文件/Python审计暂缓 |
-| 最近验证 | E-REVIEW-U-BLOCK2：研究 231 passed/64 DB-only skipped；隔离 PG 64/64、34 迁移及旧读写兼容通过；全量 types 通过。额外 3 个纯状态反例及 1 个完整 PG 重试反例确认缺陷，不能视为功能验收通过 |
+| 最近验证 | E-FIX-U-BLOCK2：研究 246 passed/71 DB-only skipped；隔离 PG 71/71、34 迁移及旧读写兼容通过；全量 types、10 文件 ESLint、模块边界通过。单测最后补类型标注后定向 14 项通过 |
 | 受控资料恢复 | 开发资料在 `data/research-agent-upgrade/`；旧保留根 `D:/QuantPilot-private-evals/research-v1` 已消费，新保留根 `D:/QuantPilot-private-evals/research-u-v2` 仅登记 hash、未打开内容。换机恢复受控归档并核对最终 LF 清单；这里不记录保留题/答案 |
-| 范围提醒 | 本轮用户仅要求 review U10—U14；未修改产品实现。Q4A 设计与 Q5A 原工程授权的历史记录保留；G0/U04、真实实验和其他板块未因此通过或启动 |
+| 范围提醒 | 用户在 review 后要求直接修复，本轮完成 R1—R3 与工程验证。Q4A/Q5A 历史授权保留；G0/U04、真实实验和其他板块未因此通过或启动 |
 
 ## 步骤状态
 
@@ -70,9 +70,9 @@
 | U10 | done | 2026-10-25-u-block2 / plan_graph 子 Agent、主 AI 复核 | plan-graph.ts 及测试；task-contracts.ts | E-U10-01；DAG/兼容回归 23 项、定向严格 types 通过；U13/U14已接线 | 真实质量留待实验；准备结束不等于金额全部齐全 |
 | U11 | done | 2026-10-25-u-block2 / gap_policy 子 Agent、主 AI 复核 | gap-policy.ts 及测试 | E-U11-01；37 项定向回归及 lint 通过；U13/U14已接线 | 无新证据只 partial，不伪造未披露 |
 | U12 | done | 2026-10-25-u-block2 / budget_policy 子 Agent、主 AI 复核 | budget-policy.ts 及测试 | E-U12-01；23 项定向回归及 lint 通过；U13/U14已接线 | 当前 claim hash 匹配核验回执后才释放核验预留 |
-| U13 | in_progress | 2026-10-25-review-u10-u14 / 主 AI | 原 financial-scheduler/runtime/tools/execution-contracts 与持久化接线；本轮仅审查文档 | 原 E-U13-01 保留；E-REVIEW-U-BLOCK2 确认更新 retry 无动作、首条结论关闭补事实入口、动态核验预留不足 | 修复 block2-review.md R1—R3 并补回归；真实质量仍待实验 |
-| U14 | in_progress | 2026-10-25-review-u10-u14 / 主 AI | 原 financial-batch/runtime/scheduler/provider；本轮仅审查文档 | 原 E-U14-01 保留；本轮 231 单测/64 PG/types 通过，但共用 U13 调度器，受 R1—R3 影响 | U13 修复后补 B2 批次与恢复回归；CLI真实adapter与实验协议仍待办 |
-| U15 | pending | 未授权 | 受控消融证据；evaluation-results.md 新小节 | U13/U14 review 问题待修；G0/样本与执行协议尚未齐备 | 完成前置并单独确认实际模型、价格和执行授权 |
+| U13 | done | 2026-10-25-fix-u10-u14 / 主 AI | scheduler/tools/material/execution-contracts/plan-graph 及回归 | E-FIX-U-BLOCK2；R1—R3 修复，246 单测/71 PG/types 通过；原 E-U13-01 与 review 反例保留 | 真实模型遵循新完成工具协议的效果和成本待实验 |
+| U14 | done | 2026-10-25-fix-u10-u14 / 主 AI | financial-batch 及共享 scheduler、B2 回归 | E-FIX-U-BLOCK2；整批写后预算预检、显式完成状态顺序、partial 重试通过；原 E-U14-01 保留 | CLI 真实 adapter 与实验协议仍待办 |
+| U15 | pending | 未授权 | 受控消融证据；evaluation-results.md 新小节 | U13/U14 工程修复完成；G0/样本与执行协议尚未齐备 | 完成前置并单独确认实际模型、价格和执行授权 |
 | U20 | pending | 未授权 | retrieval-expansion.ts、evidence-retrieval.ts、lexical-index.ts、verify-retrieval.ts | — | 等待 G0 及板块 3 授权 |
 | U21 | pending | 未授权 | 受控检索实验与报告 | — | 等待 U20/U15、费用审批 |
 | U30 | pending | 未授权 | subtask-contracts.ts、subtask-merge.ts 及测试 | — | 等待 G1 及板块 4 授权 |
@@ -880,3 +880,19 @@ E-Sxx-01 / 日期 / 会话标识：
 - 日志和脚本位于 `data/research-agent-upgrade/evidence/U14/`，前缀 `review-u10-u14-`；PG 本地 wrapper `review-pg-launch.cjs` 只向原 runner 追加复现，不修改仓库 runner。PG 清单 `data/research-agent-upgrade/evidence/S05/rehearsal-4a18233c-94aa-47cc-a0ac-b8532b48b3e8/manifest.json`，SHA-256 `03bfea3775d46ac8c45e52cfe0bdd75563eafd660ea8c38a1c9a234defe68b1e`，`outcome=passed`、`nativeClusterStopped=true`。证据所有权、保留策略及纯状态 hash 见 review 文档。
 - `npm run check:docs` 退出 0（85 Markdown / 631 本地链接）；差异检查通过。未运行真实模型、完整 release 或 CI，不以本地检查代替这些结果。
 - 本轮无真实模型调用、无保留集读取、无部署或依赖修改。后续先修复 R1—R3、补 B/B2 顺序与恢复回归，再恢复 U13/U14 done；原 G0/U04、S19/S20 与真实实验阻塞保留。审查文档、目录入口和本进度按既有规则同步 origin/codex/agent-upgrade，受控证据不提交。
+
+### E-FIX-U-BLOCK2 / 2026-10-25-fix-u10-u14：review 修复与工程复验
+
+- 用户在 review 后要求“你直接修复一下”。起点 `2ca0466b4480578b103fa8db2cb389e3c30d4b0d`，分支 `codex/agent-upgrade`，初始工作区干净。修复更新重试的 report 终态、首条结论过早关闭 compare、写入产生新核验义务时预留不足三项，D40 记录协议与取舍。U13/U14 恢复 done，原审查及失败证据保留。
+- B/B2 新增 complete_comparison 显式结束本问，正常增加一次原预算内工具调用；逐条事实和多条结论可继续保存。事实构造/冲突合并由投影和实际写入共享；写后核验预留不足在单次与 B2 整批执行前拒绝。旧过早完成 compare 可受预算约束地局部修复，不重开停止的缺口或无关问题。A 工具清单和原断言保留；父额度、原文核验、fencing 不放宽。
+- `npm run test:unit -- src/lib/company-research` 最终退出0：24 文件、246 passed / 71 DB-only skipped；新增单测14项覆盖 B/B2 retry、先 claim 后金额及第二条 claim、显式缺口、3/4次余额、事实变化失效两个 review、整批预检和旧节点修复。补齐单测 tuple 类型标注后该文件14项定向重跑通过；`npm run type-check` 最终退出0；10文件 ESLint、模块边界退出0，保留既有体积警告与 Node DEP0190 提示。
+- 标准原生 PG 命令 `npm run test:research:postgres -- --native-postgres=data/research-agent-upgrade/evidence/S05/native-postgres-16.14/package/native/bin` 最终退出0：71/71、34迁移、重复部署、新 client 与旧读写兼容通过。新增7项真实 PI+PG 回归覆盖正常 partial 更新后重试再提交、预算/停止缺口/未读来源/fencing、实际金额及多结论保存、单次与整批拒绝后继续提交。成功清单 `data/research-agent-upgrade/evidence/S05/rehearsal-26c5c732-0597-4631-9698-8a8f92deaf09/manifest.json` SHA-256 `ba28d3d8c604d1fc7cf779d270b612f617f69608250eb8370394d693eb9dfb65`，outcome=passed、nativeClusterStopped=true。
+- 日志在 `data/research-agent-upgrade/evidence/U14/fix-review-20261025/`：最终 `research-unit-02.log`、`policies-02.log`、`type-check-03.log`、`postgres-02.log`、`eslint-02.log`、`module-boundaries-01.log`。首轮 PG 69通过/2失败是新夹具将上一期金额引用到本期报表，已补齐各期合成原文；期间校验未改。首轮PG清单 `rehearsal-4507f25e-2c29-4851-8dbb-652e38b48040/manifest.json` 及 `postgres-01.log` 保留。`type-check-02.log` 的两个错误来自新增单测数组未声明二元 tuple，已补类型标注，未改变运行逻辑。
+- `source-verification.json` 核对159份源码：158份与成功PG清单一致，唯一差异为未参与PG的单测 `longSpec: typeof spec` 标注，已重新验证。原件归本次研究修复，沿用受控 evidence 保留策略，不自动清理、不提交。无真实模型调用、保留集读取、依赖修改、生产操作；G0/U04、U15及S19/S20阻塞不变。
+- `npm run check:docs` 退出0（85 Markdown / 632本地链接），`git diff --check`退出0；日志 `docs-check-01.log`、`diff-check-01.log`。源码同步与CI通过分开报告，未将本次工程检查写成整套CI通过。
+
+### 2026-10-25-fix-u10-u14 / 最终交接
+
+- R1—R3 实现和工程回归完成，更新公司研究专题、U13/U14合同、D40及review修复证据。本轮只同步相关源码、测试与五份文档，受控原件留本地。
+- 已 fetch origin 并确认对应分支没有并行提交；按仓库规则审查暂存差异后普通推送，提交与远端核对结果由本次最终回复报告。没有新增长期进程，自建PG均已停止；既有暂缓CI依赖问题不扩展处理。
+- 下一动作是按后续授权补齐正式实验前置；工程通过不能代替真实模型、标签或质量收益验收。

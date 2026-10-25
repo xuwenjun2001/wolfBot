@@ -183,11 +183,13 @@ describe('durable evidence gain and bounded repair', () => {
     expect(scheduler.nextAction(36)?.nodeId).toBe('cash_flow-compare');
     state.claims = state.claims.map(claim => claim.id === 'cash_flow' ? { ...claim, status: 'evidence_gap', reason: '定向补查未获支持' } : claim);
     invoke('record_claim', state.claims.find(claim => claim.id === 'cash_flow'), { ok: true, data: { saved: 'cash_flow' } }, 36);
-    expect(scheduler.nextAction(35)?.kind).toBe('report'); expect(state.nodeToolCalls['income_profit-verify']).toBeUndefined(); expect(state.nodeToolCalls['risks-verify']).toBeUndefined();
+    invoke('complete_comparison', { questionId: 'cash_flow' }, { ok: true, data: {} }, 35);
+    expect(scheduler.nextAction(34)?.kind).toBe('report'); expect(state.nodeToolCalls['income_profit-verify']).toBeUndefined(); expect(state.nodeToolCalls['risks-verify']).toBeUndefined();
     expect(state.gaps.every(gap => gap.status !== 'not_disclosed')).toBe(true);
   });
   it('does not reopen exhausted retrieval repair when only the claim text was rewritten', () => {
     const legacy = emptyCheckpoint(1, 1); legacy.claims = [claim('income_profit'), claim('cash_flow'), claim('risks')];
+    legacy.facts = spec.periods.map(period => ({ ...reportFixture(taskId).facts[0], id: `${period.id}-operating_cash_flow`, period }));
     const { state, scheduler, invoke } = setup(legacy, [receipt(legacy, 'income_profit'), receipt(legacy, 'risks')]);
     invoke('verify_claim', { claimId: 'cash_flow' }, { ok: true, data: receipt(state, 'cash_flow', 'insufficient') });
     for (let index = 0; index < 3; index++) invoke('search_evidence', { query: `无新证据${index}` }, { ok: true, data: { hits: [] } }, 39 - index);
@@ -197,8 +199,9 @@ describe('durable evidence gain and bounded repair', () => {
     expect(scheduler.admit('record_claim', rewritten, 36)).toBeNull(); scheduler.started();
     state.claims = state.claims.map(claim => claim.id === rewritten.id ? rewritten : claim);
     scheduler.observe('record_claim', rewritten, { ok: true, data: { saved: rewritten.id } }, 35);
-    expect(scheduler.nextAction(35)).toMatchObject({ nodeId: 'cash_flow-verify', claimId: 'cash_flow' });
-    expect(invoke('verify_claim', { claimId: 'cash_flow' }, { ok: true, data: receipt(state, 'cash_flow', 'insufficient') }, 35)).toBeNull();
+    invoke('complete_comparison', { questionId: 'cash_flow' }, { ok: true, data: {} }, 35);
+    expect(scheduler.nextAction(34)).toMatchObject({ nodeId: 'cash_flow-verify', claimId: 'cash_flow' });
+    expect(invoke('verify_claim', { claimId: 'cash_flow' }, { ok: true, data: receipt(state, 'cash_flow', 'insufficient') }, 34)).toBeNull();
     expect(state.gaps.find(gap => gap.subjectId === 'cash_flow')).toMatchObject({ status: 'partial', attempts: 5, stalledAttempts: 5 });
     expect(state.planVersion).toBe(planVersion);
     expect(state.nodes).toMatchObject({ 'cash_flow-retrieve': 'partial', 'cash_flow-compare': 'completed', 'cash_flow-verify': 'partial', 'income_profit-verify': 'completed', 'risks-verify': 'completed' });
@@ -231,10 +234,10 @@ describe('durable evidence gain and bounded repair', () => {
           const fact = { ...template, id: `${missing.period.id}-${missing.metric}`, period: missing.period, metric: missing.metric as typeof template.metric };
           expect(scheduler.admit('record_fact', { metric: fact.metric }, remaining)).toBeNull(); scheduler.started(); state.facts.push(fact);
           scheduler.observe('record_fact', { metric: fact.metric }, { ok: true, data: { saved: fact.id } }, --remaining);
-        } else {
+        } else if (!state.claims.some(c => c.questionId === action.questionId)) {
           const saved = claim(action.questionId!); expect(scheduler.admit('record_claim', saved, remaining)).toBeNull(); scheduler.started(); state.claims.push(saved);
           scheduler.observe('record_claim', saved, { ok: true, data: { saved: saved.id } }, --remaining);
-        }
+        } else invoke('complete_comparison', { questionId: action.questionId }, { ok: true, data: {} }, remaining--);
       } else if (action.kind === 'verify') invoke('verify_claim', { claimId: action.claimId }, { ok: true, data: receipt(state, action.claimId!) }, remaining--);
       else if (action.kind === 'report' && !state.checkedHash) { expect(scheduler.admit('check_coverage', {}, remaining)).toBeNull(); scheduler.started(); state.checkedHash = 'a'.repeat(64); scheduler.observe('check_coverage', {}, { ok: true, data: { status: 'completed' } }, --remaining); }
       else if (action.kind === 'report') { expect(scheduler.admit('submit_report', {}, remaining)).toBeNull(); scheduler.started(); state.submitted = true; scheduler.observe('submit_report', {}, { ok: true, data: { saved: true } }, --remaining); completed = true; break; }
@@ -242,6 +245,6 @@ describe('durable evidence gain and bounded repair', () => {
     }
     expect(completed).toBe(true); expect(state.facts).toHaveLength(6); expect(state.claims).toHaveLength(3);
     for (const question of spec.questions) { expect(state.nodes[`${question.id}-retrieve`]).toBe('completed'); expect(state.nodes[`${question.id}-verify`]).toBe('completed'); }
-    expect(state.nodeToolCalls['income_profit-compare']).toBe(5); expect(remaining).toBeGreaterThanOrEqual(0);
+    expect(state.nodeToolCalls['income_profit-compare']).toBe(6); expect(remaining).toBeGreaterThanOrEqual(0);
   });
 });

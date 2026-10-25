@@ -3,12 +3,10 @@ import type { PiAgentTool } from '@/lib/agent/types';
 import type { ResearchAttemptToken } from './attempt-store';
 import type { ResearchCheckpoint, FinancialResearchSkill } from './execution-contracts';
 import { canonicalResearchJson, type ResearchTaskSpec } from './task-contracts';
-import { researchCitationSchema } from './document-contracts';
 import { researchClaimSchema } from './revision-contracts';
 import { evidenceReadSchema, evidenceSearchSchema, researchEvidenceReader } from './evidence-retrieval';
 import { discoverTaskFilings, importTaskFiling, listResearchDocuments, filingImportSchema } from './acquisition-service';
 import { parseResearchDocument } from './parse-service';
-import { factFromDisclosure, normalizedYuan, uniqueCitations } from './financial-normalization';
 import { assembleFinancialReport, financialChanges } from './report-assembly';
 import { deterministicReportErrors, readClaimReviews } from './verification-service';
 import { reviewResearchClaim } from './claim-reviewer';
@@ -18,6 +16,7 @@ import { safeError } from './config';
 import { financialChangeSummary } from './financial-observation';
 import { recordResearchUpdateRead } from './update-run-store';
 import type { SemanticReview } from './claim-verification';
+import { comparisonCompletion, disclosedResearchFact, mergeResearchFact, recordFinancialFactSchema } from './financial-material';
 
 export const checkpointEvidenceHash = (state: ResearchCheckpoint) => artifactDigest(canonicalResearchJson({ facts: state.facts, supportingFacts: state.supportingFacts, claims: state.claims }));
 export function financialResearchTools(actor: string, token: ResearchAttemptToken, spec: ResearchTaskSpec, state: ResearchCheckpoint, model: string, save: (tool: string) => Promise<void>, ctx = defaultResearchContext, fixedDocuments = false, skill?: FinancialResearchSkill, options?: { reviews: () => SemanticReview[] }): PiAgentTool[] {
@@ -50,11 +49,8 @@ export function financialResearchTools(actor: string, token: ResearchAttemptToke
       if (result.text.trim()) await recordResearchUpdateRead(actor, token, result.bytesSha256, ctx);
       return result;
     }),
-    tool('record_fact', 'Save ONE exact current-period financial fact. Stable id is periodId-metric. Copy amount and unit; include citations covering the numeric row (page locator allowed). Tools check first-column and unit; never provide calculated values.', z.object({
-      periodId: z.string().max(100), metric: z.enum(['revenue', 'parent_net_profit', 'operating_cash_flow']), rawText: z.string().min(1).max(100), unitLabel: z.string().min(1).max(50), citations: z.array(researchCitationSchema).min(1).max(4),
-    }).strict(), async input => {
-      const period = spec.periods.find(p => p.id === input.periodId); if (!period) throw new Error('期间不属于任务');
-      const fact = factFromDisclosure({ id: `${input.periodId}-${input.metric}`, companySymbol: spec.company.symbol, period, metric: input.metric, scope: spec.scope, restatement: 'original', citations: input.citations }, input.rawText, input.unitLabel, 'native');
+    tool('record_fact', 'Save ONE exact current-period financial fact. Stable id is periodId-metric. Copy amount and unit; include citations covering the numeric row (page locator allowed). Tools check first-column and unit; never provide calculated values.', recordFinancialFactSchema, async input => {
+      const fact = disclosedResearchFact(spec, input);
       const candidate = draft(); candidate.facts = [...state.facts.filter(f => f.id !== fact.id), fact];
       const checked = await deterministicReportErrors(actor, spec, candidate, ctx);
       for (const c of input.citations) {
@@ -63,13 +59,10 @@ export function financialResearchTools(actor: string, token: ResearchAttemptToke
       }
       if (checked.errors.length) throw new Error(checked.errors.join('; '));
       const previous = state.facts.find(f => f.id === fact.id);
-      if (previous?.value.status === 'conflict') return { fact: previous, instruction: '现有同期间证据冲突未解决，保留 partial；不能用重复写入抹去冲突' };
-      if (previous?.value.status === 'known' && fact.value.status === 'known' && normalizedYuan(previous) !== normalizedYuan(fact)) {
-        const conflicted = { ...fact, normalization: undefined, citations: uniqueCitations([...previous.citations, ...fact.citations]), value: { status: 'conflict' as const, alternatives: [previous.value, fact.value], reason: '同公司、期间和指标出现不同原始金额，尚未核实重述或来源冲突' } };
-        state.facts = [...state.facts.filter(f => f.id !== fact.id), conflicted];
-        return { fact: conflicted, instruction: '保留两份原始证据，相关结论必须 evidence_gap/conflict' };
-      }
-      state.facts = candidate.facts;
+      state.facts = mergeResearchFact(state.facts, fact);
+      const saved = state.facts.find(f => f.id === fact.id)!;
+      if (saved.value.status === 'conflict') return { fact: saved, instruction: previous?.value.status === 'conflict'
+        ? '现有同期间证据冲突未解决，保留 partial；不能用重复写入抹去冲突' : '保留两份原始证据，相关结论必须 evidence_gap/conflict' };
       for (const q of ['income_profit', 'cash_flow']) state.steps[`${q}-compare`] = state.facts.filter(f => q === 'cash_flow' ? f.metric === 'operating_cash_flow' : f.metric !== 'operating_cash_flow').length >= (q === 'cash_flow' ? 2 : 4) ? 'completed' : 'running';
       return { saved: fact.id, value: fact.value, normalization: fact.normalization, changes: financialChangeSummary(financialChanges(candidate)) };
     }),
@@ -79,7 +72,9 @@ export function financialResearchTools(actor: string, token: ResearchAttemptToke
       if (checked.errors.length) throw new Error(checked.errors.join('; '));
       state.claims = candidate.claims;
       state.steps[`${claim.questionId}-retrieve`] = 'completed'; state.steps[`${claim.questionId}-verify`] = 'pending';
-      return { saved: claim.id, semanticReview: 'pending', instruction: 'verify_claim 检查此条结论；失败时只修复此 id' };
+      return { saved: claim.id, semanticReview: 'pending', instruction: options
+        ? '继续保存本问其余事实和结论，全部保存后 complete_comparison({questionId})，随后按 nextAction 逐条核验'
+        : 'verify_claim 检查此条结论；失败时只修复此 id' };
     }),
     tool('verify_claim', 'Run a calibrated separate semantic review on ONE saved claim. Citation integrity is checked first. No calibration yields an honest evidence gap.', z.object({ claimId: z.string().max(100) }).strict(), async ({ claimId }, signal) => {
       const claim = state.claims.find(c => c.id === claimId); if (!claim) throw new Error('未知结论');
@@ -106,6 +101,13 @@ export function financialResearchTools(actor: string, token: ResearchAttemptToke
       return { saved: true };
     }, true),
   ];
+  if (options) tools.push(tool('complete_comparison', 'Finish the current question AFTER saving all its facts and claims. record_claim saves one item only. Missing required amounts need an explicit evidence_gap/conflict claim; this does not verify claims.',
+    z.object({ questionId: z.enum(['income_profit', 'cash_flow', 'risks']) }).strict(), async ({ questionId }) => {
+      const completion = comparisonCompletion(spec, state, questionId);
+      if (completion.status === 'incomplete') throw new Error(`COMPARISON_INCOMPLETE: 继续 record_fact/record_claim；缺少 ${completion.missing.join('、') || '本问结论'}，无法补齐时保存明确的 evidence_gap`);
+      state.steps[`${questionId}-compare`] = completion.status;
+      return completion;
+    }));
   // Evaluation supplies real retained documents; no fixture replaces retrieval/model results.
   return fixedDocuments ? tools.filter(t => !['discover_filings', 'import_filing', 'parse_document'].includes(t.name)) : tools;
 }

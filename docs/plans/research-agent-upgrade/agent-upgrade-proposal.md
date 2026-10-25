@@ -320,6 +320,7 @@ flowchart TD
   - `executeFinancialResearch` 增加 `options.variant: 'A' | 'B' | 'B2' | 'C1' | 'C2'`，默认 `'A'`。
   - checkpoint `schemaVersion: 2`：新增 `nodes`（节点状态）、`gaps[]`、`planVersion`、`closureReserve`；v1 checkpoint 读取时自动升级，写回仍校验请求/计划版本绑定。
   - B 变体：`nextAction` 由 `readyNodes` + `repairAction` 生成；工具调用前经 `allowedNow` 检查，被拒绝时返回结构化提示而不扣减额度；局部重规划写一条 `plan.revised` 事件（触发原因、受影响节点、保留节点）。
+  - 比较阶段逐条保存事实/结论，由 `complete_comparison({questionId})` 显式结束；缺证可 partial，完成动作计入原总预算。写入前投影新增或失效的逐条核验义务；更新重试重开报告节点并保留已停止缺口和计数，详见 D40。
   - 同一逻辑请求的修订或恢复不重置预算。
 - **验收**：
   - 测试 provider 覆盖：原因缺证 → 定向补查 → 有界停止并标记 `not_disclosed`；预算进入预留区后只核验与收尾；已验证节点在无关缺口修复中不重跑。
@@ -332,7 +333,7 @@ flowchart TD
 - **依赖**：U13
 - **写入范围**：`financial-runtime.ts`、`financial-scheduler.ts`
 - **事实前提**：PI 内核在同一轮内**顺序**执行工具（`run-engine.ts` 中 `executionMode: 'sequential'`），因此 B′ 的收益是减少模型往返轮数（每轮都要重发上下文），而不是工具并发执行。不修改 PI 内核。
-- **合同**：B2 变体 `maxToolCallsPerTurn` 设为可配置（默认 3）；每次调用仍单独预留额度；同一轮中改变状态的工具（`record_fact / record_claim / verify_claim / check_coverage / submit_report`）最多 1 个，且必须排在只读工具之后，违反时返回结构化错误。
+- **合同**：B2 变体 `maxToolCallsPerTurn` 设为可配置（默认 3）；每次调用仍单独预留额度；同一轮中改变状态的工具（`record_fact / record_claim / complete_comparison / verify_claim / check_coverage / submit_report`）最多 1 个，且必须排在只读工具之后，违反时返回结构化错误。
 - **验收**：测试 provider 下一轮多次检索的预算扣减、顺序约束、停滞检测正确；报告字段新增“模型轮数”。
 
 #### U15 A / B / B′ 实验 💰

@@ -40,6 +40,17 @@ function sequenceProvider(calls: {name: string; input: unknown}[]): PiAgentModel
     yield { type: 'finish', reason: 'tool_calls' };
   } };
 }
+function gapClosureCalls(includePrepare = false) {
+  return [
+    ...(includePrepare ? [{ name: 'list_documents', input: {} }] : []),
+    ...specFixture().questions.flatMap(q => Array.from({ length: 4 }, (_, i) => ({ name: 'search_evidence', input: { query: `合成缺证 ${q.id} ${i}` } }))),
+    ...specFixture().questions.flatMap(q => [
+      { name: 'record_claim', input: { id: `${q.id}-gap`, questionId: q.id, text: '合成测试缺证', kind: 'fact', status: 'evidence_gap', reason: '合成夹具无支持，不推断原文未披露', factIds: [], citations: [] } },
+      { name: 'complete_comparison', input: { questionId: q.id } },
+    ]),
+    { name: 'check_coverage', input: {} }, { name: 'submit_report', input: {} },
+  ];
+}
 describe.skipIf(process.env.COMPANY_RESEARCH_TEST_POSTGRES !== '1')('financial execution, recovery and evidence reader with PostgreSQL', () => {
   beforeAll(() => {
     const u = new URL(process.env.DATABASE_URL!);
@@ -160,6 +171,7 @@ describe.skipIf(process.env.COMPANY_RESEARCH_TEST_POSTGRES !== '1')('financial e
       let name: string, input: unknown;
       if (action.kind === 'prepare') { name = 'list_documents'; input = {}; }
       else if (action.kind === 'retrieve') { name = 'search_evidence'; input = { query: `${action.questionId} 定向缺证 ${turns}` }; }
+      else if (action.kind === 'compare' && view.checkpoint.claims.some((claim: {questionId: string}) => claim.questionId === action.questionId)) { name = 'complete_comparison'; input = { questionId: action.questionId }; }
       else if (action.kind === 'compare') { name = 'record_claim'; input = { id: `${action.questionId}-gap`, questionId: action.questionId,
         text: '合成协议夹具：当前证据不足', status: 'evidence_gap', reason: '有界定向检索未获支持，不推断原文未披露', kind: 'fact', factIds: [], citations: [] }; }
       else if (action.kind === 'report') { name = view.checkpoint.checkedHash ? 'submit_report' : 'check_coverage'; input = {}; }
@@ -289,6 +301,86 @@ describe.skipIf(process.env.COMPANY_RESEARCH_TEST_POSTGRES !== '1')('financial e
     await writeFile(path.join(fixtureRoot, 'reader-fixture.json'), JSON.stringify({ scope: 'synthetic hostile PDF text retained through the real repository; not financial model evidence', task: await getResearchTask(actor, task.id, ctx), sources: [source, table] }, null, 2));
   });
 
+  describe.each(['B', 'B2'] as const)('%s review repair through the real PI loop and store', variant => {
+    it('submits an unread partial update again on retry without renewing its budget or stopped gaps', async () => {
+      const task = await queued(), first = (await claimFinancialResearch(`${variant}-retry-baseline`, ctx))!.attempt;
+      await executeFinancialResearch(actor, first, undefined, ctx, sequenceProvider(gapClosureCalls(true)), true, undefined, undefined, undefined, { variant });
+      expect((await getResearchTask(actor, task.id, ctx))!.checkpoint?.submitted).toBe(true);
+      const bytes = Buffer.from(`%PDF-${variant}-unread-partial`);
+      await registerResearchDocument(actor, { ...documentFixture(task.id), bytesSha256: artifactDigest(bytes), original: ref(bytes), fetchedAt: new Date().toISOString() }, bytes, undefined, ctx);
+      const input = { expectedRequestRevision: 1, expectedPlanRevision: 1, expectedReportRevision: 1, asOf: task.spec.asOf };
+      await queueResearchReportUpdate(actor, task.id, randomUUID(), input, ctx);
+      const update = (await claimFinancialResearch(`${variant}-partial-update`, ctx))!.attempt;
+      await executeFinancialResearch(actor, update, undefined, ctx, sequenceProvider(gapClosureCalls()), true);
+      const before = (await getResearchTask(actor, task.id, ctx))!;
+      expect(before.checkpoint).toMatchObject({ schemaVersion: 2, variant, submitted: true });
+      if (before.checkpoint?.schemaVersion !== 2) throw new Error('Expected scheduler checkpoint');
+      expect(before.checkpoint.gaps.some(gap => gap.stalledAttempts === 4 && gap.status === 'partial')).toBe(true);
+      expect(await queueResearchReportUpdate(actor, task.id, randomUUID(), { ...input, expectedPlanRevision: 2, expectedReportRevision: 2 }, ctx)).toMatchObject({ retry: true, budgetRevision: 2 });
+      const token = (await claimFinancialResearch(`${variant}-partial-retry`, ctx))!.attempt;
+      await expect(recordResearchUpdateRead(actor, update, artifactDigest(bytes), ctx)).rejects.toMatchObject({ code: 'LEASE_LOST' });
+      const report = await executeFinancialResearch(actor, token, undefined, ctx, sequenceProvider([{ name: 'check_coverage', input: {} }, { name: 'submit_report', input: {} }]), true);
+      const after = (await getResearchTask(actor, task.id, ctx))!;
+      expect(report).toMatchObject({ revision: 3, status: 'partial' });
+      expect(after.checkpoint).toMatchObject({ submitted: true, stopReason: null, gaps: before.checkpoint.gaps, modelTurns: before.checkpoint.modelTurns! + 2 });
+      expect(after.budget).toEqual({ revision: before.budget.revision, toolCalls: before.budget.toolCalls + 2 });
+      expect(after.usage).toMatchObject({ startedAt: before.usage.startedAt, deadline: before.usage.deadline, toolCalls: before.usage.toolCalls + 2 });
+      const [receipt] = await prisma.$queryRaw<{read_at: Date | null; checked_at: Date | null}[]>`SELECT read_at,checked_at FROM company_research_update_sources WHERE task_id=${task.id} AND source_hash=${artifactDigest(bytes)}`;
+      expect(receipt).toEqual({ read_at: null, checked_at: null });
+    }, 30000);
+
+    it('saves amounts and another claim after the first claim, then completes comparison explicitly', async () => {
+      const task = await queued(), token = (await claimFinancialResearch(`${variant}-incremental-material`, ctx))!.attempt;
+      const bytes = Buffer.from(`%PDF-${variant}-amounts`), parsed = Buffer.from(JSON.stringify({ schemaVersion: 1, pages: [{ filePage: 5, text: '合并财务报表 单位：元\n2024年 2023年\n营业收入 100.00 90.00\n归属于上市公司股东的净利润 20.00 18.00' }] }));
+      const doc = { ...documentFixture(task.id), bytesSha256: artifactDigest(bytes), original: ref(bytes), parsed: ref(parsed), state: 'ready', parser: { name: 'fixture', version: '1', failedPages: [], warnings: [] } };
+      await registerResearchDocument(actor, doc, bytes, parsed, ctx);
+      const previousBytes = Buffer.from(`%PDF-${variant}-previous-amounts`), previousParsed = Buffer.from(JSON.stringify({ schemaVersion: 1, pages: [{ filePage: 5, text: '合并财务报表 单位：元\n2023年 2022年\n营业收入 90.00 80.00\n归属于上市公司股东的净利润 18.00 16.00' }] }));
+      const previousDoc = { ...doc, id: 'annual-2023', period: task.spec.periods[0], bytesSha256: artifactDigest(previousBytes), original: ref(previousBytes), parsed: ref(previousParsed) };
+      await registerResearchDocument(actor, previousDoc, previousBytes, previousParsed, ctx);
+      const state = upgradeFinancialCheckpoint(emptyCheckpoint(1, 1), buildFinancialPlanV2(task.spec, { taskId: task.id, createdAt: new Date().toISOString() }), []);
+      state.variant = variant; if (variant === 'B2') state.maxToolCallsPerTurn = 3;
+      for (const id of Object.keys(state.nodes)) state.nodes[id] = id.endsWith('-report') || id === 'income_profit-compare' ? 'pending' : 'partial';
+      await saveResearchCheckpoint(actor, token, state, 'incremental-material-fixture', ctx);
+      const citation = { ...reportFixture(task.id).claims[0].citations[0], bytesSha256: doc.bytesSha256, quote: '营业收入 100.00 90.00' };
+      const claim = { id: 'revenue', questionId: 'income_profit', text: '合成收入披露', kind: 'fact', status: 'supported', factIds: [], citations: [citation] };
+      const facts = task.spec.periods.flatMap((period, index) => (['revenue', 'parent_net_profit'] as const).map(metric => ({ name: 'record_fact', input: {
+        periodId: period.id, metric, rawText: metric === 'revenue' ? ['90.00', '100.00'][index] : ['18.00', '20.00'][index], unitLabel: '元',
+        citations: [{ ...citation, documentId: index ? doc.id : previousDoc.id, bytesSha256: index ? doc.bytesSha256 : previousDoc.bytesSha256,
+          quote: metric === 'revenue' ? ['营业收入 90.00 80.00', citation.quote][index] : ['归属于上市公司股东的净利润 18.00 16.00', '归属于上市公司股东的净利润 20.00 18.00'][index] }],
+      } })));
+      const results: {name: string; ok: boolean; message?: string}[] = [];
+      await executeFinancialResearch(actor, token, undefined, ctx, sequenceProvider([
+        { name: 'record_claim', input: claim }, { name: 'complete_comparison', input: { questionId: 'income_profit' } }, ...facts,
+        { name: 'record_claim', input: { ...claim, id: 'profit', text: '合成利润披露' } }, { name: 'complete_comparison', input: { questionId: 'income_profit' } },
+      ]), true, async record => {
+        if (record.type === 'tool_result') { const data = record.data as {toolCall: {name: string}; result: {ok: boolean; error?: {message: string}}}; results.push({ name: data.toolCall.name, ok: data.result.ok, message: data.result.error?.message }); }
+      });
+      expect(results.map(result => result.ok), JSON.stringify(results)).toEqual([true, false, true, true, true, true, true, true]);
+      expect(results[1].message).toContain('COMPARISON_INCOMPLETE');
+      const after = (await getResearchTask(actor, task.id, ctx))!;
+      expect(after.checkpoint?.facts).toHaveLength(4); expect(after.checkpoint?.claims.map(claim => claim.id)).toEqual(['revenue', 'profit']);
+      expect(after.checkpoint).toMatchObject({ nodes: { 'income_profit-compare': 'completed', 'income_profit-verify': 'pending' } });
+      expect(after.usage.toolCalls).toBe(8); // Rejected completion executes validation; admission denials do not charge.
+    }, 30000);
+
+    it('rejects a new review obligation before charging and still submits an explicit gap', async () => {
+      const task = await queued(3), token = (await claimFinancialResearch(`${variant}-projected-reserve`, ctx))!.attempt;
+      const state = upgradeFinancialCheckpoint(emptyCheckpoint(1, 1), buildFinancialPlanV2(task.spec, { taskId: task.id, createdAt: new Date().toISOString() }), []);
+      state.variant = variant; if (variant === 'B2') state.maxToolCallsPerTurn = 3;
+      for (const id of Object.keys(state.nodes)) state.nodes[id] = id.endsWith('-report') || id === 'income_profit-compare' ? 'pending' : 'partial';
+      await saveResearchCheckpoint(actor, token, state, 'projected-reserve-fixture', ctx);
+      const claim = { ...reportFixture(task.id).claims[0], id: 'income', questionId: 'income_profit', factIds: [] }, feedback: unknown[] = [];
+      const report = await executeFinancialResearch(actor, token, undefined, ctx, sequenceProvider([
+        { name: 'record_claim', input: claim }, { name: 'record_claim', input: { ...claim, status: 'evidence_gap', reason: '无足够核验额度', citations: [] } },
+        { name: 'check_coverage', input: {} }, { name: 'submit_report', input: {} },
+      ]), true, async record => { if (record.type === 'tool_result') feedback.push(record.data); });
+      const after = (await getResearchTask(actor, task.id, ctx))!;
+      expect(JSON.stringify(feedback)).toContain('SCHEDULER_WRITE_RESERVE');
+      expect(after.usage.toolCalls).toBe(3); expect(after.checkpoint).toMatchObject({ submitted: true, stopReason: null, facts: [], claims: [{ status: 'evidence_gap' }] });
+      expect(report?.status).toBe('partial');
+    }, 30000);
+  });
+
   describe('U14 B2 sequential batch protocol fixtures', () => {
     type Call = { name: string; input: unknown; id?: string };
     function batches(turns: Call[][]): PiAgentModelProvider {
@@ -373,6 +465,21 @@ describe.skipIf(process.env.COMPANY_RESEARCH_TEST_POSTGRES !== '1')('financial e
       const task = await queued(), token = (await claimFinancialResearch('B2-duplicate-id', ctx))!.attempt;
       await executeFinancialResearch(actor, token, undefined, ctx, batches([searches(2).map(call => ({ ...call, id: 'same' }))]), true, undefined, undefined, undefined, { variant: 'B2' });
       expect((await getResearchTask(actor, task.id, ctx))!.usage.toolCalls).toBe(0);
+    }, 30000);
+
+    it('rejects a read-plus-claim batch for projected reviews before executing the read', async () => {
+      const task = await queued(4), token = (await claimFinancialResearch('B2-projected-whole-batch', ctx))!.attempt;
+      const state = upgradeFinancialCheckpoint(emptyCheckpoint(1, 1), buildFinancialPlanV2(task.spec, { taskId: task.id, createdAt: new Date().toISOString() }), []);
+      state.variant = 'B2'; state.maxToolCallsPerTurn = 3;
+      for (const id of Object.keys(state.nodes)) state.nodes[id] = id.endsWith('-report') || id === 'income_profit-compare' ? 'pending' : 'partial';
+      await saveResearchCheckpoint(actor, token, state, 'projected-batch-fixture', ctx);
+      const feedback: unknown[] = [], claim = { ...reportFixture(task.id).claims[0], id: 'income', questionId: 'income_profit', factIds: [] };
+      await executeFinancialResearch(actor, token, undefined, ctx, batches([
+        [...searches(1), { name: 'record_claim', input: claim }], [gapClaim], [{ name: 'complete_comparison', input: { questionId: 'income_profit' } }], ...close,
+      ]), true, async record => { if (record.type === 'tool_result') feedback.push(record.data); });
+      const after = (await getResearchTask(actor, task.id, ctx))!;
+      expect(JSON.stringify(feedback)).toContain('SCHEDULER_WRITE_RESERVE');
+      expect(after.usage.toolCalls).toBe(4); expect(after.checkpoint).toMatchObject({ submitted: true, stopReason: null, evidenceLedger: {}, claims: [gapClaim.input], nodeToolCalls: { 'income_profit-compare': 2 } });
     }, 30000);
 
     it('inherits a B2 limit of five and cumulative model turns on recovery while rejecting explicit mismatches', async () => {
