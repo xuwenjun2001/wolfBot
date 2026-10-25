@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { artifactDigest } from './artifact-store';
 import { canonicalResearchJson, researchTaskSpecSchema, researchTaskRevisionChangesSchema, researchRequestHash, researchPlanSchema, assertPlanForSpec } from './task-contracts';
 import { researchReportRevisionSchema, type ResearchVersionEvent } from './revision-contracts';
-import { checkpointSchema, emptyCheckpoint, initialFinancialPlan } from './execution-contracts';
+import { checkpointSchema, emptyCheckpoint, initialFinancialPlan, rebindFinancialCheckpoint } from './execution-contracts';
 import { researchDocumentSchema } from './document-contracts';
 import { semanticReviewSchema } from './claim-verification';
 import { financialChanges } from './report-assembly';
@@ -106,7 +106,7 @@ export async function reviseResearchTask(actor: string, id: string, expectedRequ
     await tx.$executeRaw`INSERT INTO company_research_plans(task_id,revision,request_revision,request_key,payload_hash,plan)
       VALUES (${id},${plan.revision},${plan.requestRevision},${requestKey},${payloadHash},${JSON.stringify(plan)}::jsonb)`;
     const generation = task.generation + 1;
-    const checkpoint = emptyCheckpoint(spec.requestRevision, plan.revision);
+    const checkpoint = rebindFinancialCheckpoint(task.checkpoint ? checkpointSchema.parse(task.checkpoint) : null, emptyCheckpoint(spec.requestRevision, plan.revision));
     await tx.$executeRaw`UPDATE company_research_tasks SET request_revision=${spec.requestRevision},plan_revision=${plan.revision},
       status='queued',generation=${generation},active_attempt_id=NULL,checkpoint=${JSON.stringify(checkpoint)}::jsonb WHERE id=${id}`;
     task.request_revision = spec.requestRevision; task.plan_revision = plan.revision; task.status = 'queued';

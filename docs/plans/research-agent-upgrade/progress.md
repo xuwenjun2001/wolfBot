@@ -6,13 +6,13 @@
 
 | 字段 | 当前值 |
 | --- | --- |
-| 最后更新 | 2026-10-25 15:27（U13 调度集成与独立审查进行中；冻结 fixture 的评分/runner 回归兼容已补验） |
+| 最后更新 | 2026-10-25 15:36（U13 工程验收通过：214 单测、54 隔离 PG、全量 types；接续 U14 批量工具） |
 | 计划版本 | 原 S 系列 v1；U 系列按 agent-upgrade-proposal.md v2 执行 |
 | 总体状态 | S01—S18 已验收（S17 按当前反例修复并重验）；S19/S20 仍有必需验收阻塞。生产部署不在授权范围内 |
 | 已验收步骤 | 18/20；S17 重开与修复过程分别保留 E-REVIEW-03 / E-FIX-R2R3 |
-| 当前待处理步骤 | U02/U10—U12 done，U13 in_progress，后续U14；U04 人审 blocked；G0 未通过；S19/S20 保持 blocked |
+| 当前待处理步骤 | U02/U10—U13 done，U14 待接续；U04 人审 blocked；G0 未通过；S19/S20 保持 blocked |
 | 下一步骤 | 按 Q5A 先实现并验证板块 2 U10—U14，保留扩展样本与真实实验门禁 |
-| 下一具体动作 | 完成 U13 单测、全量类型与隔离 PG 验证，再实现 U14 批量工具；G0/U04 与真实执行条件保留 |
+| 下一具体动作 | 同步 U13 的工程实现与证据，接续 U14 批量工具及 provider 多工具输出；G0/U04 与真实执行条件保留 |
 | 当前会话登记 | 2026-10-25-u-block2：五项实际选择已登记；主 AI 处理持久化/报告/修订兼容和统一验证，gpt-6.1-sol/max 的 plan_graph 实现 U13、gap_policy 独立审查、budget_policy 只读准备 U14；U14 等 U13 通过后实现 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
 | 分支 / 本轮实现起点 | codex/agent-upgrade；起点 `26968ffdb751d3ee0488b608f020be29679780be`，从已核对同步的 origin/codex/research-agent-s11-s15 新建；保留用户修改的 v2 计划和目录 README |
@@ -22,7 +22,7 @@
 | 运行环境 / 进程 | 本轮脚本、单测、类型检查及本地 6 页 OCR 探针均已退出；无新增持久服务、Worker 或数据库。日常服务和历史受控 checkout/junction 保留，未部署或操作生产库；普通文件 symlink 仍受 Windows 权限限制，runner 的 junction 拒绝用例已通过 |
 | 模型与数据费用 | 本轮真实研究模型调用 0；U03 mock 用量为模拟值，真实费用 unknown；U04 使用已有本地 OCR 模型。历史 18 个真实任务/626 工具、输入 9458172 / 输出 192453 Token 仅作 U01 归因，未重开预算；后续父任务仍为 40 工具/20 分钟 |
 | 阻塞 | rubric及旧四家12题标签冻结，完整设计已确认；G0仍待扩展样本人审/分层。六例执行和评分兼容限制、真实adapter/最终协议继续保留。Q5A允许先工程开发U10—U14。S19问题/支持9/12、旧保留缺答及S20原阻塞不变，Node锁文件/Python审计暂缓 |
-| 最近验证 | E-U02-04：确认及标签schema/hash通过，16项评分回归通过；U10—U12五文件83项联合回归通过，各自lint/定向types证据见对应记录。84 Markdown/622链接检查通过；U13/PG/全量类型验证尚待完成，无真实模型或新评分 |
+| 最近验证 | E-U13-01：研究 214 passed/54 DB-only skipped；隔离 PG 54/54、34 迁移及旧读写兼容通过；全量 types、15 文件 ESLint、模块边界通过。E-U02-05：评分16、协议22项通过。84 Markdown/626本地链接检查通过；无真实模型或新质量分数 |
 | 受控资料恢复 | 开发资料在 `data/research-agent-upgrade/`；旧保留根 `D:/QuantPilot-private-evals/research-v1` 已消费，新保留根 `D:/QuantPilot-private-evals/research-u-v2` 仅登记 hash、未打开内容。换机恢复受控归档并核对最终 LF 清单；这里不记录保留题/答案 |
 | 范围提醒 | 本轮按 Q5A 授权实现 U10—U14，G0/U04 不因此通过；Q4A 仅批准五变体/14 家/2 次/8000 万输入 Token 的设计，不启动 U15/U36 或同行实验；不读取未见保留答案、不部署、不修复暂缓依赖门 |
 
@@ -70,7 +70,7 @@
 | U10 | done | 2026-10-25-u-block2 / plan_graph 子 Agent、主 AI 复核 | plan-graph.ts 及测试；task-contracts.ts | E-U10-01；DAG/兼容回归 23 项、定向严格 types 通过 | 接入 U13；准备结束不等于金额全部齐全 |
 | U11 | done | 2026-10-25-u-block2 / gap_policy 子 Agent、主 AI 复核 | gap-policy.ts 及测试 | E-U11-01；37 项定向回归及 lint 通过 | 接入 U13；无新证据只 partial，不伪造未披露 |
 | U12 | done | 2026-10-25-u-block2 / budget_policy 子 Agent、主 AI 复核 | budget-policy.ts 及测试 | E-U12-01；23 项定向回归及 lint 通过 | 接入 U13；当前 claim hash 匹配核验回执后才释放核验预留 |
-| U13 | in_progress | 2026-10-25-u-block2 / plan_graph 子 Agent 实现、主 AI 集成 | financial-scheduler.ts；runtime/tools/execution-contracts/observation；集成测试；必要持久化事件与报告兼容 | U10—U12 的 83 项联合回归已通过 | 默认 A 兼容、B 调度、v2 checkpoint、fencing/预算 PG 验证 |
+| U13 | done | 2026-10-25-u-block2 / plan_graph 实现、gap_policy 审查、主 AI 集成 | financial-scheduler.ts；runtime/tools/execution-contracts/observation；持久化事件/报告/修订与更新兼容；对应测试 | E-U13-01；214 单测、54 PG、全量 types/lint通过，A 既有断言保留 | 工程验收完成，接续 U14；实际模型质量留待正式实验 |
 | U14 | pending | 2026-10-25-u-block2 / 主 AI 集成 | financial-runtime.ts 与批量工具调用测试 | 已授权，等待 U13 通过 | B2 每轮默认 3 次，顺序执行、每次独立扣额 |
 | U15 | pending | 未授权 | 受控消融证据；evaluation-results.md 新小节 | — | 等待 U14、费用审批 |
 | U20 | pending | 未授权 | retrieval-expansion.ts、evidence-retrieval.ts、lexical-index.ts、verify-retrieval.ts | — | 等待 G0 及板块 3 授权 |
@@ -849,3 +849,11 @@ E-Sxx-01 / 日期 / 会话标识：
 - 全量类型预检发现负例从当前全部已确认 JSON 推断出 confirmation 非空类型；改用实际 answerability schema 解析后显式构造 pending/null，保留冻结待审标签必须拒绝的断言。评分 v2 16/16 通过。
 - runner 合成仓库此前直接复制当前 rubric，冻结后缺其真实回执文件而有 16 项预检失败。测试改为使用明确标为 synthetic 的自有回执及匹配 hash，不借用真人授权；待审 rubric 负例也显式构造。补验第一次 21/22，修正最后一项仍依赖真实 pending 状态后 22/22 通过；生产 runner、rubric、评分阈值与执行门未放宽。
 - 日志位于 `data/research-agent-upgrade/evidence/U13/block2-20261025/`：`type-check-preflight-01.log`、`score-fixture-regression-01.log`、`ablation-protocol-regression-01.log` 与 `ablation-protocol-regression-02.log`，保留首轮失败；两个测试文件 ESLint 退出0。U13 新测试类型错误由其实现包处理，全量 types/PG 待统一完成。本次无模型或生产操作。
+
+### E-U13-01 / 2026-10-25-u-block2：B 调度与持久化工程验收
+
+- plan_graph 实现应用调度、schemaVersion 2 checkpoint 与恢复；主 AI 完成局部事件/状态同事务、生成请求轮数原子预留、报告字段、请求修订及更新重试兼容。gap_policy 独立复核并推动修复：软份额误作硬停止、默认接管误选 A、修订理由长度、compare/verify 补查停滞、跨题 claim ID 覆盖、已停止缺口借重写重开。最小反例和完整六金额/三问的正向协议测试均保留；默认 A 既有测试断言未修改。
+- `npm run test:unit -- src/lib/company-research` 最终退出0：21文件通过/7个DB文件跳过，214 passed/54 skipped；`npm run type-check` 退出0；15个本轮TS/测试文件 ESLint退出0；模块边界通过（保留既有体积警告）。最终日志为 `data/research-agent-upgrade/evidence/U13/block2-20261025/research-unit-02.log`、`type-check-integration-02.log`、`eslint-integration-01.log`。
+- `npm run test:research:postgres -- --native-postgres=data/research-agent-upgrade/evidence/S05/native-postgres-16.14/package/native/bin` 最终退出0：54/54真实SQL测试、34迁移、重复部署及旧读写兼容通过。测试自有 localhost research_test，未连接日常/生产数据库；没有 financial-e2e/模型参数。PG清单 `data/research-agent-upgrade/evidence/S05/rehearsal-7a52db30-dba2-45ba-a9bf-9cb20fb63542/manifest.json` SHA-256 `570a6b6dd25a70bd1b5486bb85a01c87fcd75c6eaf65b46b75e26cc48e136c2e`，outcome=passed、nativeClusterStopped=true。
+- 首轮PG为53/54，失败来自新增重试测试沿用旧 fetchedAt、因此正确返回无新证据；夹具改为真实新来源时点并显式断言已入队，生产更新规则未放宽。原失败日志与 `rehearsal-7bd4f04b-16c8-4df4-94bb-0458259236ee` 清单保留（其自有集群亦已停止）。原类型失败及其修复也保留，最终全量重验通过。
+- D38记录局部planVersion与持久revision/generation分工、按当前claim hash核验、软份额和硬预算、缺证只partial、恢复累计轮数等语义。B只是可信选项接线，默认A保留；C1/C2仍明确拒绝，U14/B2待实现。工程通过不等于真实质量提升、G0/U04通过或CLI真实adapter已放行。本轮真实研究模型调用0、未读取新保留内容、未部署，依赖审计暂缓不变。

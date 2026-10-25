@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { artifactDigest } from './artifact-store';
 import { documentAvailableAt, researchDocumentSchema } from './document-contracts';
-import { checkpointSchema, initialFinancialPlan } from './execution-contracts';
+import { checkpointSchema, checkpointV1Schema, initialFinancialPlan, rebindFinancialCheckpoint } from './execution-contracts';
 import { retainedUpdateFacts } from './update-dependencies';
 import { buildResearchReportDiff, researchReportEvidenceHashes } from './report-diff';
 import { researchReportDiffSchema, researchReportRevisionSchema } from './revision-contracts';
@@ -112,13 +112,11 @@ export async function queueResearchReportUpdate(actor: string, id: string, key: 
       const state = affectedQuestions.has(question.id) ? 'pending' : 'completed';
       return [[`${question.id}-retrieve`, state], [`${question.id}-compare`, state], [`${question.id}-verify`, 'pending'], [`${question.id}-report`, 'pending']];
     }));
-    let checkpoint = checkpointSchema.parse({ schemaVersion: 1, requestRevision, planRevision: plan.revision, phase: 'researching',
+    const base = checkpointV1Schema.parse({ schemaVersion: 1, requestRevision, planRevision: plan.revision, phase: 'researching',
       facts: retainedFacts, ...(retained.supportingFacts.length ? { supportingFacts: retained.supportingFacts } : {}), claims: retainedClaims, observations: [{ tool: 'update', key: payloadHash,
         summary: canonicalResearchJson({ sourceHashes: [...new Set(newDocuments.map(document => document.bytesSha256))], affectedPeriods, invalidatedClaimIds: [...affectedClaimIds], asOf: parsed.asOf }) }],
       steps, stalledCalls: 0, stopReason: null, submitted: false, checkedHash: null, lastCallKey: null, lastEvidenceHash: null });
-    if (retry && task.checkpoint) checkpoint = checkpointSchema.parse({ ...checkpointSchema.parse(task.checkpoint),
-      requestRevision, planRevision: plan.revision, phase: 'researching', stalledCalls: 0, stopReason: null, submitted: false,
-      checkedHash: null, lastCallKey: null, lastEvidenceHash: null });
+    const checkpoint = rebindFinancialCheckpoint(task.checkpoint ? checkpointSchema.parse(task.checkpoint) : null, base, retry);
     const generation = task.generation + 1;
     await tx.$executeRaw`UPDATE company_research_tasks SET request_revision=${requestRevision},plan_revision=${plan.revision},status='queued',
       generation=${generation},active_attempt_id=NULL,checkpoint=${JSON.stringify(checkpoint)}::jsonb WHERE id=${id}`;

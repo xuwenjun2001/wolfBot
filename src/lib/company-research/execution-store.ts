@@ -33,20 +33,54 @@ export async function claimFinancialResearch(worker: string, ctx = defaultResear
     return { actor: task.actor_id, attempt };
   });
 }
-export async function saveResearchCheckpoint(actor: string, token: ResearchAttemptToken, input: ResearchCheckpoint, tool?: string, ctx = defaultResearchContext) {
+export type FinancialPlanRevisionEvent = { planVersion: number; reason: string; affectedNodeIds: string[]; retainedNodeIds: string[] };
+function boundCheckpoint(input: ResearchCheckpoint, token: ResearchAttemptToken) {
   const checkpoint = checkpointSchema.parse(input);
   if (checkpoint.requestRevision !== token.requestRevision || checkpoint.planRevision !== token.planRevision || JSON.stringify(checkpoint).length > 160000) throw new ResearchPersistenceError('INVALID_RESEARCH', 'Checkpoint binding/size');
+  return checkpoint;
+}
+function assertCheckpointTransition(previous: ResearchCheckpoint | null, checkpoint: ResearchCheckpoint, token: ResearchAttemptToken, revision?: FinancialPlanRevisionEvent) {
+  if (previous?.schemaVersion === 2 && (checkpoint.schemaVersion !== 2 || checkpoint.variant !== previous.variant)) {
+    throw new ResearchPersistenceError('INVALID_RESEARCH', 'Checkpoint scheduler binding');
+  }
+  if (checkpoint.schemaVersion === 2) {
+    const previousVersion = previous?.schemaVersion === 2 ? previous.planVersion : token.planRevision;
+    if (checkpoint.planVersion !== previousVersion + (revision ? 1 : 0)) throw new ResearchPersistenceError('INVALID_RESEARCH', 'Local plan revision binding');
+  }
+  if (revision) {
+    const ids = new Set(checkpoint.schemaVersion === 2 ? Object.keys(checkpoint.nodes) : []);
+    if (checkpoint.schemaVersion !== 2 || checkpoint.planVersion !== revision.planVersion
+      || [...revision.affectedNodeIds, ...revision.retainedNodeIds].some(id => !ids.has(id))
+      || new Set([...revision.affectedNodeIds, ...revision.retainedNodeIds]).size !== revision.affectedNodeIds.length + revision.retainedNodeIds.length) {
+      throw new ResearchPersistenceError('INVALID_RESEARCH', 'Local plan revision binding');
+    }
+  }
+  if ((checkpoint.modelTurns || 0) < (previous?.modelTurns || 0)) throw new ResearchPersistenceError('INVALID_RESEARCH', 'Model round count cannot decrease');
+}
+export async function saveResearchCheckpoint(actor: string, token: ResearchAttemptToken, input: ResearchCheckpoint, tool?: string, ctx = defaultResearchContext, revision?: FinancialPlanRevisionEvent) {
+  const checkpoint = boundCheckpoint(input, token);
   return ctx.db.$transaction(async tx => {
     const task = await lockResearchTask(tx, actor, token.taskId); await assertResearchAttempt(tx, task, token);
+    const previous = task.checkpoint ? checkpointSchema.parse(task.checkpoint) : null;
+    assertCheckpointTransition(previous, checkpoint, token, revision);
     await tx.$executeRaw`UPDATE company_research_tasks SET checkpoint=${JSON.stringify(checkpoint)}::jsonb WHERE id=${task.id}`;
+    if (revision) await emitResearchEvent(tx, task, { type: 'plan.revised', ...revision }, token.id);
     await emitResearchEvent(tx, task, { type: 'research.progress', phase: checkpoint.phase, tool: tool?.slice(0, 80) || null, message: checkpoint.stopReason || '已保存公开研究状态' }, token.id);
   });
 }
 /** Reserve before the request, including failed/aborted requests. Unresolved usage stays unknown across takeover. */
-export async function reserveResearchModelRequest(actor: string, token: ResearchAttemptToken, ctx = defaultResearchContext) {
+export async function reserveResearchModelRequest(actor: string, token: ResearchAttemptToken, ctx = defaultResearchContext, generationCheckpoint?: ResearchCheckpoint) {
+  const checkpoint = generationCheckpoint ? boundCheckpoint(generationCheckpoint, token) : null;
   return ctx.db.$transaction(async tx => {
     const task = await lockResearchTask(tx, actor, token.taskId); await assertResearchAttempt(tx, task, token);
-    await tx.$executeRaw`UPDATE company_research_tasks SET unknown_model_requests=unknown_model_requests+1 WHERE id=${task.id}`;
+    const previous = task.checkpoint ? checkpointSchema.parse(task.checkpoint) : null;
+    const modelTurns = (previous?.modelTurns || 0) + (checkpoint ? 1 : 0);
+    if (checkpoint) {
+      assertCheckpointTransition(previous, checkpoint, token);
+      const next = boundCheckpoint({ ...checkpoint, modelTurns }, token);
+      await tx.$executeRaw`UPDATE company_research_tasks SET checkpoint=${JSON.stringify(next)}::jsonb,unknown_model_requests=unknown_model_requests+1 WHERE id=${task.id}`;
+    } else await tx.$executeRaw`UPDATE company_research_tasks SET unknown_model_requests=unknown_model_requests+1 WHERE id=${task.id}`;
+    return modelTurns;
   });
 }
 export async function settleResearchModelUsage(actor: string, token: ResearchAttemptToken, input: number, output: number, estimated: boolean, ctx = defaultResearchContext) {

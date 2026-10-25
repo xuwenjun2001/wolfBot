@@ -20,6 +20,7 @@ export const researchReportRevisionSchema = z.object({
   supportingFacts: z.array(financialFactSchema).max(100).optional(),
   method: z.object({ model: z.string().max(100), skillVersion: z.string().max(100), toolVersion: z.string().max(100), contractVersion: z.literal('financial-change-v1'),
     skillSha256: z.string().length(64).optional(),
+    variant: z.enum(['A', 'B', 'B2', 'C1', 'C2']).optional(), modelTurns: z.number().int().min(0).optional(),
     dataHashes: z.array(z.string().length(64)).max(100), semanticReview: z.enum(['human', 'separate_call_same_model', 'unavailable']) }).strict().optional(),
   gaps: z.array(z.object({ code: z.enum(['evidence_gap', 'evidence_conflict', 'incomparable_period', 'future_evidence', 'unknown_disclosure', 'parse_failure']), questionId: researchQuestionSchema.shape.id, message: z.string().min(1).max(1000) }).strict()).max(100),
 }).strict().superRefine((r, ctx) => {
@@ -90,6 +91,8 @@ export const researchEventSchema = z.object({
     z.object({ type: z.literal('task.revised'), fromRequestRevision: revisionSchema, changedFields: z.array(z.enum(['questions', 'periods', 'asOf'])).min(1).max(3) }).strict(),
     z.object({ type: z.literal('report.update.queued'), fromReportRevision: revisionSchema, sourceHashes: z.array(z.string().length(64)).min(1).max(100), affectedPeriods: z.array(researchIdSchema).min(1).max(2) }).strict(),
     z.object({ type: z.literal('plan.created') }).strict(),
+    z.object({ type: z.literal('plan.revised'), planVersion: revisionSchema, reason: z.string().min(1).max(400),
+      affectedNodeIds: z.array(researchIdSchema).min(1).max(40), retainedNodeIds: z.array(researchIdSchema).max(40) }).strict(),
     z.object({ type: z.literal('document.registered'), documentId: researchIdSchema, version: revisionSchema }).strict(),
     z.object({ type: z.literal('attempt.started') }).strict(), z.object({ type: z.literal('attempt.finished'), status: z.enum(['completed', 'partial', 'failed', 'cancelled', 'superseded']) }).strict(),
     z.object({ type: z.literal('report.created'), status: z.enum(['completed', 'partial', 'failed', 'cancelled']) }).strict(),
@@ -100,6 +103,10 @@ export const researchEventSchema = z.object({
 }).strict().superRefine((v, ctx) => {
   if (v.event.type === 'plan.created' && v.planRevision === null) ctx.addIssue({ code: 'custom', message: 'Plan event needs revision' });
   if (v.event.type === 'report.created' && v.reportRevision === null) ctx.addIssue({ code: 'custom', message: 'Report event needs revision' });
-  if (v.event.type.startsWith('attempt.') && (!v.attemptId || v.generation < 1 || v.planRevision === null)) ctx.addIssue({ code: 'custom', message: 'Attempt event needs plan and fencing identity' });
+  if ((v.event.type.startsWith('attempt.') || v.event.type === 'plan.revised') && (!v.attemptId || v.generation < 1 || v.planRevision === null)) ctx.addIssue({ code: 'custom', message: 'Attempt event needs plan and fencing identity' });
+  if (v.event.type === 'plan.revised') {
+    const ids = [...v.event.affectedNodeIds, ...v.event.retainedNodeIds];
+    if (new Set(ids).size !== ids.length || v.planRevision !== null && v.event.planVersion <= v.planRevision) ctx.addIssue({ code: 'custom', message: 'Invalid local plan revision' });
+  }
 });
 export type ResearchVersionEvent = z.infer<typeof researchEventSchema>;

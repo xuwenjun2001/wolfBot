@@ -85,4 +85,10 @@ describe('layered publication and local repair', () => {
     const partial = assembleFinancialReport(report.taskId, specFixture(), 1, 1, state, 'test');
     expect(partial.status).toBe('partial'); expect(partial.gaps).toHaveLength(9);
   });
+  it('reports persisted model rounds while leaving historical unknown counts absent', () => {
+    const { report } = fixture(), state = emptyCheckpoint(1, 1);
+    expect(assembleFinancialReport(report.taskId, specFixture(), 1, 1, state, 'test').method).not.toHaveProperty('modelTurns');
+    state.modelTurns = 5;
+    expect(assembleFinancialReport(report.taskId, specFixture(), 1, 1, state, 'test').method).toMatchObject({ modelTurns: 5 });
+  });
 });

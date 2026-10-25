@@ -172,7 +172,7 @@ query 为 1—300 字符；topK 为 1—20，默认 5；maxOutputCharacters 为 
 
 已完成研究可显式检查巨潮公告。候选必须重新下载后才成为任务资料；同一来源的新 bytes 会成为新原件版本，但沿用旧公告日期无法证明修订 bytes 何时公开，因此会进入披露日期待核实状态。不同公告 ID 若指向同一期间、同一 bytes 和相同披露证据，会复用既有文档。模型搜索只作为候选发现，不能替代已核实官方原件。用户选择新报告截止日期后，更新入口同时检查请求、计划和报告 revision，并要求幂等键。只有来源 hash 未进入上一版报告、披露已核实且截至所选 `asOf` 可用的资料才会排队；否则返回“无新证据”，不创建报告。
 
-更新会追加 plan revision；若截止日期改变，也追加 request revision。任务沿用原逻辑工具预算、累计用量、开始时间和 deadline。公开 checkpoint 保留受影响期间之外的事实/结论，失效受影响期间的事实与其依赖结论；保留结论仍在新 plan/asOf 下重新做语义核验。新报告完成后，报告历史按规范化 JSON hash 展示版本身份，diff API 对相邻不可变报告按指标/范围/期间、稳定 claim ID 和文档版本/hash/locator 计算变化，不调用模型编写差异或原因。支持、修订、撤回和未变化均由两版报告状态确定；缺少新报告证据时，旧报告不会被改写。
+更新会追加 plan revision；若截止日期改变，也追加 request revision。真正新来源按 D32 开启独立、同上限的预算轮次，首次领取时开始计时；历史工具、Token 和未知请求仍累计并保存不可变预算快照。失败重试、接管和同一请求修订沿用当前轮次的已用额度与 deadline。公开 checkpoint 保留受影响期间之外的事实/结论，失效受影响期间的事实与其依赖结论；保留结论仍在新 plan/asOf 下重新做语义核验。新报告完成后，报告历史按规范化 JSON hash 展示版本身份，diff API 对相邻不可变报告按指标/范围/期间、稳定 claim ID 和文档版本/hash/locator 计算变化，不调用模型编写差异或原因。支持、修订、撤回和未变化均由两版报告状态确定；缺少新报告证据时，旧报告不会被改写。
 
 执行 `npm run test:research:postgres` 会创建专用临时 PostgreSQL，演练旧库升级、重复迁移、旧代码兼容及新链路测试；不会迁移应用数据库。追加 `-- --financial-e2e` 才调用当前真实模型，对固定茅台双期公开 PDF 运行完整语料/缺后期资料两例，并核对历史 OCR 输出的阅读器。需要受控开发资料与校准回执，费用未知；固定资料运行不等于实时公告发现全链路验收。原始结果在 `data/research-agent-upgrade/evidence/S13/`，开发步骤状态以升级目录 progress 为准。
 
@@ -185,3 +185,13 @@ query 为 1—300 字符；topK 为 1—20，默认 5；maxOutputCharacters 为 
 研究 Worker 传递的 attempt token 会贯穿导入、解析和文档注册。注册在任务锁内入口及原件/解析产物写入后、metadata INSERT 前再次检查任务状态、generation、worker 与 lease；取消、接管或租约过期的旧 attempt 不能留下 ready 文档。没有 Worker token 的人工管理调用保持原有兼容入口。
 
 阅读器对引用先做 NFKC 和空白归一匹配，再映射回原文的 UTF-16 范围，因此换行、组合字符、全角字符或长页不会把上下文固定在前 9000 个字符。只有原文中存在逐字字符串时才生成 highlight；归一匹配只用于定位上下文，不伪造高亮。定向回归和 disposable PostgreSQL 验证记录在 [S11—S15 验收证据](plans/research-agent-upgrade/s11-s15-validation.md) 与 [进度交接](plans/research-agent-upgrade/progress.md)。
+
+### 可执行计划调度（U10—U13）
+
+可信调用方可通过 `executeFinancialResearch` 末尾的 `options.variant` 选择 B；新任务省略时保持 A。B 将共享准备和三问的检索、比较、核验、报告组成 13 节点计划图；准备是一次有界动作，不以六个金额全部保存为全局前提。节点工具白名单和核验收尾预留在原子扣额前检查，拒绝调用返回结构化原因并保留额度。软份额用于优先让其他节点工作，不能直接截断本问必需金额。
+
+B 的公开 checkpoint 使用 schemaVersion 2，保存节点、缺口、证据增量、局部 planVersion 和调用计数。v1 材料可升级，旧的“本问已核验”标记不能代替当前 claim hash 的回执。局部修复的 checkpoint 与 `plan.revised` 事件在同一 fenced 事务提交；与持久请求/计划 revision、Worker generation 分开。接管省略 variant 时承接已保存变体，显式切换会拒绝；请求修订和更新重试也保留该身份与累计模型轮数。
+
+检索、比较补查及核验读取均按新增 locator/内容 hash 判断进展；换关键词或重写相同证据的结论不能重置已停止缺口。未找到只保留缺证 partial，原文未披露须另有可信两期核对。报告 `method.modelTurns` 记录主循环模型请求尝试数，包含失败/中断并跨接管累计；独立 reviewer 请求记入原用量账，不计作主循环轮数。历史没有计数的报告不补零。
+
+这些变体接线不自动切换日常 Worker，也不开放付费实验。工程验证与实际模型质量分别记录在 [进度交接](plans/research-agent-upgrade/progress.md)；真实消融仍遵守[实验登记](plans/research-agent-upgrade/ablation-registration.md)。

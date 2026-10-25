@@ -32,6 +32,7 @@ export function assembleFinancialReport(taskId: string, spec: ResearchTaskSpec, 
   return researchReportRevisionSchema.parse({ schemaVersion: 1, taskId, requestRevision: spec.requestRevision, planRevision, revision, companySymbol: spec.company.symbol,
     periodIds: spec.periods.map(p => p.id), asOf: spec.asOf, generatedAt: new Date().toISOString(), status: gaps.length ? 'partial' : 'completed', facts: state.facts, ...(state.supportingFacts ? { supportingFacts: state.supportingFacts } : {}), claims, gaps,
     method: { model, skillVersion: skill.version, skillSha256: artifactDigest(skill.prompt), toolVersion: 'financial-tools-v2', contractVersion: 'financial-change-v1',
+      ...(state.schemaVersion === 2 ? { variant: state.variant } : {}), ...(state.modelTurns !== undefined ? { modelTurns: state.modelTurns } : {}),
       dataHashes: [...new Set([...[...state.facts, ...(state.supportingFacts || [])].flatMap(f => [...f.citations, ...(f.periodEvidence || [])]), ...claims.flatMap(c => c.citations)].map(c => c.bytesSha256))],
       semanticReview: reviews.length ? reviews.every(r => r.independence === 'human') ? 'human' : 'separate_call_same_model' : 'unavailable' } });
 }

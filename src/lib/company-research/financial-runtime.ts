@@ -16,18 +16,28 @@ import { readClaimReviews } from './verification-service';
 import { commitResearchReport } from './report-store';
 import { defaultResearchContext, ResearchPersistenceError } from './repository-core';
 import { researchObserver, researchToolStage, type ResearchObservationSink } from './observability';
+import { buildFinancialPlanV2 } from './plan-graph';
+import { FinancialScheduler, upgradeFinancialCheckpoint } from './financial-scheduler';
 
 /** Optional diagnostic sink contains tool data only, never model reasoning or credentials. */
 export type FinancialExecutionTrace = { at: string; type: 'tool_calls' | 'tool_result' | 'tool_feedback'; data: unknown };
-export async function executeFinancialResearch(actor: string, token: ResearchAttemptToken, shutdown?: AbortSignal, ctx = defaultResearchContext, testProvider?: PiAgentModelProvider, fixedDocuments = false, trace?: (record: FinancialExecutionTrace) => Promise<void>, observationSink?: ResearchObservationSink, skill: FinancialResearchSkill = { version: researchSkillVersion, prompt: financialResearchPrompt }) {
+export type FinancialExecutionOptions = { variant?: 'A' | 'B' | 'B2' | 'C1' | 'C2'; maxToolCallsPerTurn?: number };
+export async function executeFinancialResearch(actor: string, token: ResearchAttemptToken, shutdown?: AbortSignal, ctx = defaultResearchContext, testProvider?: PiAgentModelProvider, fixedDocuments = false, trace?: (record: FinancialExecutionTrace) => Promise<void>, observationSink?: ResearchObservationSink, skill: FinancialResearchSkill = { version: researchSkillVersion, prompt: financialResearchPrompt }, options: FinancialExecutionOptions = {}) {
+  if ((options.variant !== undefined && !['A', 'B'].includes(options.variant)) || (options.maxToolCallsPerTurn !== undefined && options.maxToolCallsPerTurn !== 1)) throw new Error('FINANCIAL_VARIANT_NOT_IMPLEMENTED');
   const task = await getResearchTask(actor, token.taskId, ctx);
   if (!task || task.status !== 'running' || task.generation !== token.generation || !task.plan) return;
-  const config = researchConfig(), state = task.checkpoint ? checkpointSchema.parse(task.checkpoint) : emptyCheckpoint(token.requestRevision, token.planRevision);
+  const config = researchConfig(), loaded = task.checkpoint ? checkpointSchema.parse(task.checkpoint) : emptyCheckpoint(token.requestRevision, token.planRevision);
+  const variant = options.variant ?? (loaded.schemaVersion === 2 ? loaded.variant : 'A');
+  if (!['A', 'B'].includes(variant)) throw new Error('FINANCIAL_VARIANT_NOT_IMPLEMENTED');
+  if (loaded.schemaVersion === 2 && loaded.variant !== variant) throw new Error('FINANCIAL_VARIANT_MISMATCH');
+  const state = variant === 'B' ? upgradeFinancialCheckpoint(loaded, buildFinancialPlanV2(task.spec, { taskId: token.taskId, createdAt: task.plan.createdAt, revision: token.planRevision }), task.documents, task.spec.periods.map(period => period.id)) : loaded;
   const observer = researchObserver(token, task.reportRevision, observationSink);
   let outcome = 'interrupted', deliveredRevision = task.reportRevision;
   observer.emit('attempt.started', { stage: 'worker', pid: process.pid, rssBytes: process.memoryUsage().rss, toolCalls: task.usage.toolCalls,
     unknownModelRequests: task.usage.unknownModelRequests });
   if (state.requestRevision !== token.requestRevision || state.planRevision !== token.planRevision) throw new Error('Checkpoint version mismatch');
+  const scheduler = state.schemaVersion === 2 ? new FinancialScheduler({ taskId: token.taskId, spec: task.spec, state, createdAt: task.plan.createdAt,
+    reviews: await readClaimReviews(actor, token.taskId, ctx) }) : null;
   const controller = new AbortController(), signal = shutdown ? AbortSignal.any([controller.signal, shutdown]) : controller.signal;
   const deadline = Date.parse(task.usage.deadline!), remaining = Math.max(0, deadline - Date.now());
   let calls = task.budget.toolCalls, heartbeatBusy = false, materializedCallId: string | null = null;
@@ -42,7 +52,7 @@ export async function executeFinancialResearch(actor: string, token: ResearchAtt
   const charged = new Set<string>();
   const onEvent = async (event: PiAgentEvent) => {
     if (event.type === 'assistant_message' && event.message.toolCalls?.length) await trace?.({ at: new Date().toISOString(), type: 'tool_calls', data: event.message.toolCalls });
-    if (event.type === 'assistant_message') for (const call of event.message.toolCalls || []) {
+    if (!scheduler && event.type === 'assistant_message') for (const call of event.message.toolCalls || []) {
       if (!charged.has(call.id)) { calls = await reserveResearchToolCall(actor, token, ctx); charged.add(call.id); }
       const key = artifactDigest(canonicalResearchJson({ tool: call.name, arguments: call.arguments })), evidenceHash = checkpointEvidenceHash(state);
       state.stalledCalls = key === state.lastCallKey && evidenceHash === state.lastEvidenceHash ? Math.min(100, state.stalledCalls + 1) : 0;
@@ -69,12 +79,16 @@ export async function executeFinancialResearch(actor: string, token: ResearchAtt
     await heartbeatResearchAttempt(actor, token, ctx);
     if (!state.submitted && !state.stopReason && remaining > 0 && calls < task.spec.budget.maxToolCalls) {
       const source = testProvider || createResearchProvider(
-        () => `剩余工具 ${task.spec.budget.maxToolCalls - calls}；剩余秒 ${Math.max(0, Math.ceil((deadline - Date.now()) / 1000))}；先保存事实和三问结论，逐条 verify_claim，然后 check_coverage 与 submit_report。`,
-        () => state.checkedHash && state.phase === 'ready' ? 'submit_report' : task.spec.budget.maxToolCalls - calls <= 2 ? state.checkedHash ? 'submit_report' : 'check_coverage' : undefined,
+        () => scheduler ? JSON.stringify({ nextAction: scheduler.nextAction(task.spec.budget.maxToolCalls - calls), remainingCalls: task.spec.budget.maxToolCalls - calls, closureReserve: scheduler.state.closureReserve })
+          : `剩余工具 ${task.spec.budget.maxToolCalls - calls}；剩余秒 ${Math.max(0, Math.ceil((deadline - Date.now()) / 1000))}；先保存事实和三问结论，逐条 verify_claim，然后 check_coverage 与 submit_report。`,
+        () => {
+          if (scheduler) { const next = scheduler.nextAction(task.spec.budget.maxToolCalls - calls); return next?.kind === 'report' ? state.checkedHash ? 'submit_report' : 'check_coverage' : next?.kind === 'verify' ? 'verify_claim' : undefined; }
+          return state.checkedHash && state.phase === 'ready' ? 'submit_report' : task.spec.budget.maxToolCalls - calls <= 2 ? state.checkedHash ? 'submit_report' : 'check_coverage' : undefined;
+        },
       );
       const provider: PiAgentModelProvider = { name: source.name, async *complete(request) {
         await trace?.({ at: new Date().toISOString(), type: 'tool_feedback', data: request.messages.filter(m => m.role === 'tool') });
-        signal.throwIfAborted(); await reserveResearchModelRequest(actor, token, ctx);
+        signal.throwIfAborted(); state.modelTurns = await reserveResearchModelRequest(actor, token, ctx, state);
         const started = performance.now();
         observer.emit('model.started', { stage: 'model', usageKnown: false });
         let usage: {inputTokens: number; outputTokens: number; usageSource?: string} | undefined;
@@ -87,9 +101,20 @@ export async function executeFinancialResearch(actor: string, token: ResearchAtt
         }
       } };
       const manager = new PiAgentContextManager({ contextWindowTokens: 128000, reservedOutputTokens: 6000, maxInputTokens: 32000 });
-      const engine = new PiAgentRunEngine({ provider, model: config.model, tools: financialResearchTools(actor, token, task.spec, state, config.model, save, ctx, fixedDocuments, skill),
+      const tools = financialResearchTools(actor, token, task.spec, state, config.model, save, ctx, fixedDocuments, skill, scheduler ? { reviews: () => scheduler.claimReviews } : undefined);
+      const governedTools = scheduler ? tools.map(tool => ({ ...tool, async execute(input: unknown, context: Parameters<typeof tool.execute>[1]) {
+        context.signal.throwIfAborted();
+        const denied = scheduler.admit(tool.name, input, task.spec.budget.maxToolCalls - calls);
+        if (denied) { await save('tool.denied'); return denied; }
+        calls = await reserveResearchToolCall(actor, token, ctx); scheduler.started(); await save(`${tool.name}.started`);
+        const result = await tool.execute(input, context);
+        const revision = scheduler.observe(tool.name, input, result, task.spec.budget.maxToolCalls - calls);
+        await saveResearchCheckpoint(actor, token, state, tool.name, ctx, revision ?? undefined);
+        return result;
+      } })) : tools;
+      const engine = new PiAgentRunEngine({ provider, model: config.model, tools: governedTools,
         requireWorkspaceWriteBeforeTerminal: false, requireTerminalTool: true, maxTurns: task.spec.budget.maxToolCalls - calls + 1,
-        maxTotalToolCalls: task.spec.budget.maxToolCalls - calls, maxToolCallsPerTurn: 1, maxTokens: Number.MAX_SAFE_INTEGER, maxTokensPerTurn: 6000,
+        maxTotalToolCalls: scheduler ? Number.MAX_SAFE_INTEGER : task.spec.budget.maxToolCalls - calls, maxToolCallsPerTurn: 1, maxTokens: Number.MAX_SAFE_INTEGER, maxTokensPerTurn: 6000,
         timeoutMs: remaining, eventHandlerTimeoutMs: 20000, preWriteReadOnlyTurnThreshold: Number.MAX_SAFE_INTEGER, postWriteReadOnlyTurnThreshold: Number.MAX_SAFE_INTEGER, progressStallTurns: Number.MAX_SAFE_INTEGER,
         contextManager: { prepare(messages, tools) {
           const index = messages.findLastIndex(m => m.role === 'assistant' && !!m.toolCalls?.length);
@@ -97,10 +122,10 @@ export async function executeFinancialResearch(actor: string, token: ResearchAtt
           const representedInState = active?.role === 'assistant' && active.toolCalls?.every(c => c.id === materializedCallId && ['record_fact', 'record_claim', 'verify_claim', 'check_coverage'].includes(c.name));
           const prepare = (compact: boolean) => manager.prepare([
             { role: 'system', content: skill.prompt },
-            { role: 'user', content: JSON.stringify({ spec: task.spec, plan: task.plan?.steps.map(({id, questionId, kind}) => ({id, questionId, kind})),
+            { role: 'user', content: JSON.stringify({ spec: task.spec, plan: scheduler ? scheduler.graph.nodes : task.plan?.steps.map(({id, questionId, kind}) => ({id, questionId, kind})),
               documents: task.documents.map(({id, version, period, state, bytesSha256, disclosure}) => ({id, version, period, state, bytesSha256, disclosure})),
               changes: financialChangeSummary(financialChanges({ facts: state.facts, periodIds: [task.spec.periods[0].id, task.spec.periods[1].id] })),
-              checkpoint: financialContextState(state, compact), nextAction: nextFinancialAction(task.spec, state), remainingCalls: task.spec.budget.maxToolCalls - calls }) },
+              checkpoint: financialContextState(state, compact), nextAction: scheduler ? scheduler.nextAction(task.spec.budget.maxToolCalls - calls) : nextFinancialAction(task.spec, state), remainingCalls: task.spec.budget.maxToolCalls - calls }) },
             ...(index >= 0 && !representedInState ? messages.slice(index) : []),
           ], tools, { inputBudgetTokens: 32000 });
           try { return prepare(false); }

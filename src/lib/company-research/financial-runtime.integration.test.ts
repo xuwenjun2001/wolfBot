@@ -9,6 +9,8 @@ import { queueFinancialResearch, claimFinancialResearch, saveResearchCheckpoint,
 import { reserveResearchToolCall, cancelResearchTask } from './attempt-store';
 import { ResearchArtifactStore, artifactDigest } from './artifact-store';
 import { emptyCheckpoint } from './execution-contracts';
+import { buildFinancialPlanV2 } from './plan-graph';
+import { upgradeFinancialCheckpoint } from './financial-scheduler';
 import { executeFinancialResearch } from './financial-runtime';
 import { specFixture, documentFixture, reportFixture } from './version-test-fixtures';
 import { registerResearchDocument } from './document-store';
@@ -133,6 +135,60 @@ describe.skipIf(process.env.COMPANY_RESEARCH_TEST_POSTGRES !== '1')('financial e
     expect(snapshot.usage.toolCalls).toBe(5); expect(snapshot.usage.unknownModelRequests).toBe(0);
     expect(snapshot.usage.inputTokens).toBe(500);
     expect(snapshot.checkpoint?.observations.some(o => o.tool === 'search_evidence' && o.summary.includes('scopedDocumentCount'))).toBe(true);
+  }, 30000);
+  it('rejects B calls in the closure reserve before charging them and counts generation turns', async () => {
+    const task = await queued(2), token = (await claimFinancialResearch('scheduler-reserve', ctx))!.attempt;
+    const feedback: unknown[] = [];
+    const report = await executeFinancialResearch(actor, token, undefined, ctx, sequenceProvider([
+      { name: 'search_evidence', input: { query: '预算预留区不应再检索' } },
+      { name: 'check_coverage', input: {} }, { name: 'submit_report', input: {} },
+    ]), true, async record => { if (record.type === 'tool_result') feedback.push(record.data); }, undefined, undefined, { variant: 'B' });
+    const snapshot = (await getResearchTask(actor, task.id, ctx))!;
+    expect(report?.status).toBe('partial'); expect(snapshot.usage.toolCalls).toBe(2); expect(snapshot.usage.unknownModelRequests).toBe(0);
+    expect(snapshot.checkpoint).toMatchObject({ schemaVersion: 2, variant: 'B', submitted: true, modelTurns: 3 });
+    expect(report?.method).toMatchObject({ variant: 'B', modelTurns: 3 });
+    expect(JSON.stringify(feedback)).toContain('SCHEDULER_CLOSURE_RESERVED');
+  }, 30000);
+  it('uses B targeted actions to close changed-query misses as partial without a not-disclosed assertion', async () => {
+    const task = await queued(), token = (await claimFinancialResearch('scheduler-gap', ctx))!.attempt;
+    let turns = 0;
+    const provider: PiAgentModelProvider = { name: 'scheduler-gap-protocol-fixture', async *complete(request) {
+      const view = request.messages.filter(message => message.role === 'user').map(message => {
+        try { return JSON.parse(String(message.content)); } catch { return null; }
+      }).findLast(value => value?.nextAction);
+      const action = view?.nextAction; if (!action) throw new Error('Missing scheduler action');
+      let name: string, input: unknown;
+      if (action.kind === 'prepare') { name = 'list_documents'; input = {}; }
+      else if (action.kind === 'retrieve') { name = 'search_evidence'; input = { query: `${action.questionId} 定向缺证 ${turns}` }; }
+      else if (action.kind === 'compare') { name = 'record_claim'; input = { id: `${action.questionId}-gap`, questionId: action.questionId,
+        text: '合成协议夹具：当前证据不足', status: 'evidence_gap', reason: '有界定向检索未获支持，不推断原文未披露', kind: 'fact', factIds: [], citations: [] }; }
+      else if (action.kind === 'report') { name = view.checkpoint.checkedHash ? 'submit_report' : 'check_coverage'; input = {}; }
+      else throw new Error(`Unexpected scheduler action ${action.kind}`);
+      turns++;
+      yield { type: 'response_start', responseId: `scheduler-gap-${turns}`, model: 'fixture' };
+      yield { type: 'tool_call_delta', index: 0, id: `scheduler-gap-call-${turns}`, nameDelta: name, argumentsDelta: JSON.stringify(input) };
+      yield { type: 'usage', usage: { inputTokens: 100, outputTokens: 20, totalTokens: 120 } };
+      yield { type: 'finish', reason: 'tool_calls' };
+    } };
+    const report = await executeFinancialResearch(actor, token, undefined, ctx, provider, true, undefined, undefined, undefined, { variant: 'B' });
+    const snapshot = (await getResearchTask(actor, task.id, ctx))!, state = snapshot.checkpoint;
+    expect(report?.status).toBe('partial'); expect(state?.submitted).toBe(true); expect(state?.claims).toHaveLength(3);
+    expect(state?.schemaVersion).toBe(2); if (state?.schemaVersion !== 2) throw new Error('Expected B checkpoint');
+    expect(state.gaps.filter(gap => gap.status === 'partial')).toHaveLength(3);
+    expect(state.gaps.every(gap => gap.type !== 'not_disclosed')).toBe(true);
+    expect(state.gaps.every(gap => gap.stalledAttempts === 4)).toBe(true);
+    expect(snapshot.usage.toolCalls).toBeLessThan(40); expect(state.modelTurns).toBe(turns);
+  }, 30000);
+  it('resumes the checkpoint-bound B variant by default and rejects an explicit downgrade to A', async () => {
+    const task = await queued(2), token = (await claimFinancialResearch('scheduler-resume', ctx))!.attempt;
+    const legacy = emptyCheckpoint(1, 1); legacy.modelTurns = 5;
+    const state = upgradeFinancialCheckpoint(legacy, buildFinancialPlanV2(task.spec, { taskId: task.id, createdAt: new Date().toISOString() }), []);
+    await saveResearchCheckpoint(actor, token, state, 'scheduler-fixture', ctx);
+    await expect(executeFinancialResearch(actor, token, undefined, ctx, sequenceProvider([]), true, undefined, undefined, undefined, { variant: 'A' })).rejects.toThrow('FINANCIAL_VARIANT_MISMATCH');
+    const report = await executeFinancialResearch(actor, token, undefined, ctx, sequenceProvider([{ name: 'check_coverage', input: {} }, { name: 'submit_report', input: {} }]), true);
+    const snapshot = (await getResearchTask(actor, task.id, ctx))!;
+    expect(report?.method).toMatchObject({ variant: 'B', modelTurns: 7 }); expect(snapshot.usage.toolCalls).toBe(2);
+    expect(snapshot.checkpoint).toMatchObject({ schemaVersion: 2, variant: 'B', modelTurns: 7, submitted: true });
   }, 30000);
   it('honors cancellation between the model response and tool execution', async () => {
     const task = await queued(), token = (await claimFinancialResearch('cancel', ctx))!.attempt;

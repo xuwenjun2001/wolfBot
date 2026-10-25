@@ -17,9 +17,10 @@ import { defaultResearchContext } from './repository-core';
 import { safeError } from './config';
 import { financialChangeSummary } from './financial-observation';
 import { recordResearchUpdateRead } from './update-run-store';
+import type { SemanticReview } from './claim-verification';
 
 export const checkpointEvidenceHash = (state: ResearchCheckpoint) => artifactDigest(canonicalResearchJson({ facts: state.facts, supportingFacts: state.supportingFacts, claims: state.claims }));
-export function financialResearchTools(actor: string, token: ResearchAttemptToken, spec: ResearchTaskSpec, state: ResearchCheckpoint, model: string, save: (tool: string) => Promise<void>, ctx = defaultResearchContext, fixedDocuments = false, skill?: FinancialResearchSkill): PiAgentTool[] {
+export function financialResearchTools(actor: string, token: ResearchAttemptToken, spec: ResearchTaskSpec, state: ResearchCheckpoint, model: string, save: (tool: string) => Promise<void>, ctx = defaultResearchContext, fixedDocuments = false, skill?: FinancialResearchSkill, options?: { reviews: () => SemanticReview[] }): PiAgentTool[] {
   const reader = researchEvidenceReader(actor, token.taskId, ctx);
   // Validation uses the author's saved claims. Publication assembly may downgrade
   // unreviewed claims, but must never overwrite the checkpoint during local repair.
@@ -93,7 +94,7 @@ export function financialResearchTools(actor: string, token: ResearchAttemptToke
       return review || { verdict: 'insufficient', reason: '未配置经过校准的 reviewer；引用检查不代表语义支持' };
     }),
     tool('check_coverage', 'Check the three questions, six numbers, period comparability and saved semantic reviews. Empty args. Missing facts/claims remain in denominator.', z.object({}).strict(), async () => {
-      const report = assembleFinancialReport(token.taskId, spec, token.planRevision, 1, state, model, await readClaimReviews(actor, token.taskId, ctx), skill);
+      const report = assembleFinancialReport(token.taskId, spec, token.planRevision, 1, state, model, options ? options.reviews() : await readClaimReviews(actor, token.taskId, ctx), skill);
       const checked = await deterministicReportErrors(actor, spec, report, ctx); state.checkedHash = checkpointEvidenceHash(state);
       state.phase = report.status === 'completed' && checked.errors.length === 0 ? 'ready' : 'verifying';
       return { status: report.status, errors: checked.errors, gaps: report.gaps, changes: financialChangeSummary(financialChanges(report)), remainingQuestions: spec.questions.filter(q => !report.claims.some(c => c.questionId === q.id && c.status === 'supported')).map(q => q.id) };

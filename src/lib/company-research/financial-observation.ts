@@ -17,6 +17,8 @@ export function financialContextState(state: import('./execution-contracts').Res
   const observations = state.observations.filter(o => !['record_fact', 'record_claim', 'check_coverage'].includes(o.tool)).slice(compact ? -2 : -3)
     .map(o => ({ ...o, summary: o.summary.slice(0, compact ? 1600 : 3500) }));
   return { ...state, observations,
+    ...(state.schemaVersion === 2 ? { evidenceLedger: Object.fromEntries(Object.entries(state.evidenceLedger).map(([id, evidence]) => [id, { locatorCount: evidence.locatorKeys.length, contentCount: evidence.evidenceHashes.length }])),
+      verificationAttempts: Object.keys(state.verificationAttempts), documentPeriods: undefined } : {}),
     facts: state.facts.map(f => ({ ...f, citations: f.citations.slice(0, 2).map(cite) })),
     ...(state.supportingFacts ? { supportingFacts: state.supportingFacts.map(f => ({ ...f, citations: f.citations.slice(0, 2).map(cite) })) } : {}),
     claims: state.claims.map(c => ({ ...c, text: c.text.slice(0, compact ? 800 : 1200), textTruncated: c.text.length > (compact ? 800 : 1200), citations: c.citations.slice(0, 2).map(cite) })),

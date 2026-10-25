@@ -1,12 +1,14 @@
 import { z } from 'zod';
 import { financialFactSchema } from './document-contracts';
 import { researchClaimSchema } from './revision-contracts';
-import { researchPlanSchema, type ResearchTaskSpec } from './task-contracts';
+import { researchIdSchema, researchPlanSchema, sha256Schema, type ResearchTaskSpec } from './task-contracts';
+import { planNodeStateSchema } from './plan-graph';
+import { researchGapSchema } from './gap-policy';
 
 export const researchSkillVersion = 'financial-change-v2';
 export type FinancialResearchSkill = Readonly<{ version: string; prompt: string }>;
-export const checkpointSchema = z.object({
-  schemaVersion: z.literal(1), requestRevision: z.number().int().min(1), planRevision: z.number().int().min(1),
+const checkpointFields = {
+  requestRevision: z.number().int().min(1), planRevision: z.number().int().min(1),
   phase: z.enum(['researching', 'verifying', 'ready']),
   facts: z.array(financialFactSchema).max(24), claims: z.array(researchClaimSchema).max(24),
   supportingFacts: z.array(financialFactSchema).max(100).optional(),
@@ -15,10 +17,47 @@ export const checkpointSchema = z.object({
   stalledCalls: z.number().int().min(0).max(100), stopReason: z.string().max(400).nullable(), submitted: z.boolean(),
   checkedHash: z.string().length(64).nullable().default(null),
   lastCallKey: z.string().length(64).nullable().default(null), lastEvidenceHash: z.string().length(64).nullable().default(null),
-}).strict();
+  modelTurns: z.number().int().min(0).optional(),
+};
+export const checkpointV1Schema = z.object({ schemaVersion: z.literal(1), ...checkpointFields }).strict();
+const nodeRecord = <T extends z.ZodType>(value: T) => z.record(researchIdSchema, value).refine(record => Object.keys(record).length <= 40, 'Too many checkpoint nodes');
+export const checkpointV2Schema = z.object({
+  schemaVersion: z.literal(2), ...checkpointFields, variant: z.enum(['B', 'B2']),
+  nodes: nodeRecord(planNodeStateSchema), gaps: z.array(researchGapSchema).max(96),
+  planVersion: z.number().int().min(1), closureReserve: z.number().int().min(0).max(102),
+  currentNodeId: researchIdSchema.nullable(), nodeToolCalls: nodeRecord(z.number().int().min(0).max(10000)),
+  evidenceLedger: nodeRecord(z.object({ locatorKeys: z.array(sha256Schema).max(256), evidenceHashes: z.array(sha256Schema).max(256) }).strict()),
+  nodeReadPeriods: nodeRecord(z.array(researchIdSchema).max(2)),
+  documentPeriods: z.record(z.string().min(1).max(220), researchIdSchema).refine(record => Object.keys(record).length <= 100, 'Too many source periods'),
+  verificationAttempts: z.record(researchIdSchema, sha256Schema).refine(record => Object.keys(record).length <= 24, 'Too many verification attempts'),
+  resolvedGapIds: z.array(sha256Schema).max(96),
+}).strict().superRefine((state, ctx) => {
+  if (state.planVersion < state.planRevision) ctx.addIssue({ code: 'custom', message: 'Local plan version precedes persisted plan' });
+  if (Object.values(state.evidenceLedger).reduce((sum, entry) => sum + entry.locatorKeys.length + entry.evidenceHashes.length, 0) > 512) ctx.addIssue({ code: 'custom', message: 'Checkpoint evidence ledger capacity reached' });
+  if (state.currentNodeId !== null && !Object.hasOwn(state.nodes, state.currentNodeId)) ctx.addIssue({ code: 'custom', message: 'Unknown current node' });
+  if (new Set(state.resolvedGapIds).size !== state.resolvedGapIds.length || state.resolvedGapIds.some(id => !state.gaps.some(gap => gap.id === id))) ctx.addIssue({ code: 'custom', message: 'Invalid resolved gap references' });
+});
+export const checkpointSchema = z.discriminatedUnion('schemaVersion', [checkpointV1Schema, checkpointV2Schema]);
+export type ResearchCheckpointV1 = z.infer<typeof checkpointV1Schema>;
+export type ResearchCheckpointV2 = z.infer<typeof checkpointV2Schema>;
 export type ResearchCheckpoint = z.infer<typeof checkpointSchema>;
-export function emptyCheckpoint(requestRevision: number, planRevision: number): ResearchCheckpoint {
+export function emptyCheckpoint(requestRevision: number, planRevision: number): ResearchCheckpointV1 {
   return { schemaVersion: 1, requestRevision, planRevision, phase: 'researching', facts: [], claims: [], observations: [], steps: {}, stalledCalls: 0, stopReason: null, submitted: false, checkedHash: null, lastCallKey: null, lastEvidenceHash: null };
+}
+/** Store-side rebinding keeps execution variants and cumulative generation requests across revisions. */
+export function rebindFinancialCheckpoint(previous: ResearchCheckpoint | null, base: ResearchCheckpointV1, retry = false): ResearchCheckpoint {
+  const modelTurns = previous?.modelTurns ?? base.modelTurns;
+  if (previous?.schemaVersion !== 2) return checkpointV1Schema.parse({ ...(retry && previous ? { ...previous, requestRevision: base.requestRevision, planRevision: base.planRevision,
+    phase: 'researching', stalledCalls: 0, stopReason: null, submitted: false, checkedHash: null, lastCallKey: null, lastEvidenceHash: null } : base),
+    ...(modelTurns === undefined ? {} : { modelTurns }) });
+  if (retry) return checkpointV2Schema.parse({ ...previous, requestRevision: base.requestRevision, planRevision: base.planRevision,
+    planVersion: Math.max(previous.planVersion + 1, base.planRevision), phase: 'researching', submitted: false, checkedHash: null, stopReason: null,
+    ...(modelTurns === undefined ? {} : { modelTurns }) });
+  const ids = ['prepare-facts', ...(['income_profit', 'cash_flow', 'risks'] as const).flatMap(question => ['retrieve', 'compare', 'verify', 'report'].map(kind => `${question}-${kind}`))];
+  return checkpointV2Schema.parse({ ...base, schemaVersion: 2, variant: previous.variant,
+    ...(modelTurns === undefined ? {} : { modelTurns }), nodes: Object.fromEntries(ids.map(id => [id, base.steps[id] ?? 'pending'])),
+    planVersion: base.planRevision, closureReserve: 2, currentNodeId: null, gaps: [], nodeToolCalls: {}, evidenceLedger: {}, nodeReadPeriods: {},
+    documentPeriods: {}, verificationAttempts: {}, resolvedGapIds: [] });
 }
 export function initialFinancialPlan(taskId: string, spec: ResearchTaskSpec) {
   return researchPlanSchema.parse({ schemaVersion: 1, taskId, requestRevision: spec.requestRevision, revision: 1, createdAt: new Date().toISOString(),

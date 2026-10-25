@@ -88,4 +88,14 @@ describe('financial change version contracts', () => {
     expect(researchEventSchema.safeParse({ ...event, attemptId: null }).success).toBe(false);
     expect(researchDocumentSchema.safeParse({ ...documentFixture(), original: { store: 'local', key: '../secret', sha256: fixtureHash, byteLength: 1 } }).success).toBe(false);
   });
+  it('binds a local plan repair to the attempt without changing the persisted plan revision', () => {
+    const event = { schemaVersion: 1, id: randomUUID(), taskId: randomUUID(), sequence: 12, at: new Date().toISOString(),
+      requestRevision: 1, planRevision: 3, reportRevision: null, attemptId: randomUUID(), generation: 7,
+      event: { type: 'plan.revised', planVersion: 4, reason: '现金流证据缺口定向修复', affectedNodeIds: ['cash_flow-retrieve'], retainedNodeIds: ['risks-verify'] } };
+    expect(researchEventSchema.parse(event)).toMatchObject({ planRevision: 3, event: { planVersion: 4 } });
+    for (const invalid of [{ ...event, attemptId: null }, { ...event, generation: 0 }, { ...event, planRevision: null },
+      { ...event, event: { ...event.event, planVersion: 3 } }, { ...event, event: { ...event.event, retainedNodeIds: ['cash_flow-retrieve'] } }]) {
+      expect(researchEventSchema.safeParse(invalid).success).toBe(false);
+    }
+  });
 });
