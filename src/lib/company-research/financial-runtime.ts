@@ -1,6 +1,6 @@
 import { PiAgentRunEngine } from '@/lib/agent/pi/run-engine';
 import { PiAgentContextManager, PiAgentContextError } from '@/lib/agent/context';
-import type { PiAgentEvent, PiAgentModelProvider } from '@/lib/agent/types';
+import type { PiAgentEvent, PiAgentModelProvider, PiAgentTool, PiAgentToolResult } from '@/lib/agent/types';
 import { createResearchProvider } from './provider';
 import { researchConfig, safeError } from './config';
 import { checkpointSchema, emptyCheckpoint, financialResearchPrompt, researchSkillVersion, type FinancialResearchSkill } from './execution-contracts';
@@ -18,19 +18,23 @@ import { defaultResearchContext, ResearchPersistenceError } from './repository-c
 import { researchObserver, researchToolStage, type ResearchObservationSink } from './observability';
 import { buildFinancialPlanV2 } from './plan-graph';
 import { FinancialScheduler, upgradeFinancialCheckpoint } from './financial-scheduler';
+import { financialBatchHardLimit, financialBatchLimit, validateFinancialBatch } from './financial-batch';
 
 /** Optional diagnostic sink contains tool data only, never model reasoning or credentials. */
 export type FinancialExecutionTrace = { at: string; type: 'tool_calls' | 'tool_result' | 'tool_feedback'; data: unknown };
 export type FinancialExecutionOptions = { variant?: 'A' | 'B' | 'B2' | 'C1' | 'C2'; maxToolCallsPerTurn?: number };
 export async function executeFinancialResearch(actor: string, token: ResearchAttemptToken, shutdown?: AbortSignal, ctx = defaultResearchContext, testProvider?: PiAgentModelProvider, fixedDocuments = false, trace?: (record: FinancialExecutionTrace) => Promise<void>, observationSink?: ResearchObservationSink, skill: FinancialResearchSkill = { version: researchSkillVersion, prompt: financialResearchPrompt }, options: FinancialExecutionOptions = {}) {
-  if ((options.variant !== undefined && !['A', 'B'].includes(options.variant)) || (options.maxToolCallsPerTurn !== undefined && options.maxToolCallsPerTurn !== 1)) throw new Error('FINANCIAL_VARIANT_NOT_IMPLEMENTED');
+  if (options.variant !== undefined && !['A', 'B', 'B2'].includes(options.variant)) throw new Error('FINANCIAL_VARIANT_NOT_IMPLEMENTED');
   const task = await getResearchTask(actor, token.taskId, ctx);
   if (!task || task.status !== 'running' || task.generation !== token.generation || !task.plan) return;
   const config = researchConfig(), loaded = task.checkpoint ? checkpointSchema.parse(task.checkpoint) : emptyCheckpoint(token.requestRevision, token.planRevision);
   const variant = options.variant ?? (loaded.schemaVersion === 2 ? loaded.variant : 'A');
-  if (!['A', 'B'].includes(variant)) throw new Error('FINANCIAL_VARIANT_NOT_IMPLEMENTED');
+  if (!['A', 'B', 'B2'].includes(variant)) throw new Error('FINANCIAL_VARIANT_NOT_IMPLEMENTED');
   if (loaded.schemaVersion === 2 && loaded.variant !== variant) throw new Error('FINANCIAL_VARIANT_MISMATCH');
-  const state = variant === 'B' ? upgradeFinancialCheckpoint(loaded, buildFinancialPlanV2(task.spec, { taskId: token.taskId, createdAt: task.plan.createdAt, revision: token.planRevision }), task.documents, task.spec.periods.map(period => period.id)) : loaded;
+  if (variant !== 'B2' && options.maxToolCallsPerTurn !== undefined && options.maxToolCallsPerTurn !== 1) throw new Error('FINANCIAL_VARIANT_NOT_IMPLEMENTED');
+  const batchLimit = variant === 'B2' ? financialBatchLimit(options.maxToolCallsPerTurn, loaded.schemaVersion === 2 ? loaded.maxToolCallsPerTurn ?? 3 : undefined) : 1;
+  const state = variant !== 'A' ? upgradeFinancialCheckpoint(loaded, buildFinancialPlanV2(task.spec, { taskId: token.taskId, createdAt: task.plan.createdAt, revision: token.planRevision }), task.documents, task.spec.periods.map(period => period.id)) : loaded;
+  if (state.schemaVersion === 2 && variant === 'B2') { state.variant = 'B2'; state.maxToolCallsPerTurn = batchLimit; }
   const observer = researchObserver(token, task.reportRevision, observationSink);
   let outcome = 'interrupted', deliveredRevision = task.reportRevision;
   observer.emit('attempt.started', { stage: 'worker', pid: process.pid, rssBytes: process.memoryUsage().rss, toolCalls: task.usage.toolCalls,
@@ -50,8 +54,13 @@ export async function executeFinancialResearch(actor: string, token: ResearchAtt
   heartbeatTimer.unref();
   const deadlineTimer = setTimeout(() => { state.stopReason = '已达到任务原始截止时间'; observer.emit('attempt.deadline', { stage: 'worker' }); controller.abort(new Error(state.stopReason)); }, Math.max(1, remaining)); deadlineTimer.unref();
   const charged = new Set<string>();
+  let batchTools: PiAgentTool[] = [], batchDecision: { turn: number; denied: PiAgentToolResult | null } | null = null;
   const onEvent = async (event: PiAgentEvent) => {
     if (event.type === 'assistant_message' && event.message.toolCalls?.length) await trace?.({ at: new Date().toISOString(), type: 'tool_calls', data: event.message.toolCalls });
+    if (variant === 'B2' && scheduler && event.type === 'assistant_message') {
+      const batch = await validateFinancialBatch(event.message.toolCalls || [], batchTools, { maxToolCallsPerTurn: batchLimit, remaining: task.spec.budget.maxToolCalls - calls, reserve: scheduler.state.closureReserve });
+      batchDecision = { turn: event.turn, denied: batch.ok ? scheduler.preflightBatch(batch.data, task.spec.budget.maxToolCalls - calls) : batch };
+    }
     if (!scheduler && event.type === 'assistant_message') for (const call of event.message.toolCalls || []) {
       if (!charged.has(call.id)) { calls = await reserveResearchToolCall(actor, token, ctx); charged.add(call.id); }
       const key = artifactDigest(canonicalResearchJson({ tool: call.name, arguments: call.arguments })), evidenceHash = checkpointEvidenceHash(state);
@@ -77,14 +86,17 @@ export async function executeFinancialResearch(actor: string, token: ResearchAtt
   };
   try {
     await heartbeatResearchAttempt(actor, token, ctx);
+    if (variant === 'B2') await save('batch.policy');
     if (!state.submitted && !state.stopReason && remaining > 0 && calls < task.spec.budget.maxToolCalls) {
       const source = testProvider || createResearchProvider(
-        () => scheduler ? JSON.stringify({ nextAction: scheduler.nextAction(task.spec.budget.maxToolCalls - calls), remainingCalls: task.spec.budget.maxToolCalls - calls, closureReserve: scheduler.state.closureReserve })
+        () => scheduler ? JSON.stringify({ nextAction: scheduler.nextAction(task.spec.budget.maxToolCalls - calls), remainingCalls: task.spec.budget.maxToolCalls - calls, closureReserve: scheduler.state.closureReserve,
+          ...(variant === 'B2' ? { batch: { maxToolCallsPerTurn: batchLimit, instruction: '同轮工具顺序执行。只批量当前节点的只读工具；状态工具至多一个且最后，submit_report 独占一轮。' } } : {}) })
           : `剩余工具 ${task.spec.budget.maxToolCalls - calls}；剩余秒 ${Math.max(0, Math.ceil((deadline - Date.now()) / 1000))}；先保存事实和三问结论，逐条 verify_claim，然后 check_coverage 与 submit_report。`,
         () => {
           if (scheduler) { const next = scheduler.nextAction(task.spec.budget.maxToolCalls - calls); return next?.kind === 'report' ? state.checkedHash ? 'submit_report' : 'check_coverage' : next?.kind === 'verify' ? 'verify_claim' : undefined; }
           return state.checkedHash && state.phase === 'ready' ? 'submit_report' : task.spec.budget.maxToolCalls - calls <= 2 ? state.checkedHash ? 'submit_report' : 'check_coverage' : undefined;
         },
+        { variant: variant === 'B2' ? 'B2' : variant === 'B' ? 'B' : 'A' },
       );
       const provider: PiAgentModelProvider = { name: source.name, async *complete(request) {
         await trace?.({ at: new Date().toISOString(), type: 'tool_feedback', data: request.messages.filter(m => m.role === 'tool') });
@@ -102,8 +114,13 @@ export async function executeFinancialResearch(actor: string, token: ResearchAtt
       } };
       const manager = new PiAgentContextManager({ contextWindowTokens: 128000, reservedOutputTokens: 6000, maxInputTokens: 32000 });
       const tools = financialResearchTools(actor, token, task.spec, state, config.model, save, ctx, fixedDocuments, skill, scheduler ? { reviews: () => scheduler.claimReviews } : undefined);
+      batchTools = tools;
       const governedTools = scheduler ? tools.map(tool => ({ ...tool, async execute(input: unknown, context: Parameters<typeof tool.execute>[1]) {
         context.signal.throwIfAborted();
+        if (variant === 'B2') {
+          if (!batchDecision || batchDecision.turn !== context.turn) return { ok: false as const, error: { code: 'FINANCIAL_BATCH_NOT_VALIDATED', message: '批次尚未预验证，未扣减工具预算' } };
+          if (batchDecision.denied) { await save('batch.denied'); return batchDecision.denied; }
+        }
         const denied = scheduler.admit(tool.name, input, task.spec.budget.maxToolCalls - calls);
         if (denied) { await save('tool.denied'); return denied; }
         calls = await reserveResearchToolCall(actor, token, ctx); scheduler.started(); await save(`${tool.name}.started`);
@@ -114,7 +131,9 @@ export async function executeFinancialResearch(actor: string, token: ResearchAtt
       } })) : tools;
       const engine = new PiAgentRunEngine({ provider, model: config.model, tools: governedTools,
         requireWorkspaceWriteBeforeTerminal: false, requireTerminalTool: true, maxTurns: task.spec.budget.maxToolCalls - calls + 1,
-        maxTotalToolCalls: scheduler ? Number.MAX_SAFE_INTEGER : task.spec.budget.maxToolCalls - calls, maxToolCallsPerTurn: 1, maxTokens: Number.MAX_SAFE_INTEGER, maxTokensPerTurn: 6000,
+        // The application enforces the configured cap with model-visible feedback;
+        // PI's fixed safety ceiling still bounds an oversized rejected response.
+        maxTotalToolCalls: scheduler ? Number.MAX_SAFE_INTEGER : task.spec.budget.maxToolCalls - calls, maxToolCallsPerTurn: variant === 'B2' ? financialBatchHardLimit : 1, maxTokens: Number.MAX_SAFE_INTEGER, maxTokensPerTurn: 6000,
         timeoutMs: remaining, eventHandlerTimeoutMs: 20000, preWriteReadOnlyTurnThreshold: Number.MAX_SAFE_INTEGER, postWriteReadOnlyTurnThreshold: Number.MAX_SAFE_INTEGER, progressStallTurns: Number.MAX_SAFE_INTEGER,
         contextManager: { prepare(messages, tools) {
           const index = messages.findLastIndex(m => m.role === 'assistant' && !!m.toolCalls?.length);

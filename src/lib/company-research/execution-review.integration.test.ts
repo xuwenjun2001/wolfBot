@@ -121,6 +121,17 @@ describe.skipIf(process.env.COMPANY_RESEARCH_TEST_POSTGRES !== '1')('execution r
     await expect(saveResearchCheckpoint(actor, token, state, 'late-revision', ctx)).rejects.toMatchObject({ code: 'LEASE_LOST' });
     await cancelResearchTask(actor, t.id, ctx);
   });
+  it('binds a B2 batch limit through persistence and request revisions', async () => {
+    const { t, token } = await task();
+    const state = upgradeFinancialCheckpoint(emptyCheckpoint(1, 1), buildFinancialPlanV2(t.spec, { taskId: t.id, createdAt: new Date().toISOString() }), []);
+    state.variant = 'B2'; state.maxToolCallsPerTurn = 5;
+    await saveResearchCheckpoint(actor, token, state, 'batch-configuration', ctx);
+    await expect(saveResearchCheckpoint(actor, token, { ...state, maxToolCallsPerTurn: 6 }, 'changed-limit', ctx)).rejects.toMatchObject({ code: 'INVALID_RESEARCH' });
+    await expect(saveResearchCheckpoint(actor, token, { ...state, maxToolCallsPerTurn: undefined }, 'omitted-limit', ctx)).rejects.toMatchObject({ code: 'INVALID_RESEARCH' });
+    await reviseResearchTask(actor, t.id, 1, 1, randomUUID(), { asOf: '2025-07-01T00:00:00Z' }, ctx);
+    expect((await getResearchTask(actor, t.id, ctx))!.checkpoint).toMatchObject({ schemaVersion: 2, variant: 'B2', maxToolCallsPerTurn: 5, requestRevision: 2, planRevision: 2 });
+    await cancelResearchTask(actor, t.id, ctx);
+  });
   it('rebinds a v2 update retry without dropping its saved work or renewing its budget', async () => {
     const { t, token } = await task();
     const state = upgradeFinancialCheckpoint(emptyCheckpoint(1, 1), buildFinancialPlanV2(t.spec, { taskId: t.id, createdAt: new Date().toISOString() }), []);

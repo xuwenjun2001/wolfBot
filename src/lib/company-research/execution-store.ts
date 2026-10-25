@@ -43,6 +43,8 @@ function assertCheckpointTransition(previous: ResearchCheckpoint | null, checkpo
   if (previous?.schemaVersion === 2 && (checkpoint.schemaVersion !== 2 || checkpoint.variant !== previous.variant)) {
     throw new ResearchPersistenceError('INVALID_RESEARCH', 'Checkpoint scheduler binding');
   }
+  if (previous?.schemaVersion === 2 && previous.variant === 'B2' && checkpoint.schemaVersion === 2
+    && (checkpoint.maxToolCallsPerTurn ?? 3) !== (previous.maxToolCallsPerTurn ?? 3)) throw new ResearchPersistenceError('INVALID_RESEARCH', 'Checkpoint batch configuration binding');
   if (checkpoint.schemaVersion === 2) {
     const previousVersion = previous?.schemaVersion === 2 ? previous.planVersion : token.planRevision;
     if (checkpoint.planVersion !== previousVersion + (revision ? 1 : 0)) throw new ResearchPersistenceError('INVALID_RESEARCH', 'Local plan revision binding');

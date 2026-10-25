@@ -2,7 +2,7 @@ import { OpenAICompatibleProvider } from '@/lib/agent/providers/openai-compatibl
 import { researchConfig } from './config';
 
 /** Reuse the hardened SSE/tool-call parser, with the gateway's explicit reasoning wire format. */
-export function createResearchProvider(control?: () => string, requiredTool?: () => string | undefined) {
+export function createResearchProvider(control?: () => string, requiredTool?: () => string | undefined, options: { variant?: 'A' | 'B' | 'B2' } = {}) {
   const config = researchConfig();
   if (!config.apiKey) throw new Error('缺少 COMPANY_RESEARCH_API_KEY');
   return new OpenAICompatibleProvider({
@@ -11,7 +11,8 @@ export function createResearchProvider(control?: () => string, requiredTool?: ()
     fetchImpl: (url, init) => {
       const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
       body.reasoning_effort = config.reasoning;
-      body.parallel_tool_calls = false;
+      // This controls model output only. PI still executes every tool sequentially.
+      body.parallel_tool_calls = options.variant === 'B2';
       if (control && Array.isArray(body.messages)) body.messages.push({ role: 'user', content: control() });
       const tool = requiredTool?.();
       if (tool) body.tool_choice = { type: 'function', function: { name: tool } };

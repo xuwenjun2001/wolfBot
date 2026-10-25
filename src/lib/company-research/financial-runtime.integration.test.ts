@@ -288,4 +288,129 @@ describe.skipIf(process.env.COMPANY_RESEARCH_TEST_POSTGRES !== '1')('financial e
     const fixtureRoot = path.resolve('data/research-agent-upgrade/evidence/S15', actor); await mkdir(fixtureRoot, { recursive: true });
     await writeFile(path.join(fixtureRoot, 'reader-fixture.json'), JSON.stringify({ scope: 'synthetic hostile PDF text retained through the real repository; not financial model evidence', task: await getResearchTask(actor, task.id, ctx), sources: [source, table] }, null, 2));
   });
+
+  describe('U14 B2 sequential batch protocol fixtures', () => {
+    type Call = { name: string; input: unknown; id?: string };
+    function batches(turns: Call[][]): PiAgentModelProvider {
+      let turn = 0;
+      return { name: 'B2-protocol-fixture', async *complete() {
+        const calls = turns[turn++]; if (!calls) throw new Error('B2 fixture exhausted');
+        yield { type: 'response_start', responseId: `B2-response-${turn}`, model: 'fixture' };
+        for (const [index, call] of calls.entries()) yield { type: 'tool_call_delta', index, id: call.id || `B2-${turn}-${index}`, nameDelta: call.name, argumentsDelta: JSON.stringify(call.input) };
+        yield { type: 'usage', usage: { inputTokens: 100, outputTokens: 20, totalTokens: 120 } };
+        yield { type: 'finish', reason: 'tool_calls' };
+      } };
+    }
+    const searches = (n: number): Call[] => Array.from({ length: n }, (_, index) => ({ name: 'search_evidence', input: { query: `合成批量定向缺证 ${index}` } }));
+    const close: Call[][] = [[{ name: 'check_coverage', input: {} }], [{ name: 'submit_report', input: {} }]];
+    const gapClaim: Call = { name: 'record_claim', input: { id: 'batch-income-gap', questionId: 'income_profit', text: '合成协议测试缺证',
+      kind: 'fact', status: 'evidence_gap', reason: '夹具没有披露材料；不表示真实财报未披露', factIds: [], citations: [] } };
+
+    it('charges each of three ordered reads once while reducing model turns from B five to B2 three', async () => {
+      const bTask = await queued(5), bToken = (await claimFinancialResearch('B-comparison', ctx))!.attempt;
+      const bReport = await executeFinancialResearch(actor, bToken, undefined, ctx, batches([...searches(3).map(call => [call]), ...close]), true, undefined, undefined, undefined, { variant: 'B' });
+      const task = await queued(5), token = (await claimFinancialResearch('B2-three-read', ctx))!.attempt, order: string[] = [];
+      const report = await executeFinancialResearch(actor, token, undefined, ctx, batches([searches(3), ...close]), true,
+        async record => { if (record.type === 'tool_result') order.push((record.data as { toolCall: { id: string } }).toolCall.id); }, undefined, undefined, { variant: 'B2' });
+      const snapshot = (await getResearchTask(actor, task.id, ctx))!;
+      expect(snapshot.usage.toolCalls).toBe(5); expect(snapshot.budget.toolCalls).toBe(5);
+      expect(snapshot.checkpoint).toMatchObject({ schemaVersion: 2, variant: 'B2', maxToolCallsPerTurn: 3, submitted: true, modelTurns: 3 });
+      expect(report?.method).toMatchObject({ variant: 'B2', modelTurns: 3 }); expect(bReport?.method?.modelTurns).toBe(5);
+      expect((await getResearchTask(actor, bTask.id, ctx))!.usage.toolCalls).toBe(5);
+      expect(order.slice(0, 3)).toEqual(['B2-1-0', 'B2-1-1', 'B2-1-2']);
+      expect(snapshot.checkpoint?.schemaVersion).toBe(2);
+      if (snapshot.checkpoint?.schemaVersion !== 2) throw new Error('Expected B2 state');
+      expect(snapshot.checkpoint.gaps.some(gap => gap.stalledAttempts === 1)).toBe(true);
+      expect(snapshot.checkpoint.gaps.every(gap => gap.type !== 'not_disclosed')).toBe(true);
+    }, 30000);
+
+    it('allows a readonly call followed by one current-node state write', async () => {
+      const task = await queued(), token = (await claimFinancialResearch('B2-read-then-state', ctx))!.attempt;
+      const state = upgradeFinancialCheckpoint(emptyCheckpoint(1, 1), buildFinancialPlanV2(task.spec, { taskId: task.id, createdAt: new Date().toISOString() }), []);
+      state.variant = 'B2'; state.maxToolCallsPerTurn = 3;
+      for (const id of ['prepare-facts', 'income_profit-retrieve', 'cash_flow-retrieve', 'risks-retrieve']) state.nodes[id] = 'completed';
+      await saveResearchCheckpoint(actor, token, state, 'B2-compare-fixture', ctx);
+      const order: string[] = [];
+      await executeFinancialResearch(actor, token, undefined, ctx, batches([[...searches(1), gapClaim]]), true,
+        async record => { if (record.type === 'tool_result') order.push((record.data as { toolCall: { name: string } }).toolCall.name); });
+      const snapshot = (await getResearchTask(actor, task.id, ctx))!;
+      expect(snapshot.usage.toolCalls).toBe(2); expect(snapshot.checkpoint?.claims).toMatchObject([gapClaim.input]);
+      expect(order).toEqual(['search_evidence', 'record_claim']);
+    }, 30000);
+
+    it('rejects whole turns before effects for state ordering, multiple mutations and a later invalid schema', async () => {
+      const invalidBatches: { calls: Call[]; code: string }[] = [
+        { calls: [gapClaim, ...searches(1)], code: 'FINANCIAL_BATCH_STATE_ORDER' },
+        { calls: [gapClaim, { name: 'check_coverage', input: {} }], code: 'FINANCIAL_BATCH_STATE_COUNT' },
+        { calls: [...searches(1), { name: 'read_evidence', input: { documentId: 'missing' } }], code: 'FINANCIAL_BATCH_ARGUMENTS' },
+        { calls: [...searches(1), { name: 'missing_tool', input: {} }], code: 'FINANCIAL_BATCH_UNKNOWN_TOOL' },
+      ];
+      for (const scenario of invalidBatches) {
+        const task = await queued(), token = (await claimFinancialResearch(`B2-invalid-${scenario.code}`, ctx))!.attempt, feedback: unknown[] = [];
+        await executeFinancialResearch(actor, token, undefined, ctx, batches([scenario.calls]), true,
+          async record => { if (record.type === 'tool_result') feedback.push(record.data); }, undefined, undefined, { variant: 'B2' });
+        const snapshot = (await getResearchTask(actor, task.id, ctx))!;
+        expect(snapshot.usage.toolCalls).toBe(0); expect(snapshot.checkpoint?.facts).toEqual([]); expect(snapshot.checkpoint?.claims).toEqual([]);
+        expect(snapshot.checkpoint?.checkedHash).toBeNull(); expect(JSON.stringify(feedback)).toContain(scenario.code);
+      }
+    }, 30000);
+
+    it('returns model-visible oversized-turn feedback and then accepts a corrected closure turn without charging the rejected batch', async () => {
+      const task = await queued(2), token = (await claimFinancialResearch('B2-limit-feedback', ctx))!.attempt, feedback: unknown[] = [];
+      const report = await executeFinancialResearch(actor, token, undefined, ctx, batches([searches(4), ...close]), true,
+        async record => { if (record.type === 'tool_feedback') feedback.push(record.data); }, undefined, undefined, { variant: 'B2' });
+      const snapshot = (await getResearchTask(actor, task.id, ctx))!;
+      expect(snapshot.usage.toolCalls).toBe(2); expect(snapshot.checkpoint?.submitted).toBe(true);
+      expect(report?.method?.modelTurns).toBe(3); expect(JSON.stringify(feedback)).toContain('FINANCIAL_BATCH_LIMIT');
+    }, 30000);
+
+    it('preflights closure reserve and duplicate identities without charging an otherwise valid first read', async () => {
+      const reserveTask = await queued(3), reserveToken = (await claimFinancialResearch('B2-reserve-whole', ctx))!.attempt, feedback: unknown[] = [];
+      await executeFinancialResearch(actor, reserveToken, undefined, ctx, batches([searches(2)]), true,
+        async record => { if (record.type === 'tool_result') feedback.push(record.data); }, undefined, undefined, { variant: 'B2' });
+      expect((await getResearchTask(actor, reserveTask.id, ctx))!.usage.toolCalls).toBe(0);
+      expect(JSON.stringify(feedback)).toContain('FINANCIAL_BATCH_CLOSURE_RESERVED');
+      const task = await queued(), token = (await claimFinancialResearch('B2-duplicate-id', ctx))!.attempt;
+      await executeFinancialResearch(actor, token, undefined, ctx, batches([searches(2).map(call => ({ ...call, id: 'same' }))]), true, undefined, undefined, undefined, { variant: 'B2' });
+      expect((await getResearchTask(actor, task.id, ctx))!.usage.toolCalls).toBe(0);
+    }, 30000);
+
+    it('inherits a B2 limit of five and cumulative model turns on recovery while rejecting explicit mismatches', async () => {
+      const task = await queued(6), token = (await claimFinancialResearch('B2-custom-resume', ctx))!.attempt;
+      const state = upgradeFinancialCheckpoint(emptyCheckpoint(1, 1), buildFinancialPlanV2(task.spec, { taskId: task.id, createdAt: new Date().toISOString() }), []);
+      state.variant = 'B2'; state.maxToolCallsPerTurn = 5; state.modelTurns = 7;
+      await saveResearchCheckpoint(actor, token, state, 'B2-resume-fixture', ctx);
+      await expect(executeFinancialResearch(actor, token, undefined, ctx, batches([]), true, undefined, undefined, undefined, { maxToolCallsPerTurn: 3 })).rejects.toThrow('FINANCIAL_BATCH_LIMIT_MISMATCH');
+      await expect(executeFinancialResearch(actor, token, undefined, ctx, batches([]), true, undefined, undefined, undefined, { variant: 'B' })).rejects.toThrow('FINANCIAL_VARIANT_MISMATCH');
+      const report = await executeFinancialResearch(actor, token, undefined, ctx, batches([searches(4), ...close]), true);
+      const snapshot = (await getResearchTask(actor, task.id, ctx))!;
+      expect(snapshot.checkpoint).toMatchObject({ schemaVersion: 2, variant: 'B2', maxToolCallsPerTurn: 5, modelTurns: 10, submitted: true });
+      expect(snapshot.usage.toolCalls).toBe(6); expect(report?.method).toMatchObject({ variant: 'B2', modelTurns: 10 });
+    }, 30000);
+
+    it('rechecks the next node after the first call rather than charging a now-disallowed second write', async () => {
+      const task = await queued(), token = (await claimFinancialResearch('B2-dynamic-admission', ctx))!.attempt, feedback: unknown[] = [];
+      const fact: Call = { name: 'record_fact', input: { periodId: task.spec.periods[0].id, metric: 'revenue', rawText: '100', unitLabel: '元', citations: reportFixture(task.id).facts[0].citations } };
+      await executeFinancialResearch(actor, token, undefined, ctx, batches([[...searches(1), fact]]), true,
+        async record => { if (record.type === 'tool_result') feedback.push(record.data); }, undefined, undefined, { variant: 'B2' });
+      const snapshot = (await getResearchTask(actor, task.id, ctx))!;
+      expect(snapshot.usage.toolCalls).toBe(1); expect(snapshot.checkpoint?.facts).toEqual([]);
+      expect(JSON.stringify(feedback)).toContain('SCHEDULER_TOOL_NOT_ALLOWED');
+    }, 30000);
+
+    it.each(['cancel', 'lease'] as const)('does not precharge later batch items when %s occurs after the first result', async failure => {
+      const task = await queued(), token = (await claimFinancialResearch(`B2-between-${failure}`, ctx))!.attempt, results: string[] = [];
+      await executeFinancialResearch(actor, token, undefined, ctx, batches([searches(3)]), true, async record => {
+        if (record.type !== 'tool_result') return;
+        results.push((record.data as { toolCall: { id: string } }).toolCall.id);
+        if (results.length === 1) {
+          if (failure === 'cancel') await cancelResearchTask(actor, task.id, ctx);
+          else await prisma.$executeRaw`UPDATE company_research_attempts SET lease_until=NOW()-INTERVAL '1 second' WHERE id=${token.id}`;
+        }
+      }, undefined, undefined, { variant: 'B2' });
+      const snapshot = (await getResearchTask(actor, task.id, ctx))!;
+      expect(snapshot.usage.toolCalls).toBe(1); expect(results).toEqual(['B2-1-0']); expect(snapshot.reportRevision).toBe(0);
+      await cancelResearchTask(actor, task.id, ctx);
+    }, 30000);
+  });
 });

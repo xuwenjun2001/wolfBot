@@ -8,6 +8,7 @@ import { buildFinancialPlanV2, readyNodes, revisePlan, type PlanNode, type Resea
 import { canonicalResearchJson, researchIdSchema, type ResearchTaskSpec } from './task-contracts';
 import { researchLocatorSchema } from './document-contracts';
 import type { FinancialPlanRevisionEvent } from './execution-store';
+import type { ValidatedFinancialCall } from './financial-batch';
 
 type SourcePeriod = { id: string; version: number; period: { id: string } };
 type SchedulerOptions = { taskId: string; spec: ResearchTaskSpec; state: ResearchCheckpointV2; createdAt: string; reviews: SemanticReview[] };
@@ -178,6 +179,17 @@ export class FinancialScheduler {
     if (tool === 'record_fact' && action.kind !== 'prepare' && (args.metric === 'operating_cash_flow' ? 'cash_flow' : 'income_profit') !== action.questionId) return denied('SCHEDULER_NODE_MISMATCH', '只能修改当前问题的事实');
     if (tool === 'verify_claim' && args.claimId !== action.claimId) return denied('SCHEDULER_NODE_MISMATCH', '必须核验 nextAction 指定的当前结论');
     if (tool === 'submit_report' && !this.state.checkedHash) return denied('SCHEDULER_COVERAGE_REQUIRED', '先 check_coverage，未扣减工具预算');
+    return null;
+  }
+  /** Check known node/claim restrictions for every call on detached public state.
+   * Tool results can still change the next action; real admission runs again.
+   */
+  preflightBatch(calls: readonly ValidatedFinancialCall[], remaining: number): PiAgentToolResult | null {
+    const shadow = new FinancialScheduler({ taskId: this.taskId, spec: this.spec, state: structuredClone(this.state), createdAt: this.plan.createdAt, reviews: this.reviews });
+    for (let index = 0; index < calls.length; index++) {
+      const denied = shadow.admit(calls[index].name, calls[index].input, remaining - index);
+      if (denied) return denied;
+    }
     return null;
   }
   started() {

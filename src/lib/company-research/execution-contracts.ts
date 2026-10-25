@@ -23,6 +23,7 @@ export const checkpointV1Schema = z.object({ schemaVersion: z.literal(1), ...che
 const nodeRecord = <T extends z.ZodType>(value: T) => z.record(researchIdSchema, value).refine(record => Object.keys(record).length <= 40, 'Too many checkpoint nodes');
 export const checkpointV2Schema = z.object({
   schemaVersion: z.literal(2), ...checkpointFields, variant: z.enum(['B', 'B2']),
+  maxToolCallsPerTurn: z.number().int().min(1).max(8).optional(),
   nodes: nodeRecord(planNodeStateSchema), gaps: z.array(researchGapSchema).max(96),
   planVersion: z.number().int().min(1), closureReserve: z.number().int().min(0).max(102),
   currentNodeId: researchIdSchema.nullable(), nodeToolCalls: nodeRecord(z.number().int().min(0).max(10000)),
@@ -32,6 +33,7 @@ export const checkpointV2Schema = z.object({
   verificationAttempts: z.record(researchIdSchema, sha256Schema).refine(record => Object.keys(record).length <= 24, 'Too many verification attempts'),
   resolvedGapIds: z.array(sha256Schema).max(96),
 }).strict().superRefine((state, ctx) => {
+  if (state.variant !== 'B2' && state.maxToolCallsPerTurn !== undefined) ctx.addIssue({ code: 'custom', message: 'Batch configuration requires B2' });
   if (state.planVersion < state.planRevision) ctx.addIssue({ code: 'custom', message: 'Local plan version precedes persisted plan' });
   if (Object.values(state.evidenceLedger).reduce((sum, entry) => sum + entry.locatorKeys.length + entry.evidenceHashes.length, 0) > 512) ctx.addIssue({ code: 'custom', message: 'Checkpoint evidence ledger capacity reached' });
   if (state.currentNodeId !== null && !Object.hasOwn(state.nodes, state.currentNodeId)) ctx.addIssue({ code: 'custom', message: 'Unknown current node' });
@@ -55,6 +57,7 @@ export function rebindFinancialCheckpoint(previous: ResearchCheckpoint | null, b
     ...(modelTurns === undefined ? {} : { modelTurns }) });
   const ids = ['prepare-facts', ...(['income_profit', 'cash_flow', 'risks'] as const).flatMap(question => ['retrieve', 'compare', 'verify', 'report'].map(kind => `${question}-${kind}`))];
   return checkpointV2Schema.parse({ ...base, schemaVersion: 2, variant: previous.variant,
+    ...(previous.variant === 'B2' ? { maxToolCallsPerTurn: previous.maxToolCallsPerTurn ?? 3 } : {}),
     ...(modelTurns === undefined ? {} : { modelTurns }), nodes: Object.fromEntries(ids.map(id => [id, base.steps[id] ?? 'pending'])),
     planVersion: base.planRevision, closureReserve: 2, currentNodeId: null, gaps: [], nodeToolCalls: {}, evidenceLedger: {}, nodeReadPeriods: {},
     documentPeriods: {}, verificationAttempts: {}, resolvedGapIds: [] });

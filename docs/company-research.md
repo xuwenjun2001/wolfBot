@@ -186,12 +186,16 @@ query 为 1—300 字符；topK 为 1—20，默认 5；maxOutputCharacters 为 
 
 阅读器对引用先做 NFKC 和空白归一匹配，再映射回原文的 UTF-16 范围，因此换行、组合字符、全角字符或长页不会把上下文固定在前 9000 个字符。只有原文中存在逐字字符串时才生成 highlight；归一匹配只用于定位上下文，不伪造高亮。定向回归和 disposable PostgreSQL 验证记录在 [S11—S15 验收证据](plans/research-agent-upgrade/s11-s15-validation.md) 与 [进度交接](plans/research-agent-upgrade/progress.md)。
 
-### 可执行计划调度（U10—U13）
+### 可执行计划调度与批量工具（U10—U14）
 
 可信调用方可通过 `executeFinancialResearch` 末尾的 `options.variant` 选择 B；新任务省略时保持 A。B 将共享准备和三问的检索、比较、核验、报告组成 13 节点计划图；准备是一次有界动作，不以六个金额全部保存为全局前提。节点工具白名单和核验收尾预留在原子扣额前检查，拒绝调用返回结构化原因并保留额度。软份额用于优先让其他节点工作，不能直接截断本问必需金额。
 
 B 的公开 checkpoint 使用 schemaVersion 2，保存节点、缺口、证据增量、局部 planVersion 和调用计数。v1 材料可升级，旧的“本问已核验”标记不能代替当前 claim hash 的回执。局部修复的 checkpoint 与 `plan.revised` 事件在同一 fenced 事务提交；与持久请求/计划 revision、Worker generation 分开。接管省略 variant 时承接已保存变体，显式切换会拒绝；请求修订和更新重试也保留该身份与累计模型轮数。
 
 检索、比较补查及核验读取均按新增 locator/内容 hash 判断进展；换关键词或重写相同证据的结论不能重置已停止缺口。未找到只保留缺证 partial，原文未披露须另有可信两期核对。报告 `method.modelTurns` 记录主循环模型请求尝试数，包含失败/中断并跨接管累计；独立 reviewer 请求记入原用量账，不计作主循环轮数。历史没有计数的报告不补零。
+
+B2 继承 B 调度，通过 `options.maxToolCallsPerTurn` 设置每轮上限，默认 3，支持整数 1—8。模型可在一轮返回多个工具，PI 仍逐个顺序执行。整批先校验数量、唯一调用 ID、工具与参数、预算预留和已知节点限制；失败时整批不执行、不扣工具次数。每轮最多一个状态工具且必须最后，导入和解析也计入状态工具；`submit_report` 必须独占一轮。实际执行每项时重新检查预算、调度及执行权，并单独原子扣额；前项结果导致后项不再可用时，后项拒绝，前项的执行与消耗保留。
+
+B2 上限绑定公开 checkpoint；接管省略选项时继承，显式改值拒绝，旧 B2 记录缺少上限时按 3 处理。请求修订和更新重试保留该配置，不重置当前工具预算或主循环轮数。日常默认 A 与 B 每轮单工具行为不变；B2 的模型往返、Token 与耗时收益需在正式实验中度量。
 
 这些变体接线不自动切换日常 Worker，也不开放付费实验。工程验证与实际模型质量分别记录在 [进度交接](plans/research-agent-upgrade/progress.md)；真实消融仍遵守[实验登记](plans/research-agent-upgrade/ablation-registration.md)。

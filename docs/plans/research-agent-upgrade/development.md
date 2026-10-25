@@ -46,6 +46,8 @@
 
 U 系列的计划图、缺口、预算纯策略和财报调度保留在公司研究层。节点软份额用于让出优先级，父任务原子预算仍是硬限制；准入失败在扣额和工具副作用之前返回。局部 planVersion 不替代请求/计划 revision 或 Worker generation；checkpoint 与局部修订事件必须同事务且受执行权保护。恢复保留变体、缺口尝试、证据增量及累计主循环模型请求数，不能用重写结论或重建 attempt 重开已停止缺口。
 
+B2 在应用层完成整轮批次预检查，PI 保持顺序执行。批量上限默认 3、整数 1—8，并绑定 checkpoint；恢复、请求修订和更新重试不得静默改变。状态工具最多一个且最后，导入/解析也纳入；提交独占一轮。每项执行前仍按新状态复查并独立原子扣额，动态拒绝不回滚已经完成的前项。模型请求次数继续使用持久预留计数，不能用工具批次长度代替。
+
 计划修订使用 expectedRevision 和幂等键，持久化后才公布新版本。旧执行在安全边界停止，其晚到写入必须失效。修订继承同一逻辑请求累计的成本、工具次数及截止约束；明确的新研究请求才具有新的预算。用户看到“等待变更生效”时不得伪装为已经切换。
 
 当前研究配置默认最多 40 次工具调用、20 分钟，实际以当前 `researchConfig()` 为准。引入 OCR、检索和候选评测后，需要另外记录它们的资源耗用。变更预算必须作为独立实验变量，不能通过提高预算制造算法提升；费用未知不能写成 0。
@@ -126,7 +128,7 @@ OCR 原生环境、模型准备与实际服务验证见 [parser README](../../..
 
 U05 原因/风险页基线增加 `--labels=fixtures/company-research/retrieval-labels-v2.json --parsed-root=<S07解析目录> --output-dir=<新证据目录>`。报告分别记录统一两期文本检索、原请求过滤范围、问型和页证据类型；保留范围外金标，MRR 使用完整唯一页排名。新现金流标签待人审；披露范围页不证明全篇未披露。具体口径和当前结果见 [板块 1 核对](block1-review.md)。
 
-U03 mock 示例：`node --import tsx scripts/research/run-agent-ablation.ts --variant=A --dataset=fixtures/company-research/development.json --repeats=2 --campaign=data/research-agent-upgrade/evidence/U03/<新目录> --provider=mock --max-input-tokens=100000`。生产 adapter 待 U13/U33 等接入，当前 real CLI 关闭执行；mock 只验证框架。登记与真实执行前置条件见 [消融实验登记](ablation-registration.md)，全 campaign 预算跨变体、重复、失败共享，未知用量即停止。
+U03 mock 示例：`node --import tsx scripts/research/run-agent-ablation.ts --variant=A --dataset=fixtures/company-research/development.json --repeats=2 --campaign=data/research-agent-upgrade/evidence/U03/<新目录> --provider=mock --max-input-tokens=100000`。U13/U14 已接入 B/B2 运行时；CLI 的生产 adapter 仍待可信组合层及执行协议接入，当前 real CLI 关闭执行；mock 只验证框架。登记与真实执行前置条件见 [消融实验登记](ablation-registration.md)，全 campaign 预算跨变体、重复、失败共享，未知用量即停止。
 
 改变 API、配置、数据、页面或运行行为时更新对应专题；本目录只保存计划/实施证据，不复制整套现有使用手册。开发文档使用仓库相对路径便于迁移，面向用户回复使用可点击绝对文件路径。
 
