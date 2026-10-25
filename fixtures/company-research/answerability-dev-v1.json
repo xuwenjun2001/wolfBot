@@ -4,8 +4,8 @@
   "sourceDatasetVersion": "research-dev-v1",
   "sourceDatasetSha256": "000f1fdbdaad9f48d98c632bbe6afa3f602a5c550a3ffc8b95e2f0a35d101cf8",
   "rubricVersion": "research-rubric-v2",
-  "status": "pending_review",
-  "note": "12题全部保留。9个既有完整人工参考题继承answerable确认；3个现金流标签为S19证据起草，均待人工裁定，只有万华暂列not_disclosed候选。有限章节缺证不等于全篇未披露。rubric v2也待确认；禁止据草稿作正式v2质量结论。",
+  "status": "frozen",
+  "note": "旧四家12题可回答性已冻结：9题沿用既有确认；3道现金流题由用户2026-10-25实际选择Q1A/Q2A/Q3A确认展示参考范围，全部answerable。会计分解不等于经营因果；不修改v1、历史评分或报告验收。扩展14家/42题和新保留资料仍独立待审。",
   "cases": [
     {
       "caseId": "dev-600519",
@@ -186,8 +186,8 @@
         {
           "questionId": "cash_flow",
           "answerability": "answerable",
-          "reviewStatus": "pending_review",
-          "rationale": "待人工确认的 answerable 候选。2026-10-19 原参考 q2 为 partial，而 S19 paired-20261020-02/baseline 已在 2024 年报文件第120—121页找到净利润调节为经营现金流的应收/应付变动，并形成 supported 会计解释；这与本批管理层章节原因缺证不同。须人工核对固定题允许的解释范围，不能把 repair-validation 两处缺证视为原文未披露。",
+          "reviewStatus": "confirmed",
+          "rationale": "用户于2026-10-25实际选择Q1A，确认展示数值、方向及两年调节表会计贡献解释为本题参考范围；原件由Agent核对后用户确认，不声称用户自行逐页查阅。不会追认旧模型缺答，不把会计贡献直接解释为需求或回款改善/恶化。",
           "evidenceRefs": [
             {
               "path": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/acceptance.json",
@@ -204,6 +204,18 @@
             {
               "path": "data/research-agent-upgrade/evidence/S19/paired-20261020-02/baseline/dev-000858/task.json",
               "sha256": "febb86214de7e3c22b3ee78eb7f5696a0c01632e85e8f6ca0d84a4a8f8bdcb4f"
+            },
+            {
+              "path": "docs/plans/research-agent-upgrade/block1-confirmation-20261025.md",
+              "sha256": "b9a7b108b294f7f0c8e72acb94fa8bf7c70e3fb89058bc57e1f2b1cde48c5d17"
+            },
+            {
+              "path": "data/research-agent-upgrade/evidence/U02/acceptance-choices-20261025-01/source-checks.json",
+              "sha256": "f8bf60626fa28909b8b9dc3e2c0635cd82c694072a52890a56f140da45d8b07e"
+            },
+            {
+              "path": "data/research-agent-upgrade/evidence/U02/acceptance-choices-20261025-01/accounting-bridges.json",
+              "sha256": "fdb3018e49b088ad7e2fc2081a8e1387a7ea33360f0666ce86d0501b2e2e7826"
             }
           ],
           "checkedRanges": [
@@ -228,11 +240,32 @@
               "bytesSha256": "b737191a758994a35e9442d46847de771fe48b758feb9a7f35601def922435e7",
               "filePageStart": 120,
               "filePageEnd": 121,
-              "section": "现金流量表补充资料（S19已定位，新的可回答性裁定待人工）",
-              "humanChecked": false
+              "section": "两年现金流调节资料（AI原件核对后，用户按选择卡确认参考范围）",
+              "humanChecked": true
+            },
+            {
+              "documentId": "000858-2023-annual",
+              "bytesSha256": "1aab0efbe751c145990ac9652c3aff165452ee060bf22a0fe0412996a55e8566",
+              "filePageStart": 7,
+              "filePageEnd": 7,
+              "section": "财务摘要/两年现金流调节资料（AI核对并由用户确认展示参考范围）",
+              "humanChecked": true
+            },
+            {
+              "documentId": "000858-2024-annual",
+              "bytesSha256": "b737191a758994a35e9442d46847de771fe48b758feb9a7f35601def922435e7",
+              "filePageStart": 7,
+              "filePageEnd": 7,
+              "section": "财务摘要/两年现金流调节资料（AI核对并由用户确认展示参考范围）",
+              "humanChecked": true
             }
           ],
-          "confirmation": null
+          "confirmation": {
+            "receiptPath": "docs/plans/research-agent-upgrade/block1-confirmation-20261025.md",
+            "receiptSha256": "b9a7b108b294f7f0c8e72acb94fa8bf7c70e3fb89058bc57e1f2b1cde48c5d17",
+            "kind": "answerability",
+            "scope": "Q1A: this cash-flow question is answerable within the cited two-year accounting-decomposition reference; AI-assisted source review and explicit user confirmation; no historical report acceptance."
+          }
         },
         {
           "questionId": "risks",
@@ -326,8 +359,8 @@
         {
           "questionId": "cash_flow",
           "answerability": "answerable",
-          "reviewStatus": "pending_review",
-          "rationale": "待人工确认的 answerable 候选。原参考 q2 的同比原因证据保留 partial；S19 repair-validation 报告引用 2024 年报现金流与净利润差异的经营性应付解释，明确限定不证明同比原因，结构化语义审查为 supported。须人工裁定其是否满足固定题；不能用模型审查替代人工标签。",
+          "reviewStatus": "confirmed",
+          "rationale": "用户于2026-10-25实际选择Q2A，确认展示数值、方向及两年调节表会计贡献解释为本题参考范围；原件由Agent核对后用户确认，不声称用户自行逐页查阅。不会追认旧模型缺答，不把会计贡献直接解释为需求或回款改善/恶化。",
           "evidenceRefs": [
             {
               "path": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/acceptance.json",
@@ -340,6 +373,18 @@
             {
               "path": "data/research-agent-upgrade/evidence/S19/repair-validation-20261020-01/baseline/dev-000333/task.json",
               "sha256": "fd3c7df3a39cb2411af30c1f8bcc523ac12e8b6071e118c3e5c8462f2fa7180d"
+            },
+            {
+              "path": "docs/plans/research-agent-upgrade/block1-confirmation-20261025.md",
+              "sha256": "b9a7b108b294f7f0c8e72acb94fa8bf7c70e3fb89058bc57e1f2b1cde48c5d17"
+            },
+            {
+              "path": "data/research-agent-upgrade/evidence/U02/acceptance-choices-20261025-01/source-checks.json",
+              "sha256": "f8bf60626fa28909b8b9dc3e2c0635cd82c694072a52890a56f140da45d8b07e"
+            },
+            {
+              "path": "data/research-agent-upgrade/evidence/U02/acceptance-choices-20261025-01/accounting-bridges.json",
+              "sha256": "fdb3018e49b088ad7e2fc2081a8e1387a7ea33360f0666ce86d0501b2e2e7826"
             }
           ],
           "checkedRanges": [
@@ -358,9 +403,38 @@
               "filePageEnd": 54,
               "section": "现金流分析/变动说明（既有人审的有限范围；不证明全篇缺失）",
               "humanChecked": true
+            },
+            {
+              "documentId": "000333-2023-annual",
+              "bytesSha256": "22f4915d91ada74a37eab8d074aef4c15420f3b1a8b5f5bd5777c00f97d58b86",
+              "filePageStart": 10,
+              "filePageEnd": 10,
+              "section": "财务摘要/两年现金流调节资料（AI核对并由用户确认展示参考范围）",
+              "humanChecked": true
+            },
+            {
+              "documentId": "000333-2024-annual",
+              "bytesSha256": "b17a9b9b84bca1d2a4e4a3cadc5dd5ba5c85e3f1fd2d758acd3315b5b040ecd9",
+              "filePageStart": 9,
+              "filePageEnd": 9,
+              "section": "财务摘要/两年现金流调节资料（AI核对并由用户确认展示参考范围）",
+              "humanChecked": true
+            },
+            {
+              "documentId": "000333-2024-annual",
+              "bytesSha256": "b17a9b9b84bca1d2a4e4a3cadc5dd5ba5c85e3f1fd2d758acd3315b5b040ecd9",
+              "filePageStart": 256,
+              "filePageEnd": 256,
+              "section": "财务摘要/两年现金流调节资料（AI核对并由用户确认展示参考范围）",
+              "humanChecked": true
             }
           ],
-          "confirmation": null
+          "confirmation": {
+            "receiptPath": "docs/plans/research-agent-upgrade/block1-confirmation-20261025.md",
+            "receiptSha256": "b9a7b108b294f7f0c8e72acb94fa8bf7c70e3fb89058bc57e1f2b1cde48c5d17",
+            "kind": "answerability",
+            "scope": "Q2A: this cash-flow question is answerable within the cited two-year accounting-decomposition reference; AI-assisted source review and explicit user confirmation; no historical report acceptance."
+          }
         },
         {
           "questionId": "risks",
@@ -453,9 +527,9 @@
         },
         {
           "questionId": "cash_flow",
-          "answerability": "not_disclosed",
-          "reviewStatus": "pending_review",
-          "rationale": "待人工核对的 not_disclosed 候选，仅指本题要求的现金流增长及与利润背离的原因解释，不否定数字和方向可答。已确认的 P16 仅称未发生重大变动；S19 本批仍缺原因证据。此前确认只覆盖 partial 缺口，不是原文未披露确认；两期现金流补充资料、财务附注及其他相关章节仍需人工核对并登记完整范围。",
+          "answerability": "answerable",
+          "reviewStatus": "confirmed",
+          "rationale": "用户于2026-10-25实际选择Q3A，确认展示数值、方向及两年调节表会计贡献解释为本题参考范围；原件由Agent核对后用户确认，不声称用户自行逐页查阅。不会追认旧模型缺答，不把会计贡献直接解释为需求或回款改善/恶化。",
           "evidenceRefs": [
             {
               "path": "data/research-agent-upgrade/annotations/2026-10-19-ai-assisted-01/acceptance.json",
@@ -468,6 +542,18 @@
             {
               "path": "data/research-agent-upgrade/evidence/S19/repair-validation-20261020-01/baseline/dev-600309/task.json",
               "sha256": "a91ade205f68c80796ac50f26cc1965ab48b313fa6ed943dd05e5e5b69cc1874"
+            },
+            {
+              "path": "docs/plans/research-agent-upgrade/block1-confirmation-20261025.md",
+              "sha256": "b9a7b108b294f7f0c8e72acb94fa8bf7c70e3fb89058bc57e1f2b1cde48c5d17"
+            },
+            {
+              "path": "data/research-agent-upgrade/evidence/U02/acceptance-choices-20261025-01/source-checks.json",
+              "sha256": "f8bf60626fa28909b8b9dc3e2c0635cd82c694072a52890a56f140da45d8b07e"
+            },
+            {
+              "path": "data/research-agent-upgrade/evidence/U02/acceptance-choices-20261025-01/accounting-bridges.json",
+              "sha256": "fdb3018e49b088ad7e2fc2081a8e1387a7ea33360f0666ce86d0501b2e2e7826"
             }
           ],
           "checkedRanges": [
@@ -486,9 +572,46 @@
               "filePageEnd": 16,
               "section": "现金流分析/变动说明（既有人审的有限范围；不证明全篇缺失）",
               "humanChecked": true
+            },
+            {
+              "documentId": "600309-2023-annual",
+              "bytesSha256": "64eb90a55396add030faaa7a05996fdd5f0095c1c26f0f1309ab6f19522991f1",
+              "filePageStart": 7,
+              "filePageEnd": 7,
+              "section": "财务摘要/两年现金流调节资料（AI核对并由用户确认展示参考范围）",
+              "humanChecked": true
+            },
+            {
+              "documentId": "600309-2024-annual",
+              "bytesSha256": "0c37e70c554609f4a22990fd97f3da4ee92bb717e44d641ac7800083789d4df7",
+              "filePageStart": 7,
+              "filePageEnd": 7,
+              "section": "财务摘要/两年现金流调节资料（AI核对并由用户确认展示参考范围）",
+              "humanChecked": true
+            },
+            {
+              "documentId": "600309-2024-annual",
+              "bytesSha256": "0c37e70c554609f4a22990fd97f3da4ee92bb717e44d641ac7800083789d4df7",
+              "filePageStart": 174,
+              "filePageEnd": 174,
+              "section": "财务摘要/两年现金流调节资料（AI核对并由用户确认展示参考范围）",
+              "humanChecked": true
+            },
+            {
+              "documentId": "600309-2024-annual",
+              "bytesSha256": "0c37e70c554609f4a22990fd97f3da4ee92bb717e44d641ac7800083789d4df7",
+              "filePageStart": 175,
+              "filePageEnd": 175,
+              "section": "财务摘要/两年现金流调节资料（AI核对并由用户确认展示参考范围）",
+              "humanChecked": true
             }
           ],
-          "confirmation": null
+          "confirmation": {
+            "receiptPath": "docs/plans/research-agent-upgrade/block1-confirmation-20261025.md",
+            "receiptSha256": "b9a7b108b294f7f0c8e72acb94fa8bf7c70e3fb89058bc57e1f2b1cde48c5d17",
+            "kind": "answerability",
+            "scope": "Q3A: this cash-flow question is answerable within the cited two-year accounting-decomposition reference; AI-assisted source review and explicit user confirmation; no historical report acceptance."
+          }
         },
         {
           "questionId": "risks",

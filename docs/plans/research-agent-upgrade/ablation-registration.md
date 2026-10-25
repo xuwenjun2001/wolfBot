@@ -1,6 +1,6 @@
 # 消融实验登记
 
-> 状态：`pending_review`。本页是 U03 的登记提案和框架验证记录，未获得真实模型实验授权。rubric 已按 [2026-10-25 确认回执](rubric-v2-confirmation-20261025.md) 冻结；G0 的可回答性标签、样本、实验设计与预算确认仍待完成。
+> 状态：`design_approved / execution_pending`。用户 Q4A 已按 [五项确认回执](block1-confirmation-20261025.md) 选定完整五变体、14 家、每例两次、整轮输入上限 80M；只批准设计，不启动真实模型实验。rubric 与旧四家标签分别冻结，扩展样本和绑定最终协议的执行条件仍待完成。
 
 ## 本次交付范围
 
@@ -8,7 +8,7 @@
 
 当前 CLI 没有接入生产研究 adapter，`--provider=real` 会关闭执行并列出阻塞。U13/U33/U37 完成相应运行时后，须由可信组合层接入 adapter，不能用任意脚本路径加载执行器。adapter 必须声明实际支持的变体、实际研究模型/推理配置、整个父任务的 40 次工具 / 20 分钟预算、输入 Token 上限执行能力及一次性测试数据库证明。不能把 C2 的预算解释为每个子 Agent 各 40 次 / 20 分钟。
 
-## 待确认的实验设计
+## 已选定的实验设计
 
 | 变体 | 预期比较 | 并发 | 当前真实执行状态 |
 | --- | --- | --- | --- |
@@ -37,7 +37,7 @@
 | `peer-pairs-v1.json` | `db9f0c970d699fd165bd5020c271c7e83a425f533f558c3ef80050dde095d75f` |
 | `rubric-v2.json` | `59cb710f1c7f8f4cea35b4c7aba662585dd0a642d35e70a6a2e98b234637a748` |
 | `rubric.json`（v1） | `81df0d53f38650a955957896c6c9883030588dc455cb482b95eff2ac7e0f0d45` |
-| `answerability-dev-v1.json`（仅旧 4 家） | `5e7b6d1217c1258e66a382cd4767afa226db818d7d3a12a694a89f17e195dd0d` |
+| `answerability-dev-v1.json`（仅旧 4 家，Q1A—Q3A 冻结） | `c43df428b0bda80c41d98bf273e06bc35b4efe955098556d9a5656d60f648d61` |
 | `development.json`（旧 4 家） | `000f1fdbdaad9f48d98c632bbe6afa3f602a5c550a3ffc8b95e2f0a35d101cf8` |
 | `holdout-registration-v2.json`（仅登记） | `c1ccbea29d988e8de2c36dbe42c28447adc74634b85ff6884de88da6a00907a2` |
 
@@ -53,14 +53,14 @@
 
 | 提案 | 样本与重复 | 父任务数 | 按历史估算的输入 | 提议 campaign 输入 cap |
 | --- | --- | --- | --- | --- |
-| 最小 3 变体探索 | A / B / C2 × 全部 14 家 × 2 次 | 84 | 44,184,000（约 44.2M） | 50,000,000，待确认 |
-| 完整 5 变体消融 | A / B / B2 / C1 / C2 × 全部 14 家 × 2 次 | 140 | 73,640,000（约 73.6M） | 80,000,000，待确认 |
+| 最小 3 变体探索（未选） | A / B / C2 × 全部 14 家 × 2 次 | 84 | 44,184,000（约 44.2M） | 50,000,000 |
+| 完整 5 变体消融（Q4A 设计已确认） | A / B / B2 / C1 / C2 × 全部 14 家 × 2 次 | 140 | 73,640,000（约 73.6M） | 80,000,000 |
 
 3 变体探索不能分别识别 B2 的往返收益和 C1 的上下文隔离效应；需要这些结论时选择完整提案。两项是互斥的完整 campaign 提案，不能先跑 50M 再在同一 campaign 提高 cap。失败、部分结果和未知用量都保留；停止后不能重置预算继续。
 
 同行实验另建 campaign：A / C2-peer × 7 对 × 2 次为 28 个父任务、56 个公司分支。旧单公司估计无法可靠给出同行任务成本，同行 cap 需独立估算并确认，不包含在上述 50M / 80M 内。若将来选择 12 家子集，必须先明确 12 个案例 ID；72 个任务约 37.9M、120 个任务约 63.1M 的数字不适用于当前 14 家全集。
 
-机器可读待审提案位于 `data/research-agent-upgrade/evidence/U03/registration-minimal3.pending.json` 与 `registration-full5.pending.json`。其中 `status=pending_review`、真实协议 hash 待生成、`approvalReceipt=null`，不能通过真实执行门禁。
+原机器可读待审提案 `registration-minimal3.pending.json`、`registration-full5.pending.json` 原样保留。新的 `data/research-agent-upgrade/evidence/U03/registration-full5.design-approved-20261025.json` 单独保存 Q4A 回执及其 hash，状态 `design_approved`、`executionApproved=false`，最终协议 hash 与实际研究模型为空；它不能替代真实执行批准。该新记录 SHA-256 为 `083dc67fc2eaef545d528f8f1755a75ba50ce8498b162d5a24ccb7eda5540aca`。
 
 ## 统计、选择与停止规则
 

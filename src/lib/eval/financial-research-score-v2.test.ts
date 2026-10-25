@@ -144,11 +144,15 @@ describe('parallel financial rubric v2', () => {
     candidate.questions[1].checkedRanges.pop();
     expect(caseAnswerabilitySchema.safeParse(candidate).success).toBe(false);
     expect(financialResearchRubricV2Schema.safeParse({ ...rubricFixture, status: 'frozen', confirmation: null }).success).toBe(false);
-    expect(answerabilityDatasetSchema.safeParse({ ...answerabilityFixture, status: 'frozen' }).success).toBe(false);
+    const pendingDataset = structuredClone(answerabilityFixture);
+    pendingDataset.cases[1].questions[1].reviewStatus = 'pending_review';
+    pendingDataset.cases[1].questions[1].confirmation = null;
+    expect(answerabilityDatasetSchema.safeParse({ ...pendingDataset, status: 'frozen' }).success).toBe(false);
     expect(answerabilityDatasetSchema.parse(answerabilityFixture).cases).toHaveLength(4);
     const parsed = answerabilityDatasetSchema.parse(answerabilityFixture);
-    expect(parsed.cases.flatMap(item => item.questions).filter(question => question.reviewStatus === 'confirmed')).toHaveLength(9);
-    expect(parsed.cases.flatMap(item => item.questions).filter(question => question.answerability === 'not_disclosed').every(question => question.reviewStatus === 'pending_review')).toBe(true);
+    expect(parsed.status).toBe('frozen');
+    expect(parsed.cases.flatMap(item => item.questions).filter(question => question.reviewStatus === 'confirmed')).toHaveLength(12);
+    expect(parsed.cases.flatMap(item => item.questions).filter(question => question.answerability === 'not_disclosed')).toHaveLength(0);
   });
 
   it('rejects pending labels or rubric in official mode and preserves explicit diagnostic mode', () => {

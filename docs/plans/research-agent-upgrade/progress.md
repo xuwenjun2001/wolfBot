@@ -6,25 +6,25 @@
 
 | 字段 | 当前值 |
 | --- | --- |
-| 最后更新 | 2026-10-25 14:39（剩余验收已整理为 Q1—Q5 选择卡；规则冻结继续有效，标签/样本/设计及开发顺序选择尚待用户回复） |
+| 最后更新 | 2026-10-25 15:03（五项真实选择已保存，旧四家12题标签冻结；U10—U12的83项联合回归通过，开始U13调度集成） |
 | 计划版本 | 原 S 系列 v1；U 系列按 agent-upgrade-proposal.md v2 执行 |
 | 总体状态 | S01—S18 已验收（S17 按当前反例修复并重验）；S19/S20 仍有必需验收阻塞。生产部署不在授权范围内 |
 | 已验收步骤 | 18/20；S17 重开与修复过程分别保留 E-REVIEW-03 / E-FIX-R2R3 |
-| 当前待处理步骤 | U00/U01/U03/U05 done；U02/U04 实现与机器准备完成、人工验收 blocked；G0 未通过；S19/S20 保持 blocked |
-| 下一步骤 | 按 block1-review.md 完成人工标签、样本与设计确认，冻结 G0；板块 2 尚未授权 |
-| 下一具体动作 | 等待 block1-acceptance-choices.md 的 Q1—Q5 真实选择；分别登记三道旧现金流标签、实验设计和开发顺序。Q5A 仅在获选后允许先做 U10—U14，扩展样本人审和真实实验要求继续保留；当前不预记批准 |
-| 当前会话登记 | 2026-10-25-u02-acceptance-choices：按用户要求准备剩余验收选择卡；核对三道现金流的原件、数字与会计解释，列出实验方案和开发顺序选项。此前规则确认有效，本次尚无新的标签、样本或设计批准 |
+| 当前待处理步骤 | U02/U10—U12 done，U13 in_progress，后续U14；U04 人审 blocked；G0 未通过；S19/S20 保持 blocked |
+| 下一步骤 | 按 Q5A 先实现并验证板块 2 U10—U14，保留扩展样本与真实实验门禁 |
+| 下一具体动作 | 独立保存五项真实选择回执并绑定证据；并行实现计划图、缺口与预算纯策略，完成后顺序集成调度与批量工具；不启动真实实验 |
+| 当前会话登记 | 2026-10-25-u-block2：用户通过选择表单实际选定 Q1A、Q2A、Q3A、Q4A、Q5A；主 AI 登记验收并集成，gpt-6.1-sol/max 子 Agent 分别负责 U10/U11/U12；U13/U14 待依赖通过后实现 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
 | 分支 / 本轮实现起点 | codex/agent-upgrade；起点 `26968ffdb751d3ee0488b608f020be29679780be`，从已核对同步的 origin/codex/research-agent-s11-s15 新建；保留用户修改的 v2 计划和目录 README |
 | 目标仓库 | `https://github.com/xuwenjun2001/wolfBot`，默认分支 `main` |
-| 本轮涉及文件 | 本次验收材料：block1-acceptance-choices.md、block1-review.md、progress.md；受控准备记录在 evidence/U02/acceptance-choices-20261025-01/。不改已冻结 rubric、旧评分、标签确认状态或原始资料；板块 1 原实现范围保留在下方步骤与历史记录 |
+| 本轮涉及文件 | 五项选择回执、answerability-dev-v1.json、验收/登记/决策/进度；U10 plan-graph.ts/测试/task-contracts.ts；U11 gap-policy.ts/测试；U12 budget-policy.ts/测试；U13/U14 financial-scheduler.ts/测试/runtime/tools/execution-contracts/observation/集成测试及必要兼容读取落点。既有评分、历史证据及原件保留 |
 | 已有改动提醒 | 起点有用户对 agent-upgrade-proposal.md 与目录 README.md 的两份修改；本次按其计划开发并纳入 U00，保留原内容。其余无已有源码改动；受控原件、凭据、临时日志不提交 |
 | 运行环境 / 进程 | 本轮脚本、单测、类型检查及本地 6 页 OCR 探针均已退出；无新增持久服务、Worker 或数据库。日常服务和历史受控 checkout/junction 保留，未部署或操作生产库；普通文件 symlink 仍受 Windows 权限限制，runner 的 junction 拒绝用例已通过 |
 | 模型与数据费用 | 本轮真实研究模型调用 0；U03 mock 用量为模拟值，真实费用 unknown；U04 使用已有本地 OCR 模型。历史 18 个真实任务/626 工具、输入 9458172 / 输出 192453 Token 仅作 U01 归因，未重开预算；后续父任务仍为 40 工具/20 分钟 |
-| 阻塞 | rubric 已冻结；G0 等待逐题标签/样本人工核对与实验设计确认。6 例新样本真实执行和评分兼容限制保留，真实 adapter 按后续步骤实现。S19 问题/支持 9/12、旧保留缺答及 S20 完整 CI 阻塞不变，Node 锁文件/Python 审计继续暂缓 |
-| 最近验证 | E-U02-03：6 份原件 hash、3 家两年现金流调节表逐行精确加总、Decimal 增幅/贡献复算及选择卡证据 hash 核对通过；83 Markdown 文档检查通过。未运行真实模型或新评分；原回归证据保留 E-U02-02 / E-U-BLOCK1-01 |
+| 阻塞 | rubric及旧四家12题标签冻结，完整设计已确认；G0仍待扩展样本人审/分层。六例执行和评分兼容限制、真实adapter/最终协议继续保留。Q5A允许先工程开发U10—U14。S19问题/支持9/12、旧保留缺答及S20原阻塞不变，Node锁文件/Python审计暂缓 |
+| 最近验证 | E-U02-04：确认及标签schema/hash通过，16项评分回归通过；U10—U12五文件83项联合回归通过，各自lint/定向types证据见对应记录。84 Markdown/622链接检查通过；U13/PG/全量类型验证尚待完成，无真实模型或新评分 |
 | 受控资料恢复 | 开发资料在 `data/research-agent-upgrade/`；旧保留根 `D:/QuantPilot-private-evals/research-v1` 已消费，新保留根 `D:/QuantPilot-private-evals/research-u-v2` 仅登记 hash、未打开内容。换机恢复受控归档并核对最终 LF 清单；这里不记录保留题/答案 |
-| 范围提醒 | 本轮实现 U00 与板块 1 的 U01—U05，按用户 v2 计划替代旧 R 草案作为后续开发入口；不改变原 S 系列状态。尚无真实模型实验授权，不读取未见保留答案，不部署，不扩展修复暂缓的依赖门 |
+| 范围提醒 | 本轮按 Q5A 授权实现 U10—U14，G0/U04 不因此通过；Q4A 仅批准五变体/14 家/2 次/8000 万输入 Token 的设计，不启动 U15/U36 或同行实验；不读取未见保留答案、不部署、不修复暂缓依赖门 |
 
 ## 步骤状态
 
@@ -63,15 +63,15 @@
 | --- | --- | --- | --- | --- | --- |
 | U00 | done | 2026-10-24-u-block1 / 主 AI | 计划、目录 README、docs/README.md、progress.md；分支 codex/agent-upgrade | E-U00-01；文档检查退出 0（78 Markdown/568 链接）、差异检查通过 | 推进 U01—U05，按文件独占并行 |
 | U01 | done | 2026-10-24-u-block1 / attribution 子 Agent，主 AI 复核 | src/lib/eval/research-failure-attribution.ts 及测试；scripts/research/attribute-failures.ts；failure-attribution.md | E-U01-01；18 唯一任务/626 调用；81 输入未变；103 eval 测试及类型检查通过 | 结论见 D33；多 Agent 质量收益仍为待检验假设 |
-| U02 | blocked | 2026-10-24-u-block1 / scoring 子 Agent，主 AI 复核；2026-10-25 主 AI 登记用户确认 | financial-research-score-v2.ts 及测试；statistics.ts 只增；rubric-v2.json；answerability-dev-v1.json；确认回执与核对文档 | E-U02-01 / E-U02-02；rubric 按用户“1.A 2.A”冻结，16 项回归及回执 hash 通过 | rubric 无需重复确认；3 道现金流逐题标签及适用响应仍需核对，不以规则确认代签样本 |
+| U02 | done | 2026-10-25-u-block2 / 主 AI 登记 Q1A—Q3A | 原评分 v2；冻结 answerability-dev-v1.json；独立确认回执与核对文档 | E-U02-04；12 confirmed/0 pending，16 评分回归及回执 hash 通过 | 无未披露题，不宣称已验收弃答能力；扩展样本与新报告各自独立核对 |
 | U03 | done | 2026-10-24-u-block1 / scoring 子 Agent；attribution 独立审查，主 AI 整合 | scripts/research/run-agent-ablation.ts、ablation-protocol.ts 及测试；ablation-registration.md | E-U03-01；22 项协议测试、12 CLI/9 mock arm、96 保存/94 启动/0 真实模型调用；登记提案完成 | 按 U13/U33 等接入真实 adapter；G0 人审与预算另行确认；mock 不构成生产变体验收 |
 | U04 | blocked | 2026-10-24-u-block1 / dataset 子 Agent；主 AI 验证接线 | development-v2.json、peer-pairs-v1.json、holdout-registration-v2.json；受控 evidence/U04/；新私有保留目录；verify-fixtures.ts 显式 v2 参数、verify-fixtures-v2.ts 及独立测试；核对文档 | E-U04-01；14 家/30 文档/42 题/7 同行对，84 原值/42 增幅/211 引用通过 | 独立人工复核数值/原因/风险与分层；新保留答案待人工，6 例生产适配限制不得静默绕过 |
 | U05 | done | 2026-10-24-u-block1 / 主 AI | retrieval-labels-v2.json；verify-retrieval.ts 兼容扩展；新增纯评分 research-retrieval-score.ts 及测试；受控 evidence/U05/；评测说明 | E-U05-01；33 query/66 预期页，Recall@5 39/66，MRR 0.5318；旧 baseline-v1 10/24 不变 | 基线报告合同已验证；现金流新金标待人工，后续 U20 的算法改进尚未授权 |
-| U10 | pending | 未授权 | plan-graph.ts 及测试；task-contracts.ts | — | 等待 G0 及板块 2 授权 |
-| U11 | pending | 未授权 | gap-policy.ts 及测试 | — | 等待 G0 及板块 2 授权 |
-| U12 | pending | 未授权 | budget-policy.ts 及测试 | — | 等待 G0 及板块 2 授权 |
-| U13 | pending | 未授权 | financial-scheduler.ts；runtime/tools/execution-contracts/observation；集成测试 | — | 等待 U10—U12 |
-| U14 | pending | 未授权 | financial-runtime.ts 与批量工具调用测试 | — | 等待 U13 |
+| U10 | done | 2026-10-25-u-block2 / plan_graph 子 Agent、主 AI 复核 | plan-graph.ts 及测试；task-contracts.ts | E-U10-01；DAG/兼容回归 23 项、定向严格 types 通过 | 接入 U13；准备结束不等于金额全部齐全 |
+| U11 | done | 2026-10-25-u-block2 / gap_policy 子 Agent、主 AI 复核 | gap-policy.ts 及测试 | E-U11-01；37 项定向回归及 lint 通过 | 接入 U13；无新证据只 partial，不伪造未披露 |
+| U12 | done | 2026-10-25-u-block2 / budget_policy 子 Agent、主 AI 复核 | budget-policy.ts 及测试 | E-U12-01；23 项定向回归及 lint 通过 | 接入 U13；当前 claim hash 匹配核验回执后才释放核验预留 |
+| U13 | in_progress | 2026-10-25-u-block2 / plan_graph 子 Agent 实现、主 AI 集成 | financial-scheduler.ts；runtime/tools/execution-contracts/observation；集成测试；必要持久化事件与报告兼容 | U10—U12 的 83 项联合回归已通过 | 默认 A 兼容、B 调度、v2 checkpoint、fencing/预算 PG 验证 |
+| U14 | pending | 2026-10-25-u-block2 / 主 AI 集成 | financial-runtime.ts 与批量工具调用测试 | 已授权，等待 U13 通过 | B2 每轮默认 3 次，顺序执行、每次独立扣额 |
 | U15 | pending | 未授权 | 受控消融证据；evaluation-results.md 新小节 | — | 等待 U14、费用审批 |
 | U20 | pending | 未授权 | retrieval-expansion.ts、evidence-retrieval.ts、lexical-index.ts、verify-retrieval.ts | — | 等待 G0 及板块 3 授权 |
 | U21 | pending | 未授权 | 受控检索实验与报告 | — | 等待 U20/U15、费用审批 |
@@ -85,7 +85,7 @@
 | U37 | pending | 未授权 | task-contracts.ts、peer-coordinator.ts、必要迁移与同行评分 | — | 等待 U33、同行对资料 |
 | U40 | pending | 未授权 | ablation-report.md、delivery.md、README.md | — | 等待 G2/U21 及板块 5 授权 |
 
-G0 尚未通过；U01 定位决策 D33 与 U03 登记提案已完成，弃答标签/评分合同与实验样本、次数、Token 上限尚未获用户确认。实现完成与冻结验收分开记录，不据 U 系列进展改变 S19/S20 的 blocked。人工入口见 [板块 1 核对](block1-review.md)，方案见 [实验登记](ablation-registration.md)。
+G0 尚未通过。rubric 与旧四家 12 题标签已冻结，Q4A 已确认完整五变体/14 家/两次/80M 输入设计；扩展样本人审、分层与六例执行适配继续待办。用户 Q5A 明确允许先实现 U10—U14，例外及范围见 [确认回执](block1-confirmation-20261025.md) 和 D37，不扩展到真实实验或其他板块。S19/S20 的 blocked 保留。
 
 ## 初始核对得到的事实（历史，当前状态见上表）
 
@@ -820,3 +820,26 @@ E-Sxx-01 / 日期 / 会话标识：
 - `npm run check:docs` 和 `git diff --check` 退出 0，83 Markdown 文档检查通过。本次只新增验收材料和交接，不修改源码、评分合同或 fixture；未新写或重复运行单测，未执行真实模型、数据库或新保留题读取。
 - Q5A 是待选的原计划顺序例外：仅允许先实现并验证 U10—U14，G0/U04 仍不记通过，U15 真实实验仍等待样本、适配与执行协议。Q5B 保持原 G0 依赖。当前未收到这一选择，不修改原计划依赖、不授权自己进入板块 2。
 - 起点 `053d2311a7599c96142a802379206e51c3aaa238`，工作区初始干净，仍在 wolfBot 的 `codex/agent-upgrade`；本轮仅同步选择卡、核对入口及本交接。用户回复后按实际选项保存独立回执，并执行对应已授权工作，不把准备材料视作已批准。
+
+### E-U02-04 / 2026-10-25-u-block2：五项真实选择登记
+
+- 用户通过选择表单逐项实际选择 Q1A、Q2A、Q3A、Q4A、Q5A。[独立回执](block1-confirmation-20261025.md) SHA-256 `b9a7b108b294f7f0c8e72acb94fa8bf7c70e3fb89058bc57e1f2b1cde48c5d17`，绑定选择卡确认时的 Git 提交/hash 与原受控 source-checks/accounting-bridges；未覆盖旧待审证据。
+- 三道旧现金流题的展示参考范围确认后，可回答性为 12 confirmed/0 pending，全部 answerable；标签 SHA-256 `c43df428b0bda80c41d98bf273e06bc35b4efe955098556d9a5656d60f648d61`。schema及12条确认回执文件hash核对退出0。原件由Agent核对、用户确认展示范围，不声称用户自行逐页阅读；不改v1原参考/评分或旧模型报告。没有未披露题，不宣称正确弃答能力已验收。
+- Q4A仅确认五变体/14家/两次/140父任务/80M整轮输入设计，新的受控设计回执 SHA-256 `083dc67fc2eaef545d528f8f1755a75ba50ce8498b162d5a24ccb7eda5540aca`；`executionApproved=false`、实际模型与最终协议为空，原 pending 提案保留。Q5A只调整代码开发顺序，G0/U04及正式实验条件继续保留，记录D37。
+- `npm run test:unit -- src/lib/eval/financial-research-score-v2.test.ts` 最终退出0，16/16通过，日志 `data/research-agent-upgrade/evidence/U13/block2-20261025/label-confirmation-tests.log`。首轮有1项失败，原因是测试依赖fixture仍为9 confirmed；已显式构造待审负例，保留冻结未审标签被拒绝的断言，并更新真实确认数12。未放宽评分schema/阈值，未重新评分历史报告。
+- `npm run check:docs` 退出0（84 Markdown/622链接，后续新增文档继续检查）。起点 `c19a45a5a0c4e3894f0f2bac18c5b082925d54ec`，工作区初始干净；主AI登记并集成，开发子Agent维持gpt-6.1-sol/max，无真实研究模型、保留集读取或生产操作。
+
+### E-U10-01 / 2026-10-25-u-block2：计划图纯合同
+
+- 新增13节点DAG、v2 schema与v1兼容steps投影，拒环/悬空/重复、错工具/完成规则、风险依赖财务准备、份额越界；局部失效覆盖新旧图下游，保留无关节点。`facts_prepared`指有界准备结束，不要求六值齐全。
+- plan_graph子Agent实现，主AI审查。计划图/旧版本合同/更新依赖三文件23项通过，定向严格TypeScript退出0；主线与U11/U12联合五文件83项通过，日志 `data/research-agent-upgrade/evidence/U13/block2-20261025/pure-policy-tests.log`。全量研究types与真实PG在U13集成后统一验证。
+
+### E-U11-01 / 2026-10-25-u-block2：结构化缺口纯策略
+
+- gap_policy子Agent新增六类缺口、按节点/问题/对象累计locator和hash增量、连续停滞与总次数上限；换query无新证据不能重置，缺证停止只partial；not_disclosed必须有明确可信两期确认。冲突不升级成确定结论，预算进入预留时转核验收尾。
+- 37项定向回归及两个文件ESLint退出0；主线联合83项通过，日志同E-U10-01。运行时接线归U13；纯函数通过不是新模型质量或全篇未披露证明。
+
+### E-U12-01 / 2026-10-25-u-block2：全局预算分配纯策略
+
+- budget_policy子Agent新增核验收尾预留、调用准入、节点累计软cap；supported草稿要有当前claimReviewHash匹配的核验回执，缺投影保守预留；显式缺口/冲突/不可比不重复核验。coverage+submit保留两次，不增改父任务额度；终态释放未用份额，已耗用不返还。
+- 23项定向回归与两个文件ESLint退出0；主线联合83项通过，日志同E-U10-01。第38次起仅核验收尾、零余额/预留越界和比例舍入等边界通过，原子扣额及恢复仍由U13真实PG验证。
