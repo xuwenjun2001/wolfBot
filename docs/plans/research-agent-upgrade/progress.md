@@ -6,14 +6,14 @@
 
 | 字段 | 当前值 |
 | --- | --- |
-| 最后更新 | 2026-10-25 15:03（五项真实选择已保存，旧四家12题标签冻结；U10—U12的83项联合回归通过，开始U13调度集成） |
+| 最后更新 | 2026-10-25 15:27（U13 调度集成与独立审查进行中；冻结 fixture 的评分/runner 回归兼容已补验） |
 | 计划版本 | 原 S 系列 v1；U 系列按 agent-upgrade-proposal.md v2 执行 |
 | 总体状态 | S01—S18 已验收（S17 按当前反例修复并重验）；S19/S20 仍有必需验收阻塞。生产部署不在授权范围内 |
 | 已验收步骤 | 18/20；S17 重开与修复过程分别保留 E-REVIEW-03 / E-FIX-R2R3 |
 | 当前待处理步骤 | U02/U10—U12 done，U13 in_progress，后续U14；U04 人审 blocked；G0 未通过；S19/S20 保持 blocked |
 | 下一步骤 | 按 Q5A 先实现并验证板块 2 U10—U14，保留扩展样本与真实实验门禁 |
-| 下一具体动作 | 独立保存五项真实选择回执并绑定证据；并行实现计划图、缺口与预算纯策略，完成后顺序集成调度与批量工具；不启动真实实验 |
-| 当前会话登记 | 2026-10-25-u-block2：用户通过选择表单实际选定 Q1A、Q2A、Q3A、Q4A、Q5A；主 AI 登记验收并集成，gpt-6.1-sol/max 子 Agent 分别负责 U10/U11/U12；U13/U14 待依赖通过后实现 |
+| 下一具体动作 | 完成 U13 单测、全量类型与隔离 PG 验证，再实现 U14 批量工具；G0/U04 与真实执行条件保留 |
+| 当前会话登记 | 2026-10-25-u-block2：五项实际选择已登记；主 AI 处理持久化/报告/修订兼容和统一验证，gpt-6.1-sol/max 的 plan_graph 实现 U13、gap_policy 独立审查、budget_policy 只读准备 U14；U14 等 U13 通过后实现 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
 | 分支 / 本轮实现起点 | codex/agent-upgrade；起点 `26968ffdb751d3ee0488b608f020be29679780be`，从已核对同步的 origin/codex/research-agent-s11-s15 新建；保留用户修改的 v2 计划和目录 README |
 | 目标仓库 | `https://github.com/xuwenjun2001/wolfBot`，默认分支 `main` |
@@ -843,3 +843,9 @@ E-Sxx-01 / 日期 / 会话标识：
 
 - budget_policy子Agent新增核验收尾预留、调用准入、节点累计软cap；supported草稿要有当前claimReviewHash匹配的核验回执，缺投影保守预留；显式缺口/冲突/不可比不重复核验。coverage+submit保留两次，不增改父任务额度；终态释放未用份额，已耗用不返还。
 - 23项定向回归与两个文件ESLint退出0；主线联合83项通过，日志同E-U10-01。第38次起仅核验收尾、零余额/预留越界和比例舍入等边界通过，原子扣额及恢复仍由U13真实PG验证。
+
+### E-U02-05 / 2026-10-25-u-block2：冻结夹具后的回归兼容
+
+- 全量类型预检发现负例从当前全部已确认 JSON 推断出 confirmation 非空类型；改用实际 answerability schema 解析后显式构造 pending/null，保留冻结待审标签必须拒绝的断言。评分 v2 16/16 通过。
+- runner 合成仓库此前直接复制当前 rubric，冻结后缺其真实回执文件而有 16 项预检失败。测试改为使用明确标为 synthetic 的自有回执及匹配 hash，不借用真人授权；待审 rubric 负例也显式构造。补验第一次 21/22，修正最后一项仍依赖真实 pending 状态后 22/22 通过；生产 runner、rubric、评分阈值与执行门未放宽。
+- 日志位于 `data/research-agent-upgrade/evidence/U13/block2-20261025/`：`type-check-preflight-01.log`、`score-fixture-regression-01.log`、`ablation-protocol-regression-01.log` 与 `ablation-protocol-regression-02.log`，保留首轮失败；两个测试文件 ESLint 退出0。U13 新测试类型错误由其实现包处理，全量 types/PG 待统一完成。本次无模型或生产操作。

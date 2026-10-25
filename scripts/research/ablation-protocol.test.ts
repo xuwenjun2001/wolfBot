@@ -26,7 +26,12 @@ async function fixture(count = 2) {
     'src/lib/eval/financial-research-score-v2.ts', 'src/lib/eval/statistics.ts', 'prisma/schema.prisma', 'package-lock.json',
     'src/lib/agent/synthetic.ts', 'src/lib/company-research/synthetic.ts']) await put(file, `// SYNTHETIC TEST PLACEHOLDER: ${file}\n`);
   await put('fixtures/company-research/rubric.json', '{"synthetic":true}');
-  await put('fixtures/company-research/rubric-v2.json', await readFile('fixtures/company-research/rubric-v2.json', 'utf8'));
+  const rubric = await readJson('fixtures/company-research/rubric-v2.json');
+  const receipt = 'SYNTHETIC TEST RECEIPT ONLY; NOT REAL HUMAN APPROVAL\n';
+  rubric.status = 'frozen';
+  rubric.confirmation = { receiptPath: 'synthetic-data/rubric-receipt.txt', receiptSha256: ablationSha256(receipt), kind: 'rubric', scope: 'Synthetic test only; no real human approval claimed.' };
+  await put(rubric.confirmation.receiptPath, receipt);
+  await put('fixtures/company-research/rubric-v2.json', `${JSON.stringify(rubric, null, 2)}\n`);
   const cases: AblationCase[] = [], documents: { id: string; symbol: string; path: string; bytesSha256: string; parserReceipt: { path: string; sha256: string } }[] = [];
   for (let index = 0; index < count; index++) {
     const id = `case-${index}`, symbol = `${String(index + 1).padStart(6, '0')}.SZ`, documentIds = [];
@@ -329,6 +334,9 @@ test('real runner rejects pending registration and missing adapters before any e
     assertDisposableDatabase: async () => { databaseProofs++; }, run: async request => { calls++; return mock.run(request); } };
   const options = f.options({ provider: 'real', model: 'gpt-5.6-luna', reasoning: 'max' });
   await assert.rejects(runAgentAblation(options, { repository: f.repository }), /APPROVED_PRODUCTION_ADAPTER_UNAVAILABLE/);
+  const pendingRubric = await readJson(path.join(f.repository, 'fixtures/company-research/rubric-v2.json'));
+  pendingRubric.status = 'pending_review'; pendingRubric.confirmation = null;
+  await f.put('fixtures/company-research/rubric-v2.json', `${JSON.stringify(pendingRubric, null, 2)}\n`);
   await assert.rejects(runAgentAblation(options, { repository: f.repository, adapter }), /RUBRIC_NOT_HUMAN_FROZEN/);
   assert.equal(calls, 0); assert.equal(databaseProofs, 0);
   assert.equal(contractSha256(f.dataset).length, 64);

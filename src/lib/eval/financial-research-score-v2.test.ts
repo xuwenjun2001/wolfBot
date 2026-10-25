@@ -144,7 +144,7 @@ describe('parallel financial rubric v2', () => {
     candidate.questions[1].checkedRanges.pop();
     expect(caseAnswerabilitySchema.safeParse(candidate).success).toBe(false);
     expect(financialResearchRubricV2Schema.safeParse({ ...rubricFixture, status: 'frozen', confirmation: null }).success).toBe(false);
-    const pendingDataset = structuredClone(answerabilityFixture);
+    const pendingDataset = answerabilityDatasetSchema.parse(answerabilityFixture);
     pendingDataset.cases[1].questions[1].reviewStatus = 'pending_review';
     pendingDataset.cases[1].questions[1].confirmation = null;
     expect(answerabilityDatasetSchema.safeParse({ ...pendingDataset, status: 'frozen' }).success).toBe(false);
