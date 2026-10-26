@@ -1,6 +1,6 @@
 /** Amount arithmetic uses decimal strings and BigInt; no binary floating point enters financial results. */
 export interface ExactDecimal { coefficient: bigint; scale: number }
-export const cnyUnitPowers = { yuan: 0, thousand_yuan: 3, ten_thousand_yuan: 4, hundred_million_yuan: 8 } as const;
+export const cnyUnitPowers = { yuan: 0, thousand_yuan: 3, ten_thousand_yuan: 4, million_yuan: 6, hundred_million_yuan: 8 } as const;
 const ten = (n: number) => 10n ** BigInt(n);
 export function decimal(value: string): ExactDecimal {
   if (!/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(value) || value.length > 120) throw new Error('Invalid decimal');

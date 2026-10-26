@@ -1,15 +1,17 @@
 import { canonicalResearchJson } from './task-contracts';
 import { normalizedYuan } from './financial-normalization';
 import { researchReportDiffSchema, type ResearchReportDiff, type ResearchReportRevision } from './revision-contracts';
+import { artifactDigest } from './artifact-store';
+import { factCitations } from './financial-evidence';
 
 function allFacts(report: ResearchReportRevision) { return [...report.facts, ...(report.supportingFacts || [])]; }
 function factKey(fact: ResearchReportRevision['facts'][number]) { return `${fact.metric}:${fact.scope}:${fact.period.id}`; }
 function factValue(fact: ResearchReportRevision['facts'][number]) {
   return canonicalResearchJson({ value: fact.value.status === 'known' ? { status: 'known', yuan: normalizedYuan(fact), currency: fact.value.currency } : fact.value,
-    period: fact.period, restatement: fact.restatement, accountingBasis: fact.accountingBasis });
+    period: fact.period, restatement: fact.restatement, accountingBasis: fact.accountingBasis, comparisonLimitations: fact.comparisonLimitations || [] });
 }
 function allCitations(report: ResearchReportRevision) {
-  return [...allFacts(report).flatMap(fact => [...fact.citations, ...(fact.periodEvidence || [])]), ...report.claims.flatMap(claim => claim.citations)];
+  return [...allFacts(report).flatMap(factCitations), ...report.claims.flatMap(claim => claim.citations)];
 }
 function citationReference(citation: ReturnType<typeof allCitations>[number]) {
   const { quote: _quote, ...reference } = citation;
@@ -24,8 +26,15 @@ export function researchReportEvidenceHashes(report: ResearchReportRevision) {
 
 export function buildResearchReportDiff(before: ResearchReportRevision, after: ResearchReportRevision): ResearchReportDiff {
   if (before.taskId !== after.taskId || before.revision >= after.revision) throw new Error('Report versions must belong to one task and be ordered');
-  const beforeFacts = new Map(allFacts(before).map(fact => [factKey(fact), fact]));
-  const afterFacts = new Map(allFacts(after).map(fact => [factKey(fact), fact]));
+  const parallelKeys = new Set([before, after].flatMap(report => {
+    const keys = allFacts(report).map(factKey);
+    return keys.filter((key, index) => keys.indexOf(key) !== index);
+  }));
+  // Keep the established single-version change semantics, while retaining parallel disclosures.
+  const keyFor = (fact: ResearchReportRevision['facts'][number]) => parallelKeys.has(factKey(fact))
+    ? `${factKey(fact)}:${artifactDigest(canonicalResearchJson([fact.restatement, fact.accountingBasis, fact.id])).slice(0, 24)}` : factKey(fact);
+  const beforeFacts = new Map(allFacts(before).map(fact => [keyFor(fact), fact]));
+  const afterFacts = new Map(allFacts(after).map(fact => [keyFor(fact), fact]));
   const facts = [...new Set([...beforeFacts.keys(), ...afterFacts.keys()])].sort().map(key => {
     const oldFact = beforeFacts.get(key) || null, newFact = afterFacts.get(key) || null;
     const fact = newFact || oldFact!;

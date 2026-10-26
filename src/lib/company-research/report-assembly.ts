@@ -4,7 +4,8 @@ import type { ResearchCheckpoint } from './execution-contracts';
 import { researchSkillVersion, financialResearchPrompt, type FinancialResearchSkill } from './execution-contracts';
 import { artifactDigest } from './artifact-store';
 import { claimReviewHash, type SemanticReview } from './claim-verification';
-import { compareFinancialFacts } from './financial-comparison';
+import { selectFinancialComparisonPair } from './financial-comparison';
+import { factCitations } from './financial-evidence';
 
 export const requiredFinancialMetrics = ['revenue', 'parent_net_profit', 'operating_cash_flow'] as const;
 export function assembleFinancialReport(taskId: string, spec: ResearchTaskSpec, planRevision: number, revision: number, state: ResearchCheckpoint, model: string, reviews: SemanticReview[] = [], skill: FinancialResearchSkill = { version: researchSkillVersion, prompt: financialResearchPrompt }): ResearchReportRevision {
@@ -25,21 +26,19 @@ export function assembleFinancialReport(taskId: string, spec: ResearchTaskSpec, 
   }
   if (spec.comparison.status === 'incomparable') gaps.push({ code: 'incomparable_period', questionId: 'income_profit', message: spec.comparison.reason });
   for (const metric of requiredFinancialMetrics) {
-    const pair = spec.periods.map(p => state.facts.find(f => f.period.id === p.id && f.metric === metric));
-    if (pair[0] && pair[1] && compareFinancialFacts(pair[0], pair[1]).status !== 'comparable') gaps.push({ code: 'incomparable_period', questionId: metric === 'operating_cash_flow' ? 'cash_flow' : 'income_profit', message: `${metric} 两期口径不能比较` });
+    const pair = selectFinancialComparisonPair(state.facts, [spec.periods[0].id, spec.periods[1].id], metric);
+    if (pair.comparison && pair.comparison.status !== 'comparable') gaps.push({ code: 'incomparable_period', questionId: metric === 'operating_cash_flow' ? 'cash_flow' : 'income_profit', message: `${metric} 两期口径不能比较：${pair.comparison.reason}` });
   }
   if (state.stopReason && !state.submitted) gaps.push({ code: 'evidence_gap', questionId: 'risks', message: state.stopReason });
   return researchReportRevisionSchema.parse({ schemaVersion: 1, taskId, requestRevision: spec.requestRevision, planRevision, revision, companySymbol: spec.company.symbol,
     periodIds: spec.periods.map(p => p.id), asOf: spec.asOf, generatedAt: new Date().toISOString(), status: gaps.length ? 'partial' : 'completed', facts: state.facts, ...(state.supportingFacts ? { supportingFacts: state.supportingFacts } : {}), claims, gaps,
     method: { model, skillVersion: skill.version, skillSha256: artifactDigest(skill.prompt), toolVersion: 'financial-tools-v2', contractVersion: 'financial-change-v1',
       ...(state.schemaVersion === 2 ? { variant: state.variant } : {}), ...(state.modelTurns !== undefined ? { modelTurns: state.modelTurns } : {}),
-      dataHashes: [...new Set([...[...state.facts, ...(state.supportingFacts || [])].flatMap(f => [...f.citations, ...(f.periodEvidence || [])]), ...claims.flatMap(c => c.citations)].map(c => c.bytesSha256))],
+      dataHashes: [...new Set([...[...state.facts, ...(state.supportingFacts || [])].flatMap(factCitations), ...claims.flatMap(c => c.citations)].map(c => c.bytesSha256))],
       semanticReview: reviews.length ? reviews.every(r => r.independence === 'human') ? 'human' : 'separate_call_same_model' : 'unavailable' } });
 }
 export function financialChanges(report: Pick<ResearchReportRevision, 'facts' | 'periodIds'>) {
   return requiredFinancialMetrics.map(metric => {
-    const before = report.facts.find(f => f.metric === metric && f.period.id === report.periodIds[0]);
-    const after = report.facts.find(f => f.metric === metric && f.period.id === report.periodIds[1]);
-    return { metric, before: before || null, after: after || null, comparison: before && after ? compareFinancialFacts(before, after) : null };
+    return { metric, ...selectFinancialComparisonPair(report.facts, report.periodIds, metric) };
   });
 }

@@ -71,6 +71,8 @@ S01—S05 的契约和存储准备见 [实施进度](plans/research-agent-upgrad
 
 Docker 不可用时，可显式传入已有可信 PostgreSQL 16 工具目录：`npm run test:research:postgres -- --native-postgres=<绝对路径/bin>`。该目录需有 initdb、pg_ctl、postgres；runner 会在本次证据目录新建专用集群、只监听随机 localhost 端口，最终停止自己创建的集群，保留日志与数据供核查。不会复用该目录附近的旧数据库。Docker 仍是默认方式；缺工具时直接失败，不自动连接应用库。
 
+追加 `--fixture-compatibility` 可核对本地已恢复的 `development-v2.json` 全部14家公司、30份文档在真实测试库中的任务输入、原件、解析回执与读取绑定。资料缺失或hash不匹配直接失败；任务不启动研究模型，旧解析状态原样保留，不能把导入成功解释为解析质量或结论验收。默认数据库回归仍使用可移植的合成原件验证百万元、重述比较与三文档OCR质量边界。
+
 Windows 开发服务可能锁住已加载的 Prisma DLL。演练脚本在独立目录生成客户端并做 ORM smoke，避免替换运行中的文件；正常应用客户端在维护开发服务时再按 `npm run prisma:generate` 更新。当前新 repository 使用参数化 SQL，没有依赖新增 ORM delegate 才能运行的隐式前提。
 
 
@@ -98,7 +100,7 @@ HTML `source-ranges-v2` 将块间换行计入字符预算，单页最多 50 万�
 
 ### 扫描件与结构化表格（S08）
 
-同一 parse API 增加 `engine`：`native` 只取原生文本；默认 `auto` 对空页、乱码或失败页尝试 OCR，单纯达到页数/字符上限不会触发；`docling` 强制走版面与表格服务，`ocr` 另外强制整页 OCR。服务故障保留原生文本并明确返回回退 warning。取消、超时、失败回退和失败页的最终回执允许重试；正常结果与解析设置绑定缓存。
+同一 parse API 增加 `engine`：`native` 只取原生文本；默认 `auto` 在服务声明 `preferNative` 能力时先用PDFium逐页复核字层，原生文字不合格的页再做OCR，修复只有数字而中文缺失的静默成功。服务不可用时保留pdf-parse文字并明确标记回退；控制字、私用字形及纯数字的稀疏字层进入待复核。单纯达到页数/字符上限不会触发OCR；`docling` 强制走版面与表格服务，`ocr` 另外强制整页OCR。取消、超时、失败回退和失败页的最终回执允许重试；原件hash、解析源码/依赖/模型指纹与页数/字符限制共同绑定缓存。
 
 服务是独立的 Python 3.12 CPU 进程，Docker 开发编排另提供 2 CPU/4 GiB/单槽配置。`DOCUMENT_PARSER_URL` 默认 `http://127.0.0.1:7821`，token 只在服务端使用，单任务超时默认 180 秒；平台 parse 请求总期限为 240 秒。模型预置、离线运行、缓存与启动办法见 [OCR 服务](../services/document-parser/README.md)。当前配方已完成 Linux CPU 容器验收，禁网 probe / HTTP 峰值分别约 2.14 / 1.70 GiB、无 OOM；实际取消、超时保留完成页和冷进程恢复通过，见进度 E-S08-04。既有引擎故障和失败证据保留。
 
@@ -108,9 +110,11 @@ HTML `source-ranges-v2` 将块间换行计入字符预算，单页最多 50 万�
 
 ### 财务口径与精确计算（S09）
 
-`financial-normalization.ts` 识别营业收入、营业总收入、归母净利润与经营现金流净额，保留披露字符串及单位标签；元/千元/万元/亿元只规范化一次，括号表示负数，0 与缺失分开。百分数、每股单位、未知币种及破损千分位不当作金额。FinancialFact 的可选 normalization/sourceQuality/disclosure/accountingBasis/derivedFrom 字段向后兼容；有归一化结果时 schema 会重算核对。
+`financial-normalization.ts` 识别营业收入、营业总收入、归母净利润与经营现金流净额，保留披露字符串及单位标签；元/千元/万元/百万元/亿元只规范化一次，括号表示负数，0 与缺失分开。百分数、每股单位、未知币种及破损千分位不当作金额。FinancialFact 的可选 normalization/sourceQuality/disclosure/accountingBasis/derivedFrom 字段向后兼容；有归一化结果时 schema 会重算核对。
 
-金额用十进制字符串和 BigInt，不经浮点数相减；原始小数最多 12 位，百分比保留 6 位，按绝对值四舍五入、中点远离零。`compareFinancialFacts` 返回 comparable/missing/conflict/incomparable 及引用，核对公司、指标、合并/母公司、日历范围、累计/单季和会计/重述依据。零基数保留差额、百分比为空；负基数按冻结规则用绝对值做分母并显式注明。重述口径没有共同 accountingBasis 时拒绝比较，不替模型补假设。
+金额用十进制字符串和 BigInt，不经浮点数相减；原始小数最多 12 位，百分比保留 6 位，按绝对值四舍五入、中点远离零。`compareFinancialFacts` 返回 comparable/missing/conflict/incomparable 及引用，核对公司、指标、合并/母公司、日历范围、累计/单季和会计/重述依据。零基数保留差额、百分比为空；负基数按冻结规则用绝对值做分母并显式注明。比较口径需要共同accountingBasis及同一真实来源位置的两年完整periodEvidence，名称相同不足以证明可比。
+
+`record_fact` 分别保留原披露与后期重述，比较版本使用独立稳定ID，不再覆盖原披露或把两个版本当成同一事实冲突。报告和快照明确选择有共同列头的唯一比较对；只有一侧、多个口径或列位不明时保留partial，不回退到原披露拼算。准则或未追溯限制通过accountingBasisEvidence绑定原文，并用comparisonLimitations展示；按披露比较列计算不代表所有会计准则完全一致。这些引用同样参与权限、截止时间、报告差异及来源更新的重新核验。
 
 `deriveSingleQuarter` 只用同年、同口径、相邻的完整累计值：Q1 本身是单季，H1−Q1、前三季−H1、全年−前三季才得到后续季度。前期缺失不能补零，来源待复核、口径不一致或期间不相邻都会拒绝。引用和 derivedFrom 保留两个输入。
 

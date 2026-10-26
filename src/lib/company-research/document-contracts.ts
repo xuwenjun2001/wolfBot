@@ -39,7 +39,7 @@ export const researchCitationSchema = z.object({
 export type VersionedCitation = z.infer<typeof researchCitationSchema>;
 const amountSchema = z.object({
   status: z.literal('known'), raw: z.string().regex(/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/).max(100),
-  unit: z.enum(['yuan', 'thousand_yuan', 'ten_thousand_yuan', 'hundred_million_yuan']), currency: z.literal('CNY'), decimals: z.number().int().min(0).max(12),
+  unit: z.enum(['yuan', 'thousand_yuan', 'ten_thousand_yuan', 'million_yuan', 'hundred_million_yuan']), currency: z.literal('CNY'), decimals: z.number().int().min(0).max(12),
 }).strict().refine(v => (v.raw.split('.')[1]?.length || 0) <= v.decimals, 'Raw value exceeds declared precision');
 export const financialFactSchema = z.object({
   id: researchIdSchema, companySymbol: companyIdentitySchema.shape.symbol, period: researchPeriodSchema,
@@ -50,6 +50,8 @@ export const financialFactSchema = z.object({
   citations: z.array(researchCitationSchema).max(10),
   // Located column/period labels for prior-period values disclosed in a later report.
   periodEvidence: z.array(researchCitationSchema).max(10).optional(),
+  accountingBasisEvidence: z.array(researchCitationSchema).max(10).optional(),
+  comparisonLimitations: z.array(z.string().min(1).max(500)).max(5).optional(),
   sourceQuality: z.enum(['native', 'needs_review']).optional(),
   disclosure: disclosureSchema.optional(), accountingBasis: z.string().min(1).max(100).optional(),
   derivedFrom: z.array(researchIdSchema).min(1).max(4).optional(),

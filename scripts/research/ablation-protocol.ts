@@ -4,12 +4,14 @@ import { canonicalResearchJson } from '../../src/lib/company-research/task-contr
 import { cnyUnitPowers } from '../../src/lib/company-research/exact-decimal';
 import { researchReportRevisionSchema, type ResearchReportRevision } from '../../src/lib/company-research/revision-contracts';
 import { caseAnswerabilitySchema, type CaseAnswerability } from '../../src/lib/eval/financial-research-score-v2';
+import type { FixtureTaskInput } from './fixture-task-adapter';
 
 export const ABLATION_VARIANTS = ['A', 'B', 'B2', 'C1', 'C2', 'C2-peer'] as const;
 export type AblationVariant = typeof ABLATION_VARIANTS[number];
 export const VARIANT_CONCURRENCY: Record<AblationVariant, number> = { A: 1, B: 1, B2: 1, C1: 1, C2: 3, 'C2-peer': 3 };
 export const DEFAULT_ABLATION_BUDGET = { maxToolCalls: 40, timeoutMs: 1_200_000 } as const;
 export type AblationReasoning = 'high' | 'max' | 'harness-mock';
+export type AblationScoringVersion = 'legacy-v1-v2' | 'confirmed-v3';
 export interface AdapterResearchConfiguration { model: string; reasoning: 'high' | 'max'; maxToolCalls: number; timeoutMs: number }
 export const ablationSha256 = (value: Buffer | string) => createHash('sha256').update(value).digest('hex');
 export const contractSha256 = (value: unknown) => ablationSha256(canonicalResearchJson(value));
@@ -50,9 +52,10 @@ export interface AblationOptions {
   variant: AblationVariant; provider: 'mock' | 'real'; dataset: string; campaign: string;
   repeats: number; maxInputTokens: number; model: string; reasoning: AblationReasoning; cache: 'cold' | 'warm';
   taskKind: 'single' | 'peer'; rubric: string; answerability?: string; documents?: string; peerPairs?: string; registration?: string;
+  scoringVersion?: AblationScoringVersion;
 }
 export function parseAblationOptions(args: string[]): AblationOptions {
-  const supported = ['variant', 'provider', 'dataset', 'campaign', 'repeats', 'max-input-tokens', 'model', 'reasoning', 'cache', 'task-kind', 'rubric', 'answerability', 'documents', 'peer-pairs', 'registration'];
+  const supported = ['variant', 'provider', 'dataset', 'campaign', 'repeats', 'max-input-tokens', 'model', 'reasoning', 'cache', 'task-kind', 'rubric', 'answerability', 'documents', 'peer-pairs', 'registration', 'scoring-version'];
   const fields: Record<string, string> = {};
   for (const argument of args) {
     const match = /^--([a-z-]+)=(.+)$/.exec(argument);
@@ -75,21 +78,32 @@ export function parseAblationOptions(args: string[]): AblationOptions {
     model: fields.model ?? 'harness-mock', reasoning: z.enum(['high', 'max', 'harness-mock']).parse(fields.reasoning ?? 'harness-mock'),
     cache: z.enum(['cold', 'warm']).parse(fields.cache ?? 'cold'), taskKind,
     rubric: fields.rubric ?? 'fixtures/company-research/rubric-v2.json', answerability: fields.answerability,
-    documents: fields.documents, peerPairs: fields['peer-pairs'], registration: fields.registration };
+    documents: fields.documents, peerPairs: fields['peer-pairs'], registration: fields.registration,
+    scoringVersion: z.enum(['legacy-v1-v2', 'confirmed-v3']).parse(fields['scoring-version'] ?? 'legacy-v1-v2') };
 }
 
-/** Never coerce million_yuan or replace original facts by restated comparison facts. */
-export function caseCompatibility(sample: AblationCase) {
+/** Keep historical scoring coverage separate from current task and source readiness. */
+export function caseCompatibility(sample: AblationCase, scoringVersion: AblationScoringVersion = 'legacy-v1-v2') {
   const scoring: string[] = [], execution: string[] = [];
+  const legacyUnits = ['yuan', 'thousand_yuan', 'ten_thousand_yuan', 'hundred_million_yuan'];
   const units = [...new Set(sample.reference.facts.map(fact => fact.unit))];
-  for (const unit of units) if (!(unit in cnyUnitPowers)) scoring.push(`UNSUPPORTED_V1_UNIT:${unit}`);
-  if (sample.reference.comparisonFacts?.length || sample.reference.changes.some(change => change.comparisonBasis === 'restated_comparative')) scoring.push('RESTATED_COMPARISON_NOT_SUPPORTED_BY_V1');
-  if (sample.documentIds.length !== 2) execution.push('ADDITIONAL_DOCUMENT_SCOPE_NOT_SUPPORTED_BY_PRODUCTION_TASK');
-  if (sample.executionReadiness?.realExecutionBlocked) execution.push(...sample.executionReadiness.reasons.map(reason => `DATASET_EXECUTION_BLOCKED:${reason}`));
+  for (const unit of units) if (scoringVersion === 'legacy-v1-v2' ? !legacyUnits.includes(unit) : !(unit in cnyUnitPowers)) scoring.push(`UNSUPPORTED_${scoringVersion === 'legacy-v1-v2' ? 'V1' : 'V3'}_UNIT:${unit}`);
+  if (scoringVersion === 'legacy-v1-v2' && (sample.reference.comparisonFacts?.length || sample.reference.changes.some(change => change.comparisonBasis === 'restated_comparative'))) scoring.push('RESTATED_COMPARISON_NOT_SUPPORTED_BY_V1');
+  const primary = sample.primaryDocumentIds ?? (sample.documentIds.length === 2 ? sample.documentIds : []), supporting = sample.supportingDocumentIds ?? [];
+  const assigned = [...primary, ...supporting];
+  const documentScopeBound = primary.length === 2 && new Set(assigned).size === assigned.length && assigned.length === sample.documentIds.length && assigned.every(id => sample.documentIds.includes(id));
+  if (!documentScopeBound) execution.push('PRIMARY_SUPPORTING_DOCUMENT_SCOPE_BINDING_REQUIRED');
+  const historicalDatasetExecutionWarnings = sample.executionReadiness?.reasons ?? [];
+  const resolvedEngineeringReasons = new Set(scoringVersion === 'confirmed-v3' ? [
+    'source million_yuan unit not yet supported by frozen production financialFactSchema; preparation arithmetic only',
+    'restated comparisonFacts/restated_comparative need a production adapter; original disclosures cannot replace adjusted comparatives in a real run',
+  ] : []);
+  if (sample.executionReadiness?.realExecutionBlocked) execution.push(...historicalDatasetExecutionWarnings.filter(reason => !resolvedEngineeringReasons.has(reason)).map(reason => `DATASET_EXECUTION_BLOCKED:${reason}`));
   let labels: CaseAnswerability | null = null;
   const parsed = caseAnswerabilitySchema.safeParse(sample.answerabilityDrafts);
   if (parsed.success) labels = parsed.data;
-  return { scoringBlockers: scoring, executionBlockers: [...execution, ...scoring], inlineLabels: labels,
+  return { scoringBlockers: scoring, executionBlockers: [...execution, ...scoring], historicalDatasetExecutionWarnings, documentScopeBound,
+    engineeringCompatibility: { amountUnitsSupported: units.every(unit => unit in cnyUnitPowers), comparativeInputsSupported: scoringVersion === 'confirmed-v3', documentScopeBound }, inlineLabels: labels,
     inlineLabelError: parsed.success ? null : parsed.error.issues.map(issue => `${issue.path.join('.')}:${issue.message}`).join('; ') };
 }
 
@@ -101,6 +115,7 @@ export interface AblationComparisonContract {
   caseIds: string[]; repeats: number; budget: typeof DEFAULT_ABLATION_BUDGET;
   maxInputTokens: number; cacheCondition: 'cold' | 'warm'; concurrencyByVariant: typeof VARIANT_CONCURRENCY;
   adapter: { id: string; supportedVariants: AblationVariant[]; inputBudget: 'enforced' | 'accounted_after_task'; researchConfiguration: AdapterResearchConfiguration | null };
+  scoring?: { version: 'confirmed-v3'; referenceVersion: string; referenceSha256: string; receiptSha256: string };
 }
 export function validateComparisonProtocol(existing: AblationComparisonContract, requested: AblationComparisonContract) {
   if (canonicalResearchJson(existing) !== canonicalResearchJson(requested)) throw new Error('ABLATION_PROTOCOL_MISMATCH: model/reasoning/data/code/scoring/budget/repeats/cache/task design changed');
@@ -139,8 +154,18 @@ export function databaseIsolationBlockers(env: DatabaseIsolationEnvironment): st
   return [];
 }
 export interface AblationWorkItem { id: string; kind: 'single' | 'peer'; cases: AblationCase[]; peerExecutionBlocked?: boolean }
+export interface AblationExecutionWorkItem {
+  id: string; kind: 'single' | 'peer'; cases: { id: string; company: AblationCase['company']; asOf: string;
+    documentIds: string[]; questions: { id: string; text: string }[]; fixtureInput?: FixtureTaskInput }[];
+}
+export function executionWorkInput(work: AblationWorkItem, fixtureInputs: ReadonlyMap<string, FixtureTaskInput> = new Map()): AblationExecutionWorkItem {
+  return { id: work.id, kind: work.kind, cases: work.cases.map(sample => ({ id: sample.id,
+    company: { symbol: sample.company.symbol, name: sample.company.name }, asOf: sample.asOf,
+    documentIds: [...sample.documentIds], questions: sample.questions.map(question => ({ id: question.id, text: question.text })),
+    ...(fixtureInputs.has(sample.id) ? { fixtureInput: fixtureInputs.get(sample.id) } : {}) })) };
+}
 export interface AblationExecutionRequest {
-  variant: AblationVariant; runtimeOptions: { variant: AblationVariant }; work: AblationWorkItem;
+  variant: AblationVariant; runtimeOptions: { variant: AblationVariant }; work: AblationExecutionWorkItem;
   repeat: number; model: string; reasoning: AblationReasoning; concurrency: number; cacheCondition: 'cold' | 'warm';
   budget: typeof DEFAULT_ABLATION_BUDGET; remainingInputTokens: number; signal: AbortSignal;
 }

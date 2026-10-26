@@ -99,3 +99,21 @@ async def test_timeout_is_terminal_and_retains_finished_pages(monkeypatch):
         assert job["result"]["pages"] == [page_one()]
         assert job["result"]["warnings"] == ["timeout_partial"]
         assert api.active is None
+
+
+@pytest.mark.anyio
+async def test_native_first_still_accounts_for_unprocessed_and_character_limited_pages(monkeypatch):
+    monkeypatch.setattr(api, "make_receipt", lambda sha, count, pages, failed, truncated, warnings: {
+        "originalSha256": sha, "pageCount": count, "pages": pages, "failedPages": failed,
+        "truncatedPages": truncated, "warnings": warnings, "status": "partial"})
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=api.app), base_url="http://parser", headers={"Authorization": "Bearer test-only"}) as client:
+        api.responses.put(("count", 3))
+        api.responses.put(("page", page_one()))
+        api.responses.put(("page", {"filePage": 2, "text": "x" * 101, "blocks": []}))
+        job_id = (await client.post("/jobs?preferNative=true&maxPages=2&maxCharacters=100", content=b"%PDF-fixture")).json()["jobId"]
+        job = await terminal(client, job_id)
+        assert api.requests.get_nowait()[1]["preferNative"] is True
+        assert job["result"]["pages"] == [page_one()]
+        assert job["result"]["truncatedPages"] == [2, 3]
+        assert job["result"]["warnings"] == ["pdfium_native_text_has_no_table_grid", "character_limit_partial"]
+        assert api.active is None

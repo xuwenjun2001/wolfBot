@@ -10,7 +10,7 @@ const sha = (value: Buffer | string) => createHash('sha256').update(value).diges
 const digest = z.string().regex(/^[a-f0-9]{64}$/);
 const period = z.object({ start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).passthrough();
 const citation = z.object({ documentId: z.string().min(1), bytesSha256: digest, filePage: z.number().int().positive(), quote: z.string().min(1) }).passthrough();
-const units = { ...cnyUnitPowers, million_yuan: 6 } as const;
+const units = cnyUnitPowers;
 const fact = z.object({ metric: z.string().min(1), period, rawValue: z.string().min(1), unit: z.enum(['yuan', 'thousand_yuan', 'ten_thousand_yuan', 'million_yuan', 'hundred_million_yuan']),
   normalizedYuan: z.string().min(1), citation, priorPeriod: z.boolean().optional(), restated: z.boolean().optional() }).passthrough();
 export const fixtureDatasetV2Schema = z.object({ schemaVersion: z.literal(2), datasetVersion: z.string().min(1),
@@ -43,7 +43,7 @@ function referenceCitations(value: unknown): z.infer<typeof citation>[] {
   return Object.values(record).flatMap(referenceCitations);
 }
 
-/** Validate amounts and comparison provenance without expanding the production unit contract. */
+/** Validate amounts and comparison provenance with the shared exact production unit contract. */
 export function verifyFixtureAmountsV2(sample: FixtureDatasetV2['cases'][number], documents: FixtureDatasetV2['documents']) {
   const docs = new Map(documents.map(d => [d.id, d]));
   for (const [isComparison, facts] of [[false, sample.reference.facts], [true, sample.reference.comparisonFacts || []]] as const) {

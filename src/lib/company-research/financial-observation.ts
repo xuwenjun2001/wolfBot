@@ -14,13 +14,16 @@ export function financialObservation(tool: string, data: unknown): string {
 export function financialContextState(state: import('./execution-contracts').ResearchCheckpoint, compact = false) {
   const quoteLimit = compact ? 160 : 350;
   const cite = (c: import('./document-contracts').VersionedCitation) => ({ ...c, quote: c.quote.slice(0, quoteLimit), quoteTruncated: c.quote.length > quoteLimit });
+  const fact = (f: import('./document-contracts').FinancialFact) => ({ ...f, citations: f.citations.slice(0, 2).map(cite),
+    ...(f.periodEvidence ? { periodEvidence: f.periodEvidence.slice(0, 2).map(cite) } : {}),
+    ...(f.accountingBasisEvidence ? { accountingBasisEvidence: f.accountingBasisEvidence.slice(0, 2).map(cite) } : {}) });
   const observations = state.observations.filter(o => !['record_fact', 'record_claim', 'check_coverage'].includes(o.tool)).slice(compact ? -2 : -3)
     .map(o => ({ ...o, summary: o.summary.slice(0, compact ? 1600 : 3500) }));
   return { ...state, observations,
     ...(state.schemaVersion === 2 ? { evidenceLedger: Object.fromEntries(Object.entries(state.evidenceLedger).map(([id, evidence]) => [id, { locatorCount: evidence.locatorKeys.length, contentCount: evidence.evidenceHashes.length }])),
       verificationAttempts: Object.keys(state.verificationAttempts), documentPeriods: undefined } : {}),
-    facts: state.facts.map(f => ({ ...f, citations: f.citations.slice(0, 2).map(cite) })),
-    ...(state.supportingFacts ? { supportingFacts: state.supportingFacts.map(f => ({ ...f, citations: f.citations.slice(0, 2).map(cite) })) } : {}),
+    facts: state.facts.map(fact),
+    ...(state.supportingFacts ? { supportingFacts: state.supportingFacts.map(fact) } : {}),
     claims: state.claims.map(c => ({ ...c, text: c.text.slice(0, compact ? 800 : 1200), textTruncated: c.text.length > (compact ? 800 : 1200), citations: c.citations.slice(0, 2).map(cite) })),
   };
 }

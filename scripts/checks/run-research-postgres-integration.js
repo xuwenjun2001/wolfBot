@@ -19,14 +19,15 @@ const nativeArgument = process.argv.slice(2).find(a => a.startsWith('--native-po
 const financialE2e = process.argv.includes('--financial-e2e');
 const reliability = process.argv.includes('--reliability');
 const delivery = process.argv.includes('--delivery');
+const fixtureCompatibility = process.argv.includes('--fixture-compatibility');
 const evaluationArgument = process.argv.slice(2).find(a => a.startsWith('--evaluation='));
 if (evaluationArgument && !['baseline','candidate','holdout'].includes(evaluationArgument.slice('--evaluation='.length))) throw new Error('Unknown evaluation phase');
-if (process.argv.slice(2).some(a => a !== nativeArgument && a !== evaluationArgument && !['--financial-e2e', '--reliability', '--delivery'].includes(a))) throw new Error('Unknown runner argument');
+if (process.argv.slice(2).some(a => a !== nativeArgument && a !== evaluationArgument && !['--financial-e2e', '--reliability', '--delivery', '--fixture-compatibility'].includes(a))) throw new Error('Unknown runner argument');
 if (evaluationArgument) reserveEvaluationPhase(root, process.env.RESEARCH_EVALUATION_CAMPAIGN, evaluationArgument.slice('--evaluation='.length));
 fs.mkdirSync(path.join(schemaDirectory, 'migrations'), { recursive: true });
 const nativeBin = nativeArgument ? path.resolve(nativeArgument.slice('--native-postgres='.length)) : null;
 const nativeData = path.join(evidence, 'postgres-data');
-const report = { schemaVersion: 1, startedAt: new Date().toISOString(), head: gitHead, sourceHashes, oldCodeRef: 'd17ac893b9605971f5ec47be7d1577aa32d8bd0e', postgresRuntime: nativeBin ? 'isolated-native' : 'docker', steps: [] };
+const report = { schemaVersion: 1, startedAt: new Date().toISOString(), head: gitHead, sourceHashes, oldCodeRef: 'd17ac893b9605971f5ec47be7d1577aa32d8bd0e', postgresRuntime: nativeBin ? 'isolated-native' : 'docker', fixtureCompatibility, ...(fixtureCompatibility ? { developmentDatasetSha256: createHash('sha256').update(fs.readFileSync('fixtures/company-research/development-v2.json')).digest('hex') } : {}), steps: [] };
 let created = false, nativeCreated = false;
 function run(label, executable, args, env = {}, quiet = false) {
   // Native pg_ctl's background child inherits handles on Windows. Files avoid waiting for pipe EOF.
@@ -87,7 +88,7 @@ async function main() {
       if (data.status !== 0) throw new Error('Cannot restore old research source');
       fs.writeFileSync(path.join(legacy,path.basename(source)),data.stdout);
     }
-    const env = { DATABASE_URL: databaseUrl, RESEARCH_TEST_DATABASE_URL: databaseUrl, COMPANY_RESEARCH_TEST_POSTGRES: '1', RESEARCH_LEGACY_STORE: path.join(legacy,'store.ts'), RESEARCH_COMPAT_FIXTURE: path.join(evidence,'legacy-fixture.json') };
+    const env = { DATABASE_URL: databaseUrl, RESEARCH_TEST_DATABASE_URL: databaseUrl, COMPANY_RESEARCH_TEST_POSTGRES: '1', RESEARCH_TEST_PUBLIC_FIXTURES: fixtureCompatibility ? '1' : '0', RESEARCH_LEGACY_STORE: path.join(legacy,'store.ts'), RESEARCH_COMPAT_FIXTURE: path.join(evidence,'legacy-fixture.json') };
     run('migrate-old',process.execPath,[prismaBin,'migrate','deploy','--schema',schema],env);
     run('legacy-before',process.execPath,['--import','tsx','scripts/research/legacy-compatibility.ts','before'],env);
     for (const file of files) if (file >= migration && file !== 'migration_lock.toml') fs.cpSync(path.join('prisma/migrations',file),path.join(schemaDirectory,'migrations',file),{recursive:true});
@@ -98,7 +99,7 @@ async function main() {
     run('new-client-smoke',process.execPath,['-e', 'const {PrismaClient}=require(process.env.RESEARCH_GENERATED_CLIENT);const db=new PrismaClient();db.companyResearchTask.count().then(n=>console.log("new task model count="+n)).finally(()=>db.$disconnect());'],{...env,RESEARCH_GENERATED_CLIENT:path.join(schemaDirectory,'generated-client')});
     run('legacy-after',process.execPath,['--import','tsx','scripts/research/legacy-compatibility.ts','after'],env);
     const vitestBin = path.join(path.dirname(require.resolve('vitest/package.json')),'vitest.mjs');
-    run('database-tests',process.execPath,[vitestBin,'run','--no-file-parallelism','src/lib/company-research/store.integration.test.ts','src/lib/company-research/version-store.integration.test.ts','src/lib/company-research/evidence-retrieval.integration.test.ts','src/lib/company-research/review-regressions.integration.test.ts','src/lib/company-research/financial-runtime.integration.test.ts','src/lib/company-research/execution-review.integration.test.ts','src/lib/company-research/reliability.integration.test.ts'],env);
+    run('database-tests',process.execPath,[vitestBin,'run','--no-file-parallelism','src/lib/company-research/store.integration.test.ts','src/lib/company-research/version-store.integration.test.ts','src/lib/company-research/evidence-retrieval.integration.test.ts','src/lib/company-research/review-regressions.integration.test.ts','src/lib/company-research/financial-runtime.integration.test.ts','src/lib/company-research/execution-review.integration.test.ts','src/lib/company-research/reliability.integration.test.ts','src/lib/company-research/fixture-compatibility.integration.test.ts'],env);
     if (financialE2e) run('financial-model-e2e',process.execPath,['--import','tsx','scripts/research/run-financial-e2e.ts'],env);
     if (delivery) run('delivery-journey',process.execPath,['--import','tsx','scripts/checks/run-research-delivery.ts'],{...env,RESEARCH_DELIVERY_EVIDENCE:path.join(root,'data/research-agent-upgrade/evidence/S20',`journey-${id}`)});
     if (reliability) run('real-worker-interruption',process.execPath,['--import','tsx','scripts/research/interrupt-financial-worker.ts'], { ...env, RESEARCH_RELIABILITY_ROOT: path.join(root, 'data/research-agent-upgrade/evidence/S18', id) });

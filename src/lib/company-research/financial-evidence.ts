@@ -4,7 +4,7 @@ import { isResearchEvidencePeriod } from './evidence-periods';
 import { deriveSingleQuarter } from './financial-comparison';
 import { normalizedYuan } from './financial-normalization';
 
-export const factCitations = (fact: FinancialFact) => [...fact.citations, ...(fact.periodEvidence || [])];
+export const factCitations = (fact: FinancialFact) => [...fact.citations, ...(fact.periodEvidence || []), ...(fact.accountingBasisEvidence || [])];
 const citationSet = (items: VersionedCitation[]) => canonicalResearchJson([...new Set(items.map(canonicalResearchJson))].sort());
 const samePeriod = (a: FinancialFact['period'], b: FinancialFact['period']) => a.start === b.start && a.end === b.end && a.kind === b.kind && a.basis === b.basis;
 
@@ -23,7 +23,9 @@ export function financialEvidenceErrors(facts: FinancialFact[], supportingFacts:
         const expected = deriveSingleQuarter(inputs[0]!, inputs[1] || null);
         if (!samePeriod(f.period, expected.period) || f.metric !== expected.metric || f.restatement !== expected.restatement || f.accountingBasis !== expected.accountingBasis
           || normalizedYuan(f) !== normalizedYuan(expected) || citationSet(f.citations) !== citationSet(expected.citations)
-          || citationSet(f.periodEvidence || []) !== citationSet(expected.periodEvidence || [])) errors.push('DERIVED_FACT_MISMATCH');
+          || citationSet(f.periodEvidence || []) !== citationSet(expected.periodEvidence || [])
+          || citationSet(f.accountingBasisEvidence || []) !== citationSet(expected.accountingBasisEvidence || [])
+          || canonicalResearchJson(f.comparisonLimitations || []) !== canonicalResearchJson(expected.comparisonLimitations || [])) errors.push('DERIVED_FACT_MISMATCH');
       } catch { errors.push('DERIVED_INPUT_INVALID'); }
       continue;
     }

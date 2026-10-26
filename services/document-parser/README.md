@@ -4,6 +4,8 @@
 
 它使用独立 Python 3.12 环境，避免改变 market-data 的依赖。`uv.lock` 锁定 Docling、RapidOCR、ONNX Runtime 与 CPU 版 Torch/torchvision；本轮实跑版本和限制见[研究进度](../../docs/plans/research-agent-upgrade/progress.md)。模型文件及解析缓存都在忽略的 `data/document-parser/`，不进入 Git。
 
+Docling 的 PDF 后端显式固定为现有 `PyPdfiumDocumentBackend`，各平台使用相同选择，避免依赖升级静默切换后端。Windows 本轮原始扫描曾在默认 `ThreadedDoclingParseDocumentBackend` 的 `docling_parse` 原生扩展内发生 `0xc0000005` 访问冲突；旧失败证据保留。此选择复用已安装 PDFium，不新增依赖，也不改变版面、表格或 OCR 的 `needs_review` 限制。
+
 ## Windows 本地启动
 
 在项目根目录运行，先安装依赖并下载模型。这一步需要网络；日常解析不访问远程模型服务。
@@ -48,11 +50,13 @@ docker compose -f docker-compose.parser.yml ps
 | `DELETE /jobs/{id}` | 停止自己的模型进程，已完成页保留，下一任务重新启动进程 |
 | `GET /health` | 包/权重指纹和 CPU/并发配置，不证明任意文件能解析 |
 
-查询参数为 `maxPages=500`（1—1000）、`maxCharacters=2000000`（100—5000000）、`forceOcr=false`、`timeoutSeconds=180`（1—1200）。原件总页数最多 10000，单页正文最多 50 万字符，栅格化有像素预算。平台 parse API 的总请求期限为 240 秒；调高本服务超时不会扩大研究任务总预算，也不会越过调用方期限。
+查询参数为 `maxPages=500`（1—1000）、`maxCharacters=2000000`（100—5000000）、`forceOcr=false`、`preferNative=false`、`timeoutSeconds=180`（1—1200）。原件总页数最多 10000，单页正文最多 50 万字符，栅格化有像素预算。平台 parse API 的总请求期限为 240 秒；调高本服务超时不会扩大研究任务总预算，也不会越过调用方期限。
+
+`/health` 的 `capabilities.preferNative=true` 表示支持 PDFium 原生文本优先模式，平台 `auto` 路由使用它复核 pdf-parse 表面可读的字层。该模式逐页提取 PDFium 原生文字；空页、短字层、缺字/私用字形或大图覆盖的稀疏字层才转入整页 OCR。纯数字且缺乏文字标签的页面也保守转入复核，不能仅凭没有替代字符就认定字形完整。PDFium 只输出真实文件页和稳定块，不补造表格或坐标；成功 OCR 仍为 `needs_review`，空白 OCR 记为失败页。包、模型及解析源码共同决定版本指纹，旧缓存不会被新算法直接复用。
 
 进程按页交付；取消、超时、失败与字符截断进入显式 warnings/failedPages/truncatedPages。接口最近保留 16 个任务响应，重启后不恢复任务队列。模型进程可以重启并复用已完成的版本化页缓存；错误页不写成成功缓存。平台不会复用超时、取消、Worker 中断和 OCR 失败回退的最终回执，下一次可以重试。
 
-OCR 和自动重建的表格都标记 `needs_review`。低质量块不能直接成为已核实财务事实；样本人工验收也不会自动解除某份业务资料的质量标记。页坐标归一化到 0—1，只有引擎实际给出的框才输出；跨页表保留各自页/表 ID，不自动合并。原生正文放在 `nativeText`，原始 Docling 结果另存缓存供诊断。
+OCR 和 Docling 自动重建的版面/表格都标记 `needs_review`；默认管线可能只对局部做 OCR，不能把其块静默晋升为原生文字。低质量块不能直接成为已核实财务事实；样本人工验收也不会自动解除某份业务资料的质量标记。页坐标归一化到 0—1，只有引擎实际给出的框才输出；跨页表保留各自页/表 ID，不自动合并。原生正文放在 `nativeText`，原始 Docling 结果另存缓存供诊断。
 
 缓存是持有 PDF bytes 后才能触发的私有服务缓存，不提供按摘要读取资料的公网接口。缓存可能含原文及表格；它与平台的 actor 隔离原件目录分别管理，没有默认 TTL 或自动 GC。停服务后由运行方按资料保留范围清理，长期验收证据先归档，不把缓存当作唯一备份。
 

@@ -9,7 +9,7 @@ function pair(before: string, after: string) {
   return [a, { ...b, id: 'after', value: { ...a.value, raw: after } }] as const;
 }
 describe('deterministic financial normalization', () => {
-  it.each([['1.20', '万元', '12000'], ['1.23', '亿元', '123000000'], ['407,149,600', '千元', '407149600000'], ['(1,234.50)', '元', '-1234.5'], ['−56.78', '元', '-56.78'], ['０.００', '元', '0']])('normalizes %s %s exactly', (raw, unit, expected) => {
+  it.each([['1.20', '万元', '12000'], ['1.23', '亿元', '123000000'], ['407,149,600', '千元', '407149600000'], ['913,789', '百万元', '913789000000'], ['1.23456789', '单位：百万元 币种：人民币', '1234567.89'], ['(1,234.50)', '元', '-1234.5'], ['−56.78', '元', '-56.78'], ['０.００', '元', '0']])('normalizes %s %s exactly', (raw, unit, expected) => {
     expect(disclosedAmount(raw, unit)).toMatchObject({ status: 'known', normalizedYuan: expected });
   });
   it('keeps unknown/missing/zero separate and rejects percentages, per-share and broken grouping', () => {
@@ -18,6 +18,7 @@ describe('deterministic financial normalization', () => {
     for (const [raw, unit] of [['1,23.45', '元'], ['1.20%', '元'], ['2', '元/股'], ['(1.00', '元'], ['1', '港元']]) expect(disclosedAmount(raw, unit).status).toBe('invalid');
     expect(financialMetric('营业总收入')).toBe('total_operating_income');
     expect(financialMetric('营业收入（千元）')).toBe('revenue');
+    expect(financialMetric('营业收入（人民币百万元）')).toBe('revenue');
     expect(financialMetric('每股经营活动现金流')).toBeNull();
     expect(financialMetric('归属于上市公司股东的净利润（扣非）')).toBeNull();
     expect(financialMetric('营业收入（不含某业务）')).toBeNull();
@@ -46,7 +47,7 @@ describe('comparison and quarter derivation', () => {
     const [a, b] = pair('100', '110');
     expect(compareFinancialFacts(a, { ...b, scope: 'parent' })).toMatchObject({ status: 'incomparable', reason: 'scope_mismatch' });
     expect(compareFinancialFacts(a, { ...b, restatement: 'restated' })).toMatchObject({ status: 'incomparable', reason: 'restatement_basis_unresolved' });
-    expect(compareFinancialFacts({ ...a, accountingBasis: 'restatement-v2' }, { ...b, accountingBasis: 'restatement-v2', restatement: 'restated' })).toMatchObject({ status: 'comparable' });
+    expect(compareFinancialFacts({ ...a, accountingBasis: 'restatement-v2' }, { ...b, accountingBasis: 'restatement-v2', restatement: 'restated' })).toMatchObject({ status: 'incomparable', reason: 'accounting_basis_evidence_unresolved' });
     expect(compareFinancialFacts(a, { ...b, period: { ...b.period, kind: 'interim', end: '2024-06-30' } })).toMatchObject({ status: 'incomparable' });
     expect(compareFinancialFacts(a, { ...b, value: { status: 'missing', reason: 'not disclosed' } })).toMatchObject({ status: 'missing' });
     expect(compareFinancialFacts(a, { ...b, value: { status: 'conflict', alternatives: [a.value, b.value], reason: 'two sources' } } as FinancialFact)).toMatchObject({ status: 'conflict' });

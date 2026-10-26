@@ -1,7 +1,9 @@
 import { readFile } from 'node:fs/promises';
 
+interface FixtureTransportCase { company: { symbol: string; name: string } }
+interface FixtureTransportDocument { url: string; path: string; title: string; symbol: string; period: { end: string }; disclosedOn?: string }
 /** Closed fixture transport. Only the configured model gateway reaches the network. */
-export async function installFixtureTransport(testCase: any, documents: any[], onGateway: (url: string, init: RequestInit | undefined, response: Response) => void) {
+export async function installFixtureTransport(testCase: FixtureTransportCase, documents: FixtureTransportDocument[], onGateway: (url: string, init: RequestInit | undefined, response: Response) => void) {
   const original = globalThis.fetch;
   const gateway = new URL(process.env.COMPANY_RESEARCH_BASE_URL || 'https://sub2api.380001.xyz/v1');
   const content = new Map<string, string>();
@@ -16,8 +18,8 @@ export async function installFixtureTransport(testCase: any, documents: any[], o
       if (url.pathname.includes('/financials/')) return json({ reports: documents.map(doc => ({
         report_date: doc.period.end, notice_date: doc.disclosedOn, data_type: '年度报告',
         revenue: null, revenue_yoy: null, operating_cash_flow_per_share: null,
-        parent_net_profit: testCase.reference.facts.find((f: any) => f.metric === 'parent_net_profit' && f.period.end === doc.period.end)?.normalizedYuan,
-        net_profit_yoy: doc.period.end.startsWith('2024') ? testCase.reference.changes.find((c: any) => c.metric === 'parent_net_profit')?.percentage : null,
+        // Evaluation references must never become synthetic provider observations.
+        parent_net_profit: null, net_profit_yoy: null,
       })) });
       if (url.pathname.includes('/announcements/')) return json({ announcements: documents.map(doc => ({
         title: doc.title, symbol: doc.symbol, pdf_url: doc.url, url: doc.url, notice_date: doc.disclosedOn,

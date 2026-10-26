@@ -17,6 +17,7 @@ import { financialChangeSummary } from './financial-observation';
 import { recordResearchUpdateRead } from './update-run-store';
 import type { SemanticReview } from './claim-verification';
 import { comparisonCompletion, disclosedResearchFact, mergeResearchFact, recordFinancialFactSchema } from './financial-material';
+import { factCitations } from './financial-evidence';
 
 export const checkpointEvidenceHash = (state: ResearchCheckpoint) => artifactDigest(canonicalResearchJson({ facts: state.facts, supportingFacts: state.supportingFacts, claims: state.claims }));
 export function financialResearchTools(actor: string, token: ResearchAttemptToken, spec: ResearchTaskSpec, state: ResearchCheckpoint, model: string, save: (tool: string) => Promise<void>, ctx = defaultResearchContext, fixedDocuments = false, skill?: FinancialResearchSkill, options?: { reviews: () => SemanticReview[] }): PiAgentTool[] {
@@ -49,11 +50,11 @@ export function financialResearchTools(actor: string, token: ResearchAttemptToke
       if (result.text.trim()) await recordResearchUpdateRead(actor, token, result.bytesSha256, ctx);
       return result;
     }),
-    tool('record_fact', 'Save ONE exact current-period financial fact. Stable id is periodId-metric. Copy amount and unit; include citations covering the numeric row (page locator allowed). Tools check first-column and unit; never provide calculated values.', recordFinancialFactSchema, async input => {
+    tool('record_fact', 'Save ONE disclosed financial amount, copying its exact unit and numeric row. Preserve original disclosures separately. A later-report prior-year value requires restatement=restated, accountingBasis and periodEvidence. For a comparative pair, both facts need the same basis tag and complete located year headers from the same report/table. Include accountingBasisEvidence and comparisonLimitations for accounting restrictions; the tag alone never establishes equivalent standards. Never provide calculated values.', recordFinancialFactSchema, async input => {
       const fact = disclosedResearchFact(spec, input);
       const candidate = draft(); candidate.facts = [...state.facts.filter(f => f.id !== fact.id), fact];
       const checked = await deterministicReportErrors(actor, spec, candidate, ctx);
-      for (const c of input.citations) {
+      for (const c of factCitations(fact)) {
         const receipt = checked.evidence.receipts.get(`${c.documentId}:${c.documentVersion}`);
         if (receipt?.schemaVersion === 2 && receipt.pages.filter(p => c.locator.kind === 'html' || p.filePage === c.locator.filePage).flatMap(p => p.blocks).some(b => b.quality !== 'native')) throw new Error('FACT_SOURCE_NEEDS_REVIEW');
       }
@@ -63,8 +64,9 @@ export function financialResearchTools(actor: string, token: ResearchAttemptToke
       const saved = state.facts.find(f => f.id === fact.id)!;
       if (saved.value.status === 'conflict') return { fact: saved, instruction: previous?.value.status === 'conflict'
         ? '现有同期间证据冲突未解决，保留 partial；不能用重复写入抹去冲突' : '保留两份原始证据，相关结论必须 evidence_gap/conflict' };
-      for (const q of ['income_profit', 'cash_flow']) state.steps[`${q}-compare`] = state.facts.filter(f => q === 'cash_flow' ? f.metric === 'operating_cash_flow' : f.metric !== 'operating_cash_flow').length >= (q === 'cash_flow' ? 2 : 4) ? 'completed' : 'running';
-      return { saved: fact.id, value: fact.value, normalization: fact.normalization, changes: financialChangeSummary(financialChanges(candidate)) };
+      for (const q of ['income_profit', 'cash_flow'] as const) state.steps[`${q}-compare`] = comparisonCompletion(spec, state, q).missing.length ? 'running' : 'completed';
+      return { saved: fact.id, value: fact.value, normalization: fact.normalization, restatement: fact.restatement, accountingBasis: fact.accountingBasis,
+        comparisonLimitations: fact.comparisonLimitations, changes: financialChangeSummary(financialChanges({ facts: state.facts, periodIds: candidate.periodIds })) };
     }),
     tool('record_claim', 'Save/repair ONE claim by stable id. Must answer the question, cite both periods for comparison, distinguish fact/inference/opinion. Cash flow needs evidence-backed explanation. Unsupported statements use evidence_gap with reason.', researchClaimSchema, async claim => {
       const candidate = draft(); candidate.claims = [...state.claims.filter(c => c.id !== claim.id), claim];

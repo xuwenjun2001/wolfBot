@@ -3,23 +3,35 @@ import { parsedDocumentV2Schema, type ParsedDocument, type ParsedBlock } from '.
 
 export interface ParseOptions { maxPages: number; maxCharacters: number; signal: AbortSignal }
 export interface ResearchParserPort { name: string; version: string; parse(bytes: Buffer, mediaType: ParsedDocument['mediaType'], options: ParseOptions): Promise<ParsedDocument> }
+/** Conservative text-layer diagnostics, independent of a document's language or subject. */
+export function nativePdfTextFlags(text: string): string[] {
+  const points = [...text], visible = points.filter(c => !/\s/u.test(c));
+  const flags: string[] = [];
+  if (points.some(c => c === '\uFFFD' || (c.codePointAt(0)! < 32 && !['\n', '\r', '\t'].includes(c)))) flags.push('unmapped_text_glyphs');
+  if (points.some(c => { const n = c.codePointAt(0)!; return (n >= 0xe000 && n <= 0xf8ff) || (n >= 0xf0000 && n <= 0xffffd) || (n >= 0x100000 && n <= 0x10fffd); })) flags.push('private_use_text_glyphs');
+  const numbers = visible.filter(c => /\p{N}/u.test(c)).length, letters = visible.filter(c => /\p{L}/u.test(c)).length;
+  // Missing font mappings can leave only page labels/numbers, without replacement characters.
+  // A genuinely numeric page also requires review; its labels cannot be verified from this layer.
+  if (numbers >= 8 && letters <= Math.max(2, Math.floor(visible.length * .015)) && numbers / visible.length > .35) flags.push('sparse_text_layer_requires_review');
+  return flags;
+}
 function blocks(text: string, digest: string, page: number): ParsedBlock[] {
   const chunks = text.match(/[^\n]+(?:\n|$)/g) || [];
   const lines = text.trim().split('\n');
   const printedPage = [...lines.slice(0, 3), ...lines.slice(-3)].map(s => s.trim()).find(s => /^(?:第\s*\d+\s*页(?:\s*共\s*\d+\s*页)?|\d+\s*[/／]\s*\d+|-\s*\d+\s*-)$/.test(s));
+  const pageFlags = nativePdfTextFlags(text);
   return chunks.map(t => t.trim()).filter(Boolean).flatMap(t => t.match(/[\s\S]{1,1800}/g) || []).map((t, order) => {
     const id = `b_${artifactDigest(`${digest}:${page}:${order}:${t}`).slice(0, 32)}`;
-    const garbled = (t.match(/\uFFFD/g)?.length || 0) / t.length > 0.02;
-    return { id, order, kind: 'text', text: t, locator: { kind: 'block', filePage: page, ...(printedPage ? { printedPage } : {}), blockId: id }, quality: garbled ? 'needs_review' : 'native', flags: garbled ? ['garbled_text'] : [] };
+    return { id, order, kind: 'text', text: t, locator: { kind: 'block', filePage: page, ...(printedPage ? { printedPage } : {}), blockId: id }, quality: pageFlags.length ? 'needs_review' : 'native', flags: pageFlags };
   });
 }
 /** Native text is retained as-is; page joins are never used as fabricated paragraph or table geometry. */
 export class NativePdfParser implements ResearchParserPort {
-  name = 'pdf-parse'; version = '2.4.5-blocks-v2';
+  name = 'pdf-parse'; version = '2.4.5-blocks-v3';
   async parse(bytes: Buffer, mediaType: ParsedDocument['mediaType'], options: ParseOptions): Promise<ParsedDocument> {
     if (mediaType !== 'application/pdf') throw new Error('PDF parser media type mismatch');
     options.signal.throwIfAborted();
-    const { PDFParse } = await import('pdf-parse'), parser = new PDFParse({ data: bytes });
+    const { PDFParse } = await import('pdf-parse'), parser = new PDFParse({ data: bytes, stopAtErrors: true });
     const pages: ParsedDocument['pages'] = [], failedPages: number[] = [], truncatedPages: number[] = [], warnings: string[] = ['native_text_has_no_table_grid'];
     let pageCount = 1, characters = 0;
     const digest = artifactDigest(bytes);

@@ -19,9 +19,10 @@ def parser_identity():
     if not weights:
         raise RuntimeError("Models not provisioned; run bootstrap.py first")
     manifest = [(str(p.relative_to(root)), digest(p.read_bytes())) for p in weights]
-    versions = {p: importlib.metadata.version(p) for p in ["docling", "rapidocr", "onnxruntime", "torch"]}
-    fingerprint = digest(json.dumps([versions, manifest], sort_keys=True).encode())[:20]
-    return {"name": "docling-rapidocr-cpu", "version": f"adapter-v1-{fingerprint}"}
+    versions = {p: importlib.metadata.version(p) for p in ["docling", "rapidocr", "onnxruntime", "torch", "pypdfium2"]}
+    sources = {name: digest(Path(__file__).with_name(name).read_bytes()) for name in ["adapter.py", "native_text.py", "worker.py"]}
+    fingerprint = digest(json.dumps([versions, manifest, sources], sort_keys=True).encode())[:20]
+    return {"name": "docling-rapidocr-cpu", "version": f"adapter-v2-{fingerprint}"}
 
 
 def normalize_box(box, width, height):
@@ -38,6 +39,7 @@ def normalize_box(box, width, height):
 
 @lru_cache(maxsize=2)
 def converter(force_ocr):
+    from docling.backend.pypdfium2_backend import PyPdfiumDocumentBackend
     from docling.datamodel.accelerator_options import AcceleratorOptions
     from docling.datamodel.base_models import InputFormat
     from docling.datamodel.pipeline_options import OcrMode, PdfPipelineOptions, RapidOcrOptions
@@ -51,7 +53,10 @@ def converter(force_ocr):
         ocr_options=RapidOcrOptions(backend="onnxruntime", lang=["ch"], mode=OcrMode.FULL_PAGE if force_ocr else OcrMode.DEFAULT),
         enable_remote_services=False,
     )
-    return DocumentConverter(format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=options)})
+    # Pin the existing PDFium backend on every platform. Docling's implicit default
+    # may change; its threaded docling_parse Windows extension access-violated on
+    # the real scan probes. Layout, tables and OCR still use the same pipeline.
+    return DocumentConverter(format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=options, backend=PyPdfiumDocumentBackend)})
 
 
 def convert_page(pdf_bytes, page_number, original_sha, force_ocr=False):
@@ -64,10 +69,17 @@ def convert_page(pdf_bytes, page_number, original_sha, force_ocr=False):
         width, height = page.get_size()
         if width * height * 9 > 30_000_000:
             raise ValueError("Page exceeds raster pixel budget")
-        text_page = page.get_textpage()
-        native = text_page.get_text_range()
-        text_page.close()
-        page.close()
+        native_failed = False
+        try:
+            text_page = page.get_textpage()
+            try:
+                native = text_page.get_text_range()
+            finally:
+                text_page.close()
+        except Exception:  # noqa: BLE001 - preserve a failed text layer as an OCR quality flag
+            native, native_failed = "", True
+        finally:
+            page.close()
     scanned = len(native.strip()) < 30 or native.count("\ufffd") / max(1, len(native)) > .02
     result = converter(force_ocr or scanned).convert(
         DocumentStream(name="original.pdf", stream=io.BytesIO(pdf_bytes)),
@@ -81,7 +93,11 @@ def convert_page(pdf_bytes, page_number, original_sha, force_ocr=False):
         box = normalize_box(prov.bbox, width, height)
         table = None
         text = getattr(item, "text", "")
-        flags = ["ocr_requires_review"] if force_ocr or scanned else []
+        # The default pipeline may OCR individual regions even on a native page.
+        # Its reconstructed output cannot prove that an individual block was native.
+        flags = ["ocr_requires_review"] if force_ocr or scanned else ["ocr_or_layout_requires_review"]
+        if native_failed:
+            flags.append("native_text_extraction_failed")
         if isinstance(item, TableItem):
             data = item.data
             cells = []

@@ -18,4 +18,15 @@ describe('report update dependencies', () => {
     const result = retainedUpdateFacts(report, new Set(['new-period']), new Map([[`${fact.citations[0].documentId}:1`, 'new-period']]));
     expect(result.facts).toEqual([]); expect(result.supportingFacts.map(f => f.id)).toEqual(['unrelated-input']);
   });
+  it('invalidates comparisons and calculated dependants when their accounting-basis evidence changes', () => {
+    const report = reportFixture(), base = report.facts[0];
+    const limitation = { ...base.citations[0], documentId: 'accounting-note', documentVersion: 2 };
+    const input = { ...base, id: 'basis-input', accountingBasisEvidence: [limitation] };
+    const derived = { ...base, id: 'derived', derivedFrom: [input.id] };
+    report.facts = [derived, { ...base, id: 'unrelated' }]; report.supportingFacts = [input];
+    const result = retainedUpdateFacts(report, new Set(['changed-note-period']), new Map([['accounting-note:2', 'changed-note-period']]));
+    expect([...result.invalid].sort()).toEqual(['basis-input', 'derived']);
+    expect(result.facts.map(fact => fact.id)).toEqual(['unrelated']);
+    expect(result.supportingFacts).toEqual([]);
+  });
 });

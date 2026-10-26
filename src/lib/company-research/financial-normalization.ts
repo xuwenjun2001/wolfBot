@@ -4,7 +4,7 @@ import { cnyUnitPowers, decimal, decimalText, multiplyPowerOfTen } from './exact
 
 export const unitPowers = cnyUnitPowers;
 export function financialMetric(label: string): FinancialFact['metric'] | null {
-  const s = label.normalize('NFKC').replace(/\s/g, '').replace(/\((?:人民币)?(?:元|千元|万元|亿元)\)/g, '');
+  const s = label.normalize('NFKC').replace(/\s/g, '').replace(/\((?:人民币)?(?:百万元|亿元|万元|千元|元)\)/g, '');
   if (s === '营业总收入') return 'total_operating_income';
   if (s === '营业收入') return 'revenue';
   if (['归属于上市公司股东的净利润', '归属于母公司股东的净利润', '归母净利润'].includes(s)) return 'parent_net_profit';
@@ -13,7 +13,7 @@ export function financialMetric(label: string): FinancialFact['metric'] | null {
 }
 export function monetaryUnit(label: string): keyof typeof unitPowers | null {
   const s = label.normalize('NFKC').replace(/\s/g, '').replace(/币种[:：]?人民币/g, '').replace(/单位[:：]?/g, '').replace(/^人民币/, '');
-  return ({ 元: 'yuan', 千元: 'thousand_yuan', 万元: 'ten_thousand_yuan', 亿元: 'hundred_million_yuan' } as const)[s as '元'] || null;
+  return ({ 元: 'yuan', 千元: 'thousand_yuan', 万元: 'ten_thousand_yuan', 百万元: 'million_yuan', 亿元: 'hundred_million_yuan' } as const)[s as '元'] || null;
 }
 export function disclosedAmount(rawText: string, unitLabel: string) {
   const unit = monetaryUnit(unitLabel); if (!unit) return { status: 'invalid' as const, reason: 'unknown_or_non_monetary_unit' };

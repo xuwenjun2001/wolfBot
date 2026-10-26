@@ -7,6 +7,7 @@ import { reportBindingErrors } from './revision-contracts';
 import { numericFactErrors, semanticReviewSchema } from './claim-verification';
 import type { ResearchTaskSpec } from './task-contracts';
 import { defaultResearchContext } from './repository-core';
+import { factCitations } from './financial-evidence';
 
 export async function researchVerificationContext(actor: string, taskId: string, ctx = defaultResearchContext) {
   const documents = await listResearchDocuments(actor, taskId, ctx);
@@ -31,7 +32,7 @@ export async function researchVerificationContext(actor: string, taskId: string,
 export async function deterministicReportErrors(actor: string, spec: ResearchTaskSpec, report: ResearchReportRevision, ctx = defaultResearchContext) {
   const evidence = await researchVerificationContext(actor, report.taskId, ctx);
   const allFacts = [...report.facts, ...(report.supportingFacts || [])];
-  const citations = [...allFacts.flatMap(f => [...f.citations, ...(f.periodEvidence || [])]), ...report.claims.flatMap(c => c.citations)];
+  const citations = [...allFacts.flatMap(factCitations), ...report.claims.flatMap(c => c.citations)];
   await evidence.load(citations);
   const errors = reportBindingErrors(report, spec, evidence.documents, (id, version, filePage) => evidence.page({ documentId: id, documentVersion: version, locator: { kind: 'page', filePage }, bytesSha256: '', quote: '' }), evidence.located);
   for (const fact of allFacts) errors.push(...numericFactErrors(fact, evidence.documents, evidence.page).map(e => `${fact.id}:${e}`));

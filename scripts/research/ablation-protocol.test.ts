@@ -22,7 +22,9 @@ async function fixture(count = 2) {
     await writeFile(path.join(repository, file), content);
   };
   for (const file of ['scripts/research/run-agent-ablation.ts', 'scripts/research/ablation-protocol.ts',
+    'scripts/research/ablation-reference-inputs.ts', 'scripts/research/fixture-task-adapter.ts',
     'scripts/workers/company-research-worker.ts', 'src/lib/eval/financial-research-score.ts',
+    'src/lib/eval/financial-research-score-v3.ts', 'src/lib/eval/confirmed-reference-contracts.ts', 'src/lib/eval/confirmed-reference-loader.ts',
     'src/lib/eval/financial-research-score-v2.ts', 'src/lib/eval/statistics.ts', 'prisma/schema.prisma', 'package-lock.json',
     'src/lib/agent/synthetic.ts', 'src/lib/company-research/synthetic.ts']) await put(file, `// SYNTHETIC TEST PLACEHOLDER: ${file}\n`);
   await put('fixtures/company-research/rubric.json', '{"synthetic":true}');
@@ -124,7 +126,7 @@ test('dataset compatibility preserves unsupported units, restated facts and extr
   const checked = caseCompatibility(sample);
   assert.ok(checked.scoringBlockers.includes('UNSUPPORTED_V1_UNIT:million_yuan'));
   assert.ok(checked.scoringBlockers.includes('RESTATED_COMPARISON_NOT_SUPPORTED_BY_V1'));
-  assert.ok(checked.executionBlockers.includes('ADDITIONAL_DOCUMENT_SCOPE_NOT_SUPPORTED_BY_PRODUCTION_TASK'));
+  assert.ok(checked.executionBlockers.includes('PRIMARY_SUPPORTING_DOCUMENT_SCOPE_BINDING_REQUIRED'));
   assert.equal(sample.documentIds.length, 3);
   assert.throws(() => ablationDatasetSchema.parse({ ...f.dataset, visibility: 'hidden' }), /hidden holdout/);
   assert.throws(() => ablationDatasetSchema.parse({ ...f.dataset, cases: [sample, sample] }), /Duplicate/);
@@ -151,6 +153,7 @@ test('all variant transport routes forward options without any provider request'
   globalThis.fetch = async () => { networkRequests++; throw new Error('Unexpected network in mock'); };
   try {
     const adapter: AblationExecutionAdapter = { ...base, run: async request => {
+      for (const forbidden of ['reference', 'answerabilityDrafts', 'acceptedReference', 'normalizedYuan', 'executionReadiness']) assert.equal(JSON.stringify(request.work).includes(`"${forbidden}"`), false, `Adapter received evaluation field ${forbidden}`);
       requests.push({ variant: request.variant, concurrency: request.concurrency, runtime: request.runtimeOptions.variant });
       return base.run(request);
     } };
@@ -340,4 +343,35 @@ test('real runner rejects pending registration and missing adapters before any e
   await assert.rejects(runAgentAblation(options, { repository: f.repository, adapter }), /RUBRIC_NOT_HUMAN_FROZEN/);
   assert.equal(calls, 0); assert.equal(databaseProofs, 0);
   assert.equal(contractSha256(f.dataset).length, 64);
+});
+
+test('explicit v3 uses accepted references for every real development case while model inputs contain no answers', async () => {
+  const parent = path.resolve('data/research-agent-upgrade/evidence/U04/engineering-20261026/evaluation');
+  await mkdir(parent, { recursive: true });
+  const campaign = await mkdtemp(path.join(parent, 'confirmed-v3-test-'));
+  const base = createHarnessMockAdapter(); let calls = 0;
+  const options: AblationOptions = { variant: 'A', provider: 'mock', dataset: 'fixtures/company-research/development-v2.json', campaign,
+    repeats: 1, maxInputTokens: 80_000_000, model: 'harness-mock', reasoning: 'harness-mock', cache: 'cold', taskKind: 'single',
+    rubric: 'fixtures/company-research/rubric-v2.json', scoringVersion: 'confirmed-v3' };
+  const run = await runAgentAblation(options, { adapter: { ...base, run: async request => {
+    calls++;
+    assert.equal(request.work.cases[0].fixtureInput!.spec.periods.length, 2);
+    for (const forbidden of ['reference', 'answerabilityDrafts', 'acceptedReference', 'normalizedYuan', 'executionReadiness']) assert.equal(JSON.stringify(request.work).includes(`"${forbidden}"`), false);
+    return base.run(request);
+  } } });
+  assert.equal(calls, 14); assert.equal(run.summary.scoringVersion, 'confirmed-v3');
+  assert.equal(run.summary.scoringCoverage.v3ScoredCompanyLegs, 14); assert.equal(run.summary.scoringCoverage.incompleteCoverage, false);
+  assert.equal(run.summary.v3!.numeric.total, 126); assert.equal(run.summary.v3!.numeric.passed, 0);
+  assert.equal(run.summary.v3!.questionTotal, 42); assert.equal(run.summary.v3!.originalDisclosures.total, 9);
+  assert.equal(run.summary.v3!.gatePassed, null); assert.equal(run.summary.v3!.correctAbstention.total, 0);
+  assert.equal(run.summary.plannedDenominators.comparativeAmountItems, 84);
+  assert.equal(run.summary.plannedDenominators.percentageItems, 42);
+  assert.equal(run.summary.plannedDenominators.retainedOriginalDisclosureItems, 9);
+  assert.equal(run.summary.actualModelCalls, 0); assert.equal(run.summary.productionAcceptance, false);
+  assert.ok(run.summary.datasetCompatibilityBlockers.some(reason => reason.includes('FIXED_PARSER_RECEIPT_PARTIAL')));
+  assert.ok(run.summary.datasetCompatibilityBlockers.includes('CONFIRMED_NOT_DISCLOSED_STRATUM_MISSING'));
+  const protocol = await readJson(path.join(campaign, 'protocol.json'));
+  assert.equal(protocol.contract.scoring.referenceSha256, run.summary.referenceBinding!.referenceSha256);
+  assert.equal(protocol.contract.scoring.receiptSha256, run.summary.referenceBinding!.receiptSha256);
+  await assert.rejects(runAgentAblation({ ...options, provider: 'real', model: 'gpt-6.1-sol', reasoning: 'max' }), /APPROVED_PRODUCTION_ADAPTER_UNAVAILABLE/);
 });

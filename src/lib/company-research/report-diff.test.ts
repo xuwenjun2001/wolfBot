@@ -60,4 +60,23 @@ describe('immutable report differences', () => {
     expect(diff.facts[0].status).toBe('unchanged');
     expect(diff.evidence.added).toHaveLength(1);
   });
+
+  it('keeps the original and adjusted comparative as separate differences when both exist', () => {
+    const before = reportFixture(), after = structuredClone(before); after.revision = 2;
+    const original = after.facts[0], basisCitation = { ...original.citations[0], bytesSha256: 'b'.repeat(64), documentId: 'basis-notes' };
+    after.facts.push({ ...original, id: 'restated-comparative', restatement: 'restated', accountingBasis: 'later-report',
+      accountingBasisEvidence: [basisCitation], comparisonLimitations: ['投资业务未追溯调整。'],
+      value: { status: 'known', raw: '12', unit: 'million_yuan', currency: 'CNY', decimals: 0 } });
+    const diff = buildResearchReportDiff(before, after);
+    expect(diff.facts).toHaveLength(2);
+    expect(diff.facts).toEqual(expect.arrayContaining([
+      expect.objectContaining({ status: 'unchanged', before: expect.objectContaining({ id: original.id }), after: expect.objectContaining({ id: original.id }) }),
+      expect.objectContaining({ status: 'added', before: null, after: expect.objectContaining({ id: 'restated-comparative' }) }),
+    ]));
+    expect(diff.evidence.added).toEqual([expect.objectContaining({ documentId: 'basis-notes' })]);
+    const later = structuredClone(after); later.revision = 3; later.facts.reverse();
+    expect(buildResearchReportDiff(after, later).status).toBe('unchanged');
+    later.revision = 4; later.facts[0].comparisonLimitations = ['准则限制已改述，仍需复核。'];
+    expect(buildResearchReportDiff(after, later).facts.find(f => f.after?.id === 'restated-comparative')?.status).toBe('changed');
+  });
 });

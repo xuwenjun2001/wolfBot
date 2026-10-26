@@ -6,25 +6,25 @@
 
 | 字段 | 当前值 |
 | --- | --- |
-| 最后更新 | 2026-10-26 16:31（6A/7A/8A/9B独立回执、新参考版本及数据/文档检查完成） |
+| 最后更新 | 2026-10-26 17:58（工程接入、隔离PG及扫描有界重验完成，文档检查通过，同步收尾） |
 | 计划版本 | 原 S 系列 v1；U 系列按 agent-upgrade-proposal.md v2 执行 |
 | 总体状态 | S01—S18 已验收（S17 按当前反例修复并重验）；S19/S20 仍有必需验收阻塞。生产部署不在授权范围内 |
 | 已验收步骤 | 18/20；S17 重开与修复过程分别保留 E-REVIEW-03 / E-FIX-R2R3 |
 | 当前待处理步骤 | U02/U10—U14 done；U04资料与剩余验收blocked；G0未通过；S19/S20保持blocked |
-| 下一步骤 | 承接已确认有限参考，补齐未披露真实分层、完整风险、解析与六例执行/评分适配；可信adapter和完整协议仍待准备，真实实验未开始 |
-| 下一具体动作 | 不再重复询问Q6—Q9。开发先准备至少2例真实未披露候选、平安/招行剩余风险与工程补证，再给具体选择卡；后续sol/max用量/报价和最终执行/暂缓题另备 |
-| 当前会话登记 | 2026-10-26-u-confirmation：用户原回复“A A  A B”已登记6A/7A/8A/9B；独立回执与新参考覆盖层完成，60比较金额/30增幅/9原披露基期/34有限页范围及22文档绑定通过。仅确认记录与参考数据，无产品研究调用 |
+| 下一步骤 | 本轮百万元/重述、PDF原生回退、多文档执行输入和有限参考诊断评分已接入；扫描后端有界重验完成，全文可用性未通过。之后补齐真实未披露分层、完整风险、人审与派生解析清单，可信adapter和最终协议另备，真实实验未开始 |
+| 下一具体动作 | 同步本轮后准备至少2例真实未披露候选、平安/招行剩余风险、扫描选页验收与U05新页金标的具体选择卡，不重复询问Q6—Q9。新的解析回执另建派生清单，后续sol/max用量/报价及最终执行/暂缓题另备 |
+| 当前会话登记 | 2026-10-26-u04-engineering：用户要求进行下一步；三名gpt-6.1-sol/max开发子Agent分别完成财务口径、解析与执行评分适配，主AI集成并验证真实资料、75项隔离PG及交接。扫描原生后端访问冲突已定位，已用已有PDFium后端同预算重验；U04剩余人审与G0不预判通过 |
 | 工作区 | `D:/QuantPilot`；在其他电脑以实际项目根为准 |
-| 分支 / 本轮实现起点 | codex/agent-upgrade；本轮起点 `f96f6cd68ad415435e55ec7d0998392346637454`，初始工作区干净 |
+| 分支 / 本轮实现起点 | codex/agent-upgrade；本轮起点 `08a97052eded0498eb4d327df3328feb42eaf939`，初始工作区干净 |
 | 目标仓库 | `https://github.com/xuwenjun2001/wolfBot`，默认分支 `main` |
-| 本轮涉及文件 | 新增acceptance-confirmation-20261026.md及confirmed-references-20261026.json；更新本目录README.md、progress.md、decisions.md、block1-review.md、ablation-registration.md与human-annotation.md；独立机器回执与核验留受控U04新批次 |
-| 已有改动提醒 | 本轮开始工作区干净；只提交新确认回执、有限参考JSON及六份交接文档。原选择卡、development-v2、旧标签/工作表/准备回执与模型结果保持原字节；受控机器回执不提交 |
-| 运行环境 / 进程 | 本轮仅保存确认、参考数据复算及文档检查；未启动数据库、Worker、OCR或持久服务，没有真实研究模型调用；未新增子Agent |
+| 本轮涉及文件 | 研究应用层的金额/比较/证据/工具/报告与回归；text-parser/ocr-parser和document-parser服务；确认参考loader/scorer-v3、fixture输入与消融预检；PG runner及fixture-compatibility集成测试；相关专题/决策/本交接。受控工程证据在evidence/U04/engineering-20261026/，不纳入Git |
+| 已有改动提醒 | 本轮开始工作区干净；本轮源码/测试与五份交接文档待同步。原选择卡、确认回执、有限参考JSON、development-v2、旧标签/工作表/解析回执与历史模型结果保持原字节；原PDF、受控机器回执与缓存不提交 |
+| 运行环境 / 进程 | 本轮启动过临时原生PG和本地解析/OCR服务，无产品研究模型调用。最终PG和自启解析服务均停止，解析所属进程0、7821无监听，清理证据在最终parser批次。未修改环境、依赖锁或应用库 |
 | 模型与数据费用 | Q9B选后续协议优先gpt-6.1-sol/max；最后只读观察的本机实际配置仍sol/high，40工具/20分钟，本轮未改环境。产品研究调用0、未取价；价格unknown，80M设计上限沿用，执行未获批准。开发子Agent继续sol/max且独立记账 |
-| 阻塞 | 新增10家数值/比较口径、10题现金流answerable与限定风险已确认；光明旧未披露候选失效，未披露分层无确认例，仍须至少2例。平安/招行完整风险、扫描/解析、六例执行评分与覆盖层接入、可信adapter和最终协议仍待完成。S19/S20与暂缓依赖问题不变 |
-| 最近验证 | E-U04-03：新回执/参考1085项数据完整性断言通过，60金额/30增幅/9原披露基期、三桥表及22文档绑定通过；check:docs退出0（87 Markdown/657链接），差异检查通过。无产品源码改动，未重跑单测/types/PG/完整release或CI，原工程证据为E-FIX-U-BLOCK2 |
+| 阻塞 | 工程兼容和有限参考接入已实现，正式资料门仍阻塞：真实confirmed not_disclosed为0，至少需要2例；平安/招行完整风险仍partial；扫描人工验收、全量标签/完整响应审查、U05新页金标、派生解析清单与最终协议、可信真实adapter、sol/max用量报价和付费执行批准未完成。S19/S20与暂缓依赖问题不变 |
+| 最近验证 | E-U04-04：387单测通过/75 DB-only跳过，隔离真PG另验75/75及34迁移/旧代码兼容/14家30文档导入；Node脚本31/31、最终types/39个TS及PG runner lint/模块边界通过。六份旧指纹全文无截断但仍partial，最终后端27选页含封面质量限制；两扫描120秒保留7/8页并partial。五组mock共140父任务独立审计通过，包装命令重定向退出1保留；真实CLI预期拒绝，0模型调用。文档检查87 Markdown/660链接与差异检查通过 |
 | 受控资料恢复 | 开发资料在 `data/research-agent-upgrade/`；旧保留根 `D:/QuantPilot-private-evals/research-v1` 已消费，新保留根 `D:/QuantPilot-private-evals/research-u-v2` 仅登记 hash、未打开内容。换机恢复受控归档并核对最终 LF 清单；这里不记录保留题/答案 |
-| 范围提醒 | 本轮落实用户选择，不改变生产实现、正式标签或预算。Q1A—Q5A沿用，Q6A/Q7A/Q8A/Q9B单独存证；新参考覆盖层未接入scorer/runner、不作整家公司golden。U04/G0及真实实验不因有限确认通过 |
+| 范围提醒 | 本轮修改工程实现，未冻结正式全量标签或执行协议，未改预算。Q1A—Q5A与Q6A/Q7A/Q8A/Q9B回执沿用；confirmed-v3只做显式诊断，保留126主数值/42问题与9原披露，完整响应未审的正式分子为null。不晋升整家公司golden，U04/G0及真实实验不因工程通过 |
 
 ## 步骤状态
 
@@ -65,7 +65,7 @@
 | U01 | done | 2026-10-24-u-block1 / attribution 子 Agent，主 AI 复核 | src/lib/eval/research-failure-attribution.ts 及测试；scripts/research/attribute-failures.ts；failure-attribution.md | E-U01-01；18 唯一任务/626 调用；81 输入未变；103 eval 测试及类型检查通过 | 结论见 D33；多 Agent 质量收益仍为待检验假设 |
 | U02 | done | 2026-10-25-u-block2 / 主 AI 登记 Q1A—Q3A | 原评分 v2；冻结 answerability-dev-v1.json；独立确认回执与核对文档 | E-U02-04；12 confirmed/0 pending，16 评分回归及回执 hash 通过 | 无未披露题，不宣称已验收弃答能力；扩展样本与新报告各自独立核对 |
 | U03 | done | 2026-10-24-u-block1 / scoring 子 Agent；attribution 独立审查，主 AI 整合 | scripts/research/run-agent-ablation.ts、ablation-protocol.ts 及测试；ablation-registration.md | E-U03-01；22 项协议测试、12 CLI/9 mock arm、96 保存/94 启动/0 真实模型调用；设计按Q4A确认 | B/B2运行时已接线，CLI可信adapter、最终协议和执行批准待办；mock不构成生产变体验收 |
-| U04 | blocked | 2026-10-24-u-block1；2026-10-26-u-confirmation / 主AI | 原fixture保持；新增acceptance-confirmation-20261026.md、confirmed-references-20261026.json与受控confirmation-20261026-01/ | E-U04-01/02/03；Q6A/Q7A/Q8A接受新增10家有限参考，10现金流answerable；新版本数据核验通过，平安/招行风险覆盖仍partial，未晋升golden | 补至少2例真实未披露、完整风险、扫描/解析与6例执行评分适配；覆盖层接入及正式冻结另验，新保留内容未读 |
+| U04 | blocked | 2026-10-26-u04-engineering / 主AI与三名sol/max子Agent；旧确认保留 | 研究财务/解析/多文档输入/显式v3诊断、PG回归与交接；原fixture和确认字节保持 | E-U04-01/02/03/04；百万元/重述/三文档/确认参考工程接入，387单测、75真PG、31脚本通过；六份全文旧指纹与最终后端选页分列，两扫描120秒保留7/8页且仍partial。用户确认范围沿用，未晋升golden | 至少2例真实未披露、平安/招行完整风险、扫描人工与全量标签/响应审查、U05新金标、派生清单/最终协议与可信adapter另验；新保留内容未读 |
 | U05 | done | 2026-10-24-u-block1 / 主 AI | retrieval-labels-v2.json；verify-retrieval.ts 兼容扩展；新增纯评分 research-retrieval-score.ts 及测试；受控 evidence/U05/；评测说明 | E-U05-01；33 query/66 预期页，Recall@5 39/66，MRR 0.5318；旧 baseline-v1 10/24 不变 | 基线报告合同已验证；现金流新金标待人工，后续 U20 的算法改进尚未授权 |
 | U10 | done | 2026-10-25-u-block2 / plan_graph 子 Agent、主 AI 复核 | plan-graph.ts 及测试；task-contracts.ts | E-U10-01；DAG/兼容回归 23 项、定向严格 types 通过；U13/U14已接线 | 真实质量留待实验；准备结束不等于金额全部齐全 |
 | U11 | done | 2026-10-25-u-block2 / gap_policy 子 Agent、主 AI 复核 | gap-policy.ts 及测试 | E-U11-01；37 项定向回归及 lint 通过；U13/U14已接线 | 无新证据只 partial，不伪造未披露 |
@@ -85,7 +85,7 @@
 | U37 | pending | 未授权 | task-contracts.ts、peer-coordinator.ts、必要迁移与同行评分 | — | 等待 U33、同行对资料 |
 | U40 | pending | 未授权 | ablation-report.md、delivery.md、README.md | — | 等待 G2/U21 及板块 5 授权 |
 
-G0尚未通过。rubric与旧四家12题标签已冻结，Q4A确认完整五变体/14家/两次/80M设计；Q6—Q8已确认扩展10家有限参考，Q9B选择后续sol/max配置偏好。剩余人审、未披露分层、解析与六例执行评分适配仍待办，不重复请求已确认选择。Q5A允许先实现U10—U14，例外范围见 [确认回执](block1-confirmation-20261025.md) 和D37，不扩展到真实实验或其他板块。S19/S20的blocked保留。
+G0尚未通过。rubric与旧四家12题标签已冻结，Q4A确认完整五变体/14家/两次/80M设计；Q6—Q8确认扩展10家有限参考，Q9B选择后续sol/max配置偏好。本轮六例财务/文档/评分工程兼容已实现，剩余人审、真实未披露分层、扫描与派生解析清单仍待办，不重复请求已确认选择。Q5A允许先实现U10—U14，例外范围见 [确认回执](block1-confirmation-20261025.md) 和D37，不扩展到真实实验或其他板块。S19/S20的blocked保留。
 
 ## 初始核对得到的事实（历史，当前状态见上表）
 
@@ -97,6 +97,24 @@ G0尚未通过。rubric与旧四家12题标签已冻结，Q4A确认完整五变�
 - 原 S03 网关基线全部在鉴权时失败；用户指定新模型后另存校准，4 次请求均 200，但提前收尾且无财报来源，不是质量提升证据。后续人工确认按 E-ANNOT-02 单独归档，不能反向把旧模型运行变为通过。
 
 ## 验收证据
+
+### E-U04-04 / 2026-10-26-u04-engineering：有限参考接入与六例工程兼容
+
+- 用户要求“进行下一步”，本轮起点 `08a97052eded0498eb4d327df3328feb42eaf939`，`codex/agent-upgrade`，初始工作区干净，实际origin为wolfBot。三名开发子Agent使用gpt-6.1-sol/max，分别处理财务、解析和评分输入，主AI集成验证与同步。原Q6—Q9卡片、独立确认、参考覆盖层和development-v2字节不变，确认时的integration=false保留为历史事实，实际工程接入在本证据另记。
+- 财务应用层精确支持million_yuan；record_fact可分别保存原披露和重述比较版本，旧原披露ID兼容。自动比较只选同一真实完整两年列头下的唯一口径，basis名称不能证明同准则；歧义、不完整、错单位/年份列、OCR待复核仍拒绝。准则限制引文贯穿权限/定位核验、报告hash/差异与来源更新依赖；重复同值写入不能清掉已存限制。PI内核、核验门槛、父预算与环境未改。
+- 真实固定原件回放18金额/9比较通过，18错单位及8错基期负例被拒；新生产auto回执的平安2023 p11和太保2023 p33另验12金额/6比较，引用页非failed且blocks全native，强制failed页负例被来源绑定门拒绝。海尔6金额仍仅绑定旧固定native回执。证据为 `engineering-20261026/financial-basis/real-native-replay-04.json`、`current-receipt-financial-replay-03.json` 与 `handoff.json`；这是确定性工程复算，不替代完整报告语义或模型验收。
+- 新增严格确认参考loader和显式confirmed-v3诊断，绑定用户确认、原卡、源清单及各输入实际SHA。每次14家保留84金额/42增幅/42问题，9项原披露另列；覆盖层只继承10道现金流answerable，收入/风险整题标签仍unknown。完整响应未审时正式supported/completion分子为null，official拒绝、gatePassed=null；不从局部风险确认推断整题或整家公司golden。历史v1/v2与结果不改。
+- fixture执行输入仅含公司、实际年度、问题、40工具/20分钟预算和白名单资料元数据，不包含答案/标签。洋河、华鲁各保留第三份扫描附件，平安/太保按FY2022→FY2023；固定旧解析回执不自动换新。旧baseline transport移除从reference读取的归母金额/同比，避免把评分答案伪装成接口返回；原campaign和旧结果保留，源码变化不能复用旧协议hash。
+- 主线 `npm run test:unit -- src/lib/company-research src/lib/eval` 最终退出0：48文件通过/8跳过，387项通过/75 DB-only跳过；Node四文件31/31、最终全量type-check、39个改动TS文件与PG runner的ESLint、模块边界退出0，既有大文件警告保留。日志 `unit-final-03.log`、`type-check-final.log`、`eslint-all-final.log`、`eslint-pg-runner-final.log`、`module-boundaries.log` 与 `evaluation/node-tests-03.log`。财务定向75/75和评分23/23与上述主线有重叠，不累加为独立通过数。
+- 隔离真PG最终退出0：75/75，34迁移、旧代码兼容、重复deploy、14家/30实际原件与固定回执导入及权限/读取通过，模型调用0。manifest为 `data/research-agent-upgrade/evidence/S05/rehearsal-9a1f67c7-2d2f-4fa1-8079-37452e8a16e7/manifest.json`，outcome=passed、nativeClusterStopped=true；当前TS源码与其sourceHashes匹配。日志 `postgres-final-03.log`；真实fixture导入另存本轮actor专属目录，生成物不提交。
+- 全14/30输入预检退出0；A/B/B2/C1/C2×14×2共140个mock父任务、140账本行全部完成，模拟输入140000/共享80M cap。PowerShell包装末尾重定向语法错误导致wrapper退出1，五组执行结果均保存；独立audit退出0并核对矩阵、账本、比较及127份当前源码，不能把wrapper写成成功或mock写成真实质量。真实CLI预检预期退出1拒绝，实际模型调用0。完整证据 `engineering-20261026/evaluation/verification-summary.json`、`mock-full5-final-01-audit.json`。
+- 六份真实长年报通过生产auto逐页回退，0截断但保留failed页/needs_review，整份均partial；招行中文恢复与24项金额/15个现金流或风险参考页定位通过。第一批最终路由证据在 `engineering-20261026/parser/final-02/`，绑定后端修复前指纹adapter-v2-974c5a10a2de940b7751，不能混称后端修复后的最终协议。扫描探针曾发生worker停止，Windows事件确认Docling原生pdf_parsers.cp312-win_amd64.pyd两次0xc0000005访问冲突；保留 `scan-readonly-diagnostics.json`，不把当前内存观察当峰值或编造退出码。
+- 转换器显式固定已有PyPdfiumDocumentBackend，Python11/11与Ruff通过，未改依赖/质量或预算。最终指纹adapter-v2-ada41c3c9fb347a656ac/auto route-v4，六原件共27选页另做原生探针，24金额与15参考范围页定位通过；封面额外探针中平安两年p1需复核、太保2023p1为空/failed，未对其跑OCR，探针回执均partial。两扫描以maxPages=12/120秒跑实际auto：洋河98页完成1—7（6页OCR需复核）、91页截断、120592ms；华鲁101页完成1—8（8页OCR需复核）、93页截断、120485ms。两者failed=[]、timeout_partial，保留已完成页，未达到12页或全文验收，不标扫描已兼容。
+- 最终后端证据在 `engineering-20261026/parser/pdfium-backend-01/`：environment-manifest绑定12份源码、8原件与旧回执；reference-locations绑定真实选页和定位；两份扫描auto/summary保留超时与复核状态。`runtime-diagnostics-and-shutdown-confirmation.json`记录09:50:24—09:56:20 UTC窗口内无相关Application1000/1001事件、查询无错误，所属/解析Python进程均0，7821无监听；仅证明本次窗口未记录同类崩溃，不证明所有扫描稳定，未测峰值资源。
+- 首轮类型检查的测试隐式any、PG中token未知值断言错误和过严单年标题核验均已修复并重验；原失败日志保留。原生/OCR质量状态、asOf/权限/来源绑定、预算和所有分母不放宽。未运行完整release、生产部署、真实研究实验或新保留集；未处理暂缓的Node锁/Python依赖审计。
+- U04与G0继续blocked：真实confirmed not_disclosed=0（至少需2例）、平安/招行完整风险仍partial；扫描人工验收、全量标签/完整响应审查、U05新增页金标、派生解析清单与最终协议、可信真实adapter、sol/max用量报价及付费执行批准仍待完成。Q6—Q9选择沿用，下一批先备可定位原件与具体选择题，不要求用户开放式写答案；S19/S20不改为done。
+- 整合清单 `data/research-agent-upgrade/evidence/U04/engineering-20261026/validation.json`集中登记当前源码、各证据hash与真实退出码；PG的166份源码和mock的127份源码与当前字节一致。原PDF/机器回执、解析缓存、临时日志与数据库证据按忽略规则只留受控本地，不进入Git；代码同步与CI状态分别报告。
+- `npm run check:docs`退出0（87 Markdown/660本地链接）、`git diff --check`退出0，日志为 `docs-check-final.log` 和 `diff-check-final.log`；远端重新fetch后与本轮起点0/0，无并行提交。按仓库规则仅暂存本轮52份相关源码/测试/文档，审查后正常提交推送，对应远端SHA由收尾再次核对。
 
 ### E-U04-03 / 2026-10-26-u-confirmation：四项真实选择与独立参考版本
 
@@ -946,3 +964,11 @@ E-Sxx-01 / 日期 / 会话标识：
 - 用户已选6A/7A/8A/9B；独立回执、新有限参考覆盖层、D41及相关入口/标注/实验登记已更新。原卡片、v2数据、旧工作表、准备回执和历史结果保持原字节，受控材料留本地。配置偏好sol/max和实际最后观察sol/high分别记录，无付费执行授权。
 - 新参考数据核验通过，限定确认不等于14家42题/扫描/整家公司golden或G0全部通过。未披露分层至少两例、平安/招行完整风险、六例兼容与解析/覆盖层接入、U05页金标及真实adapter/费用/协议继续待办；这些范围准备后再给选择题，不让用户自行发散。
 - 本轮只同步两项新产物与六份相关交接文档；按AGENTS审查暂存、fetch核对并普通推送origin/codex/agent-upgrade，实际提交与远端SHA由收尾核对。无持久进程、保留集读取或日常/生产数据操作，不扩大处理暂缓CI依赖问题。
+
+### 2026-10-26-u04-engineering / 下一步工程适配与交接
+
+- 用户要求继续下一步，完成已确认参考的工程接入与六例兼容：百万元/原披露和重述比较、原生文字质量回退、三文档执行白名单及显式v3诊断评分。财务、解析和评分开发子Agent均为gpt-6.1-sol/max；主AI负责当前源码核对、应用证据依赖补齐、真实原件复算与隔离PG整合。
+- 387单测与75真PG分别通过，14家/30文档实际导入读取验证；31项脚本和140任务mock审计通过，mock包装命令退出1与历史失败保留。最终类型、TS/PG runner lint、模块边界通过；详细输入/源码/命令身份见E-U04-04及受控validation.json，不把工程通过记为G0或真实模型收益。
+- 六长年报的旧指纹全文结果与最终PDFium后端27选页分开保存，两扫描同120秒预算实际保留7/8页，仍partial/needs_review/截断。原后端访问冲突已有事件证据；本次新后端窗口无同类事件但不能推断全扫描稳定。PG与自启解析/OCR服务均停止，未留所属进程或7821监听，未操作日常/生产服务和应用库。
+- 不再询问Q6—Q9；后续先准备至少2个真实未披露候选、平安/招行完整风险和扫描/U05新页金标选择材料，再由用户选择确认。新的解析派生清单、全量标签/响应审查、真实adapter、sol/max用量报价及最终执行批准仍待完成；140父任务/80M设计与40工具/20分钟硬预算不变，真实产品模型调用0，新保留内容未读。
+- 仅同步本轮相关源码、测试与六份文档；按AGENTS审查暂存、fetch检查并普通推送origin/codex/agent-upgrade，最终SHA与剩余未同步文件由收尾核对。不扩大暂缓的锁文件/依赖审计，也不声称本轮完整release或GitHub CI通过。

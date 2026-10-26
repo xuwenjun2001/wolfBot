@@ -50,13 +50,15 @@ def stop_worker():
 
 @app.get("/health", dependencies=[Depends(authorize)])
 def health():
-    return {"parser": parser_identity(), "device": "cpu", "concurrency": 1}
+    return {"parser": parser_identity(), "device": "cpu", "concurrency": 1, "capabilities": {"preferNative": True}}
 
 
 async def execute(job_id, pdf_path, settings, original_sha):
     global active
     job = jobs[job_id]
     pages, failed, warnings, count = [], [], [], None
+    if settings.get("preferNative"):
+        warnings.append("pdfium_native_text_has_no_table_grid")
     started = time.monotonic()
     try:
         start_worker()
@@ -109,7 +111,8 @@ async def execute(job_id, pdf_path, settings, original_sha):
 @app.post("/jobs", status_code=202, dependencies=[Depends(authorize)])
 async def create_job(request: Request, maxPages: int = Query(500, ge=1, le=1000),
                      maxCharacters: int = Query(2000000, ge=100, le=5000000),
-                     forceOcr: bool = False, timeoutSeconds: int = Query(180, ge=1, le=1200)):
+                     forceOcr: bool = False, preferNative: bool = False,
+                     timeoutSeconds: int = Query(180, ge=1, le=1200)):
     global active
     if active:
         raise HTTPException(429, "Parser busy")
@@ -131,7 +134,7 @@ async def create_job(request: Request, maxPages: int = Query(500, ge=1, le=1000)
         while len(jobs) >= 16:
             del jobs[next(iter(jobs))]
         jobs[job_id] = {"status": "queued", "cancel": False, "completedPages": 0}
-        settings = {"maxPages": maxPages, "maxCharacters": maxCharacters, "forceOcr": forceOcr, "timeoutSeconds": timeoutSeconds}
+        settings = {"maxPages": maxPages, "maxCharacters": maxCharacters, "forceOcr": forceOcr, "preferNative": preferNative, "timeoutSeconds": timeoutSeconds}
         asyncio.create_task(execute(job_id, pdf_path, settings, digest(bytes(data))))
         return {"jobId": job_id}
     except BaseException:

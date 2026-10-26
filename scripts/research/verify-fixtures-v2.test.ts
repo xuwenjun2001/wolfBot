@@ -45,9 +45,9 @@ test('source, company and exact numeric tokens stay bound', () => {
   const wrongToken = sample(); wrongToken.reference.facts[0].rawValue = '1'; wrongToken.reference.facts[0].normalizedYuan = '1';
   assert.throws(() => check(wrongToken), /absent from quote/);
 });
-test('million-yuan samples validate without extending production monetary units', () => {
+test('million-yuan samples validate under the exact production monetary unit contract', () => {
   const s = sample();
   s.reference.facts.forEach(f => { Object.assign(f, { unit: 'million_yuan', normalizedYuan: f.rawValue === '10.00' ? '10000000' : '12000000' }); });
   assert.doesNotThrow(() => check(s));
-  assert.equal('million_yuan' in cnyUnitPowers, false);
+  assert.equal(cnyUnitPowers.million_yuan, 6);
 });

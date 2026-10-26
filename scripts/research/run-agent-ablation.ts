@@ -6,9 +6,11 @@ import { z } from 'zod';
 import { scoreFinancialCase, summarizeScores, type EvaluationCase } from '../../src/lib/eval/financial-research-score';
 import { answerabilityDatasetSchema, financialResearchRubricV2Schema, scoreFinancialCaseV2, summarizeScoresV2, compareFinancialScoresV2,
   type CaseAnswerability, type EvaluationScoreV2 } from '../../src/lib/eval/financial-research-score-v2';
+import { scoreFinancialCaseV3, summarizeScoresV3, compareFinancialScoresV3, type EvaluationScoreV3 } from '../../src/lib/eval/financial-research-score-v3';
+import { loadAblationConfirmedInputs, type AblationConfirmedInputs } from './ablation-reference-inputs';
 import { ABLATION_VARIANTS, VARIANT_CONCURRENCY, DEFAULT_ABLATION_BUDGET, ablationDatasetSchema, ablationDocumentSchema, peerPairsSchema, safeIdSchema,
   ablationSha256, contractSha256, parseAblationOptions, caseCompatibility, validateComparisonProtocol, validateUsage,
-  campaignInputState, realExecutionBlockers, createHarnessMockAdapter, runKey, AblationExecutionFailure, validateExecutionResult, ablationReportResultSchema,
+  campaignInputState, realExecutionBlockers, createHarnessMockAdapter, runKey, AblationExecutionFailure, validateExecutionResult, ablationReportResultSchema, executionWorkInput,
   type AblationOptions, type AblationCase, type AblationWorkItem, type AblationComparisonContract,
   type AblationExecutionAdapter, type AblationExecutionResult, type AblationUsage } from './ablation-protocol';
 
@@ -50,7 +52,9 @@ async function readRepositoryFile(repository: string, file: string) {
 const repositoryJson = async (repository: string, file: string) => JSON.parse((await readRepositoryFile(repository, file)).toString().replace(/^\uFEFF/, '')) as unknown;
 async function sourceCodeHashes(repository: string) {
   const files = ['scripts/research/run-agent-ablation.ts', 'scripts/research/ablation-protocol.ts',
+    'scripts/research/ablation-reference-inputs.ts', 'scripts/research/fixture-task-adapter.ts',
     'src/lib/eval/financial-research-score.ts', 'src/lib/eval/financial-research-score-v2.ts', 'src/lib/eval/statistics.ts',
+    'src/lib/eval/financial-research-score-v3.ts', 'src/lib/eval/confirmed-reference-contracts.ts', 'src/lib/eval/confirmed-reference-loader.ts',
     'scripts/workers/company-research-worker.ts', 'prisma/schema.prisma', 'package-lock.json'];
   async function walk(directory: string) {
     if ((await lstat(path.join(repository, directory))).isSymbolicLink()) throw new Error('ABLATION_CODE_SYMLINK');
@@ -99,6 +103,8 @@ async function loadInputs(options: AblationOptions, repository: string, adapter:
   }
   const rubricFile = path.resolve(repository, options.rubric), rubricBytes = await readRepositoryFile(repository, rubricFile);
   const rubric = financialResearchRubricV2Schema.parse(JSON.parse(rubricBytes.toString()));
+  const confirmedInputs = options.scoringVersion === 'confirmed-v3' ? await loadAblationConfirmedInputs(repository, dataset, datasetSha256, manifest) : null;
+  if (confirmedInputs) Object.assign(dataHashes, confirmedInputs.hashes);
   const labels = new Map<string, CaseAnswerability>(), labelHashes: Record<string, string> = {};
   const defaultLabels = 'fixtures/company-research/answerability-dev-v1.json';
   const labelFile = options.answerability ?? (dataset.datasetVersion === 'research-dev-v1' ? defaultLabels : undefined);
@@ -142,7 +148,9 @@ async function loadInputs(options: AblationOptions, repository: string, adapter:
     rubricSha256: ablationSha256(rubricBytes), labelHashes, peerPairsSha256, caseIds: dataset.cases.map(sample => sample.id), repeats: options.repeats,
     budget: DEFAULT_ABLATION_BUDGET, maxInputTokens: options.maxInputTokens, cacheCondition: options.cache, concurrencyByVariant: VARIANT_CONCURRENCY,
     adapter: { id: adapter?.id ?? 'production-adapter-unavailable', supportedVariants: adapter?.supportedVariants ?? [],
-      inputBudget: adapter?.inputBudget ?? 'accounted_after_task', researchConfiguration: adapter?.researchConfiguration ?? null } };
+      inputBudget: adapter?.inputBudget ?? 'accounted_after_task', researchConfiguration: adapter?.researchConfiguration ?? null },
+    ...(confirmedInputs ? { scoring: { version: 'confirmed-v3' as const, referenceVersion: confirmedInputs.confirmed.references.referenceVersion,
+      referenceSha256: confirmedInputs.confirmed.binding.referenceSha256, receiptSha256: confirmedInputs.confirmed.binding.receiptSha256 } } : {}) };
   const comparisonContractSha256 = contractSha256(contract);
   let registrationApproved = false, registrationBound = false, approvalReceiptBound = false, approvalHash: string | null = null;
   if (options.registration) {
@@ -158,7 +166,10 @@ async function loadInputs(options: AblationOptions, repository: string, adapter:
       approvalReceiptBound = receipt.comparisonContractSha256 === comparisonContractSha256 && receipt.maxInputTokens === options.maxInputTokens && receipt.variants.includes(options.variant);
     }
   }
-  const caseBlockers = dataset.cases.flatMap(sample => caseCompatibility(sample).executionBlockers.map(reason => `${sample.id}:${reason}`));
+  const caseBlockers = dataset.cases.flatMap(sample => caseCompatibility(sample, options.scoringVersion).executionBlockers.map(reason => `${sample.id}:${reason}`));
+  if (confirmedInputs) caseBlockers.push('V3_FULL_DATASET_NOT_FROZEN', 'CONFIRMED_NOT_DISCLOSED_STRATUM_MISSING',
+    ...manifest.filter(document => document.parserReceipt?.status && document.parserReceipt.status !== 'ready').map(document => `${document.id}:FIXED_PARSER_RECEIPT_${String(document.parserReceipt!.status).toUpperCase()}`),
+    ...confirmedInputs.confirmed.references.cases.filter(reference => reference.risks.fullQuestionCoverage === 'partial').map(reference => `${reference.caseId}:FULL_RISK_QUESTION_COVERAGE_PARTIAL`));
   if (options.provider === 'real') {
     const blockers = realExecutionBlockers({ options, adapter,
       env: { DATABASE_URL: process.env.DATABASE_URL, RESEARCH_TEST_DATABASE_URL: process.env.RESEARCH_TEST_DATABASE_URL }, rubricFrozen: rubric.status === 'frozen',
@@ -166,27 +177,33 @@ async function loadInputs(options: AblationOptions, repository: string, adapter:
       registrationApproved, registrationBound, approvalReceiptBound, caseBlockers: [...caseBlockers, ...work.filter(item => item.peerExecutionBlocked).map(item => `${item.id}:PEER_EXECUTION_BLOCKED`)], peerReviewed });
     if (blockers.length) throw new Error(`ABLATION_REAL_PREFLIGHT_REQUIRED:${blockers.join(';')}`);
   }
-  return { dataset, contract, comparisonContractSha256, approvalHash, rubric, labels, work, peerUnpairedCaseIds, caseBlockers };
+  return { dataset, contract, comparisonContractSha256, approvalHash, rubric, labels, work, peerUnpairedCaseIds, caseBlockers, confirmedInputs };
 }
 
-type CaseScore = { caseId: string; v1: ReturnType<typeof scoreFinancialCase> | null; v2: EvaluationScoreV2 | null; notScored: string[] };
-function scoreReports(samples: AblationCase[], execution: AblationExecutionResult, labels: Map<string, CaseAnswerability>, rubric: ReturnType<typeof financialResearchRubricV2Schema.parse>): CaseScore[] {
+type CaseScore = { caseId: string; v1: ReturnType<typeof scoreFinancialCase> | null; v2: EvaluationScoreV2 | null; v3: EvaluationScoreV3 | null; notScored: string[] };
+function scoreReports(samples: AblationCase[], execution: AblationExecutionResult, labels: Map<string, CaseAnswerability>, rubric: ReturnType<typeof financialResearchRubricV2Schema.parse>, confirmedInputs: AblationConfirmedInputs | null): CaseScore[] {
   return samples.map(sample => {
     const source = execution.reports.find(report => report.caseId === sample.id);
     const errors = [...(source?.hardErrors ?? ['NO_REPORT']), ...(['failed', 'cancelled'].includes(execution.status) ? [`EXECUTION_STATUS:${execution.status}`] : [])];
     const compatible = caseCompatibility(sample), notScored = [...compatible.scoringBlockers];
-    if (notScored.length) return { caseId: sample.id, v1: null, v2: null, notScored };
     const evaluation = sample as unknown as EvaluationCase;
+    let v3: EvaluationScoreV3 | null = null;
+    if (confirmedInputs) {
+      try { v3 = scoreFinancialCaseV3(evaluation, source?.report ?? null, errors, { rubric, mode: 'diagnostic',
+        reference: confirmedInputs.referenceCases.get(sample.id), legacyLabels: confirmedInputs.legacyLabels.get(sample.id), referenceBindingSha256: confirmedInputs.referenceBindingSha256 }); }
+      catch (error) { notScored.push(`V3_SCORING_UNAVAILABLE:${publicError(error)}`); }
+    }
+    if (compatible.scoringBlockers.length) return { caseId: sample.id, v1: null, v2: null, v3, notScored };
     let v1: ReturnType<typeof scoreFinancialCase>;
     try { v1 = scoreFinancialCase(evaluation, source?.report ?? null, errors); }
-    catch (error) { return { caseId: sample.id, v1: null, v2: null, notScored: [`V1_SCORING_UNAVAILABLE:${publicError(error)}`] }; }
+    catch (error) { return { caseId: sample.id, v1: null, v2: null, v3, notScored: [...notScored, `V1_SCORING_UNAVAILABLE:${publicError(error)}`] }; }
     let v2: EvaluationScoreV2 | null = null;
     if (!labels.has(sample.id)) notScored.push(`V2_LABEL_SCHEMA_NOT_READY:${compatible.inlineLabelError ?? 'missing labels'}`);
     else {
       try { v2 = scoreFinancialCaseV2(evaluation, source?.report ?? null, errors, labels.get(sample.id)!, { rubric, mode: 'diagnostic' }); }
       catch (error) { notScored.push(`V2_SCORING_UNAVAILABLE:${publicError(error)}`); }
     }
-    return { caseId: sample.id, v1, v2, notScored };
+    return { caseId: sample.id, v1, v2, v3, notScored };
   });
 }
 interface SavedRun {
@@ -251,7 +268,7 @@ export async function runAgentAblation(options: AblationOptions, dependencies: {
   if (adapter && (adapter.provider !== options.provider || !adapter.supportedVariants.includes(options.variant))) throw new Error('ABLATION_ADAPTER_PROVIDER_OR_VARIANT_MISMATCH');
   const loaded = await loadInputs(options, repository, adapter);
   const campaign = path.resolve(repository, options.campaign);
-  const allowedRoots = [path.join(repository, 'data/research-agent-upgrade/evidence/U-ablation'), ...(options.provider === 'mock' ? [path.join(repository, 'data/research-agent-upgrade/evidence/U03')] : [])];
+  const allowedRoots = [path.join(repository, 'data/research-agent-upgrade/evidence/U-ablation'), ...(options.provider === 'mock' ? [path.join(repository, 'data/research-agent-upgrade/evidence/U03'), path.join(repository, 'data/research-agent-upgrade/evidence/U04/engineering-20261026/evaluation')] : [])];
   if (!allowedRoots.some(root => campaign !== root && inside(root, campaign))) throw new Error('ABLATION_EXPLICIT_CONTROLLED_CAMPAIGN_REQUIRED');
   await ensureScopedDirectory(repository, campaign);
   const lockFile = path.join(campaign, '.run.lock'), lockId = randomUUID();
@@ -297,7 +314,7 @@ export async function runAgentAblation(options: AblationOptions, dependencies: {
       } else {
         await exclusiveJson(path.join(directory, 'started.json'), { runKey: key, comparisonContractSha256: loaded.comparisonContractSha256, remainingInputTokens: budget.remaining, at: new Date().toISOString() });
         try {
-          const returned = await adapter!.run({ variant: options.variant, runtimeOptions: { variant: options.variant }, work, repeat,
+          const returned = await adapter!.run({ variant: options.variant, runtimeOptions: { variant: options.variant }, work: executionWorkInput(work, loaded.confirmedInputs?.fixtureInputs), repeat,
             model: options.model, reasoning: options.reasoning, concurrency: VARIANT_CONCURRENCY[options.variant], cacheCondition: options.cache,
             budget: DEFAULT_ABLATION_BUDGET, remainingInputTokens: budget.remaining, signal: AbortSignal.timeout(DEFAULT_ABLATION_BUDGET.timeoutMs) });
           try { execution = validateExecutionResult(returned); }
@@ -321,7 +338,7 @@ export async function runAgentAblation(options: AblationOptions, dependencies: {
         status: budget.stop ? 'not_started' : execution.status, actualModelCalls: options.provider === 'mock' ? 0 : execution.usage.measurement === 'provider_reported' ? execution.usage.modelRequests : null,
         usage: execution.usage, elapsedMs: Date.now() - started, phaseDurationsMs: execution.phaseDurationsMs, treeSummary: execution.treeSummary,
         reports: execution.reports, error: execution.error ? publicError(new Error(execution.error)) : null,
-        scores: scoreReports(work.cases, execution, loaded.labels, loaded.rubric),
+        scores: scoreReports(work.cases, execution, loaded.labels, loaded.rubric, loaded.confirmedInputs),
         peerComparison: work.kind === 'peer' ? { status: 'not_scored', reason: 'U37 peer production adapter and cross-company scoring are not implemented; transport mock only' } : null };
       await exclusiveJson(path.join(directory, 'result.json'), saved);
       const file = path.join(directory, 'result.json');
@@ -329,27 +346,32 @@ export async function runAgentAblation(options: AblationOptions, dependencies: {
       await appendFile(ledger.ledgerFile, `${JSON.stringify(entry)}\n`); ledger.entries.push(entry); results.push(saved);
     }
     const allCaseScores = results.flatMap(result => result.scores);
-    const v1Scores = allCaseScores.flatMap(score => score.v1 ? [score.v1] : []), v2Scores = allCaseScores.flatMap(score => score.v2 ? [score.v2] : []);
+    const v1Scores = allCaseScores.flatMap(score => score.v1 ? [score.v1] : []), v2Scores = allCaseScores.flatMap(score => score.v2 ? [score.v2] : []), v3Scores = allCaseScores.flatMap(score => score.v3 ? [score.v3] : []);
     const summary = { schemaVersion: 1, variant: options.variant, provider: options.provider, productionAcceptance: false,
       measurement: options.provider === 'mock' ? 'simulated harness usage; actual model calls zero' : 'provider usage with unknown items preserved',
       comparisonContractSha256: loaded.comparisonContractSha256, complete: !stoppedEarly, stoppedEarly,
       plannedRuns: loaded.work.length * options.repeats, savedRuns: results.length, executedRuns: results.filter(result => result.status !== 'not_started').length,
       plannedDenominators: { companyLegs: loaded.work.reduce((total, work) => total + work.cases.length, 0) * options.repeats,
         numericItems: loaded.work.reduce((total, work) => total + work.cases.reduce((sum, sample) => sum + sample.reference.facts.length + sample.reference.changes.length, 0), 0) * options.repeats,
+        comparativeAmountItems: loaded.work.reduce((total, work) => total + work.cases.reduce((sum, sample) => sum + sample.reference.facts.length, 0), 0) * options.repeats,
+        percentageItems: loaded.work.reduce((total, work) => total + work.cases.reduce((sum, sample) => sum + sample.reference.changes.length, 0), 0) * options.repeats,
+        retainedOriginalDisclosureItems: loaded.work.reduce((total, work) => total + work.cases.reduce((sum, sample) => sum + (loaded.confirmedInputs?.referenceCases.get(sample.id)?.numericalReference.originalPriorDisclosures.length ?? 0), 0), 0) * options.repeats,
         singleCompanyQuestions: loaded.work.reduce((total, work) => total + work.cases.length * 3, 0) * options.repeats,
         peerComparisonQuestions: options.taskKind === 'peer' ? loaded.work.length * options.repeats : 0 },
-      scoringCoverage: { v1ScoredCompanyLegs: v1Scores.length, v2ScoredCompanyLegs: v2Scores.length, totalCompanyLegs: allCaseScores.length,
-        incompleteCoverage: v1Scores.length !== allCaseScores.length || v2Scores.length !== allCaseScores.length },
+      scoringVersion: options.scoringVersion ?? 'legacy-v1-v2', referenceBinding: loaded.confirmedInputs?.confirmed.binding ?? null,
+      scoringCoverage: { v1ScoredCompanyLegs: v1Scores.length, v2ScoredCompanyLegs: v2Scores.length, v3ScoredCompanyLegs: v3Scores.length, totalCompanyLegs: allCaseScores.length,
+        incompleteCoverage: loaded.confirmedInputs ? v3Scores.length !== allCaseScores.length : v1Scores.length !== allCaseScores.length || v2Scores.length !== allCaseScores.length },
       // An incompatible case suppresses the aggregate; no silent subset accuracy.
       v1: v1Scores.length === allCaseScores.length ? summarizeScores(v1Scores) : null,
       v2: v2Scores.length === allCaseScores.length ? summarizeScoresV2(v2Scores) : null,
+      v3: loaded.confirmedInputs && v3Scores.length === allCaseScores.length ? summarizeScoresV3(v3Scores) : null,
       campaignInputUsage: campaignInputState(ledger.entries.map(entry => entry.usage), options.maxInputTokens),
       actualModelCalls: options.provider === 'mock' ? 0 : results.some(result => result.actualModelCalls === null) ? null : results.reduce((sum, result) => sum + result.actualModelCalls!, 0),
       cost: 'unknown', failureRuns: results.filter(result => result.error).length, datasetCompatibilityBlockers: loaded.caseBlockers,
       peerUnpairedCaseIds: loaded.peerUnpairedCaseIds, results };
     await exclusiveJson(path.join(arm, 'results.json'), summary);
-    const rows = results.map(result => `| ${result.repeat} | ${result.workId} | ${result.status} | ${result.usage.inputTokens ?? 'unknown'} | ${result.scores.map(score => score.v1 ? `${score.v1.numericPassed}/${score.v1.numericTotal}` : 'not_scored').join('; ')} | ${result.error?.replace(/\|/g, '/') ?? ''} |`);
-    await writeFile(path.join(arm, 'results.md'), `# ${options.variant} — ${options.provider === 'mock' ? '运输框架 mock，非生产 Agent 验收' : '登记实验执行'}\n\n完整计划 ${summary.plannedRuns} 个父任务，保存 ${summary.savedRuns}，实际启动 ${summary.executedRuns}；提前停止 ${summary.stoppedEarly}。公司分支 ${summary.plannedDenominators.companyLegs}，必需数值 ${summary.plannedDenominators.numericItems}，单公司问题 ${summary.plannedDenominators.singleCompanyQuestions}，跨公司比较 ${summary.plannedDenominators.peerComparisonQuestions}。\n\n所有失败和未启动任务保留。评分兼容覆盖不足时汇总为 null，不把可兼容子集当全部质量。mock 用量是模拟账本，实际模型调用为零；真实费用 unknown。G0 人审未完成，当前不作正式 v2 质量结论。\n\n| 重复 | 案例/同行对 | 状态 | 输入 Token | v1 数值 | 错误/停止原因 |\n| --- | --- | --- | --- | --- | --- |\n${rows.join('\n')}\n\n全 campaign 已知输入 ${summary.campaignInputUsage.inputTokens}/${options.maxInputTokens}，未知用量 ${summary.campaignInputUsage.inputTokensAreLowerBound}。cap跨变体和重复共享；未知用量时停止后续任务。所有原始结果和账本保持可复核。\n`, { flag: 'wx' });
+    const rows = results.map(result => `| ${result.repeat} | ${result.workId} | ${result.status} | ${result.usage.inputTokens ?? 'unknown'} | ${result.scores.map(score => { const selected = loaded.confirmedInputs ? score.v3 : score.v1; return selected ? `${selected.numericPassed}/${selected.numericTotal}` : 'not_scored'; }).join('; ')} | ${result.error?.replace(/\|/g, '/') ?? ''} |`);
+    await writeFile(path.join(arm, 'results.md'), `# ${options.variant} — ${options.provider === 'mock' ? '运输框架 mock，非生产 Agent 验收' : '登记实验执行'}\n\n完整计划 ${summary.plannedRuns} 个父任务，保存 ${summary.savedRuns}，实际启动 ${summary.executedRuns}；提前停止 ${summary.stoppedEarly}。公司分支 ${summary.plannedDenominators.companyLegs}，必需数值 ${summary.plannedDenominators.numericItems}，单公司问题 ${summary.plannedDenominators.singleCompanyQuestions}，跨公司比较 ${summary.plannedDenominators.peerComparisonQuestions}。\n\n所有失败和未启动任务保留。评分兼容覆盖不足时汇总为 null，不把可兼容子集当全部质量。mock 用量是模拟账本，实际模型调用为零；真实费用 unknown。G0 人审未完成，当前评分版本 ${summary.scoringVersion} 只报告工程与诊断结果，不作正式质量结论。\n\n| 重复 | 案例/同行对 | 状态 | 输入 Token | ${summary.scoringVersion} 数值 | 错误/停止原因 |\n| --- | --- | --- | --- | --- | --- |\n${rows.join('\n')}\n\n全 campaign 已知输入 ${summary.campaignInputUsage.inputTokens}/${options.maxInputTokens}，未知用量 ${summary.campaignInputUsage.inputTokensAreLowerBound}。cap跨变体和重复共享；未知用量时停止后续任务。所有原始结果和账本保持可复核。\n`, { flag: 'wx' });
     const comparisons: unknown[] = [];
     for (const other of ABLATION_VARIANTS.filter(variant => variant !== options.variant)) {
       // Summaries are presentation artifacts. Only ledger-verified per-run reports/scores enter comparisons.
@@ -358,6 +380,14 @@ export async function runAgentAblation(options: AblationOptions, dependencies: {
       const expectedKeys = Array.from({ length: options.repeats }, (_, index) => loaded.work.map(work => runKey(other, index + 1, work.id))).flat();
       if (previous.length !== expectedKeys.length || expectedKeys.some(key => !previous.some(result => result.runKey === key))) {
         comparisons.push({ baseline: other, candidate: options.variant, result: null, reason: 'Incomplete previous arm matrix; missing runs may not be dropped' });
+        continue;
+      }
+      if (loaded.confirmedInputs) {
+        const scores = (runs: SavedRun[]) => runs.flatMap(run => run.scores.flatMap(score => score.v3 ? [{ ...score.v3, caseId: `${run.repeat}:${run.workId}:${score.caseId}` }] : []));
+        const left = scores(previous), right = scores(results);
+        comparisons.push(left.length === previous.reduce((sum, run) => sum + run.scores.length, 0) && right.length === allCaseScores.length ?
+          { baseline: other, candidate: options.variant, scoringVersion: 'confirmed-v3', result: compareFinancialScoresV3(left, right) } :
+          { baseline: other, candidate: options.variant, scoringVersion: 'confirmed-v3', result: null, reason: 'Incomplete v3 numerical coverage; full matrix retained' });
         continue;
       }
       const scores = (runs: SavedRun[]) => runs.flatMap(run => run.scores.flatMap(score => score.v2 ? [{ ...score.v2, caseId: `${run.repeat}:${run.workId}:${score.caseId}` }] : []));
