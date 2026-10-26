@@ -1,6 +1,6 @@
 # 消融实验登记
 
-> 状态：`design_approved / execution_pending`。用户 Q4A 已按 [五项确认回执](block1-confirmation-20261025.md) 选定完整五变体、14 家、每例两次、整轮输入上限 80M；只批准设计，不启动真实模型实验。rubric 与旧四家标签分别冻结，扩展样本和绑定最终协议的执行条件仍待完成。
+> 状态：`design_approved / execution_pending`。用户Q4A已按 [五项确认回执](block1-confirmation-20261025.md) 选定完整五变体、14家、每例两次、整轮输入上限80M；Q9B按 [新增回执](acceptance-confirmation-20261026.md) 选择后续协议优先使用gpt-6.1-sol/max。只确认设计与配置偏好，真实执行仍待完整协议和批准。rubric与旧四家标签分别冻结，新增10家有限参考已确认，全量新集的资料、分层和评分前置未完成。
 
 ## 本次交付范围
 
@@ -23,6 +23,8 @@
 
 产品研究模型的仓库默认来自 `src/lib/company-research/config.ts`：`gpt-5.6-luna` / `max`，环境变量可以覆盖。该默认不等于实验已冻结的实际配置。真实执行必须显式指定 `--model` / `--reasoning`，并与可信 adapter 报告的实际研究配置一致。本次开发子 Agent 的模型配置不构成研究模型选择依据。mock 默认模型和推理均标为 `harness-mock`。
 
+用户于2026-10-26实际选择Q9B：后续协议优先采用 **gpt-6.1-sol / max**。最后一次本机允许字段的只读核对仍为sol/high，本次未修改环境；新机器回执单独登记preference，不改写旧design-approved回执中的空模型字段。sol/max的adapter兼容、实际用量和价格仍待核实；价格为unknown，最终配置与协议hash尚未冻结，未启动付费任务。
+
 缓存提议统一为 `cold`，每个 arm 与重复遵守相同的冷启动定义；若采用 `warm`，另建 campaign 并登记预热步骤、共享范围和顺序。当前 mock 只传递这一条件，不验证生产缓存效果。真实 adapter 接入时还需冻结原件/解析版本、检索参数和索引版本、工具/权限、收尾预算以及各阶段实现；比较检索优化 R 时独立登记唯一变化。
 
 ## 样本与版本
@@ -31,6 +33,8 @@
 
 当前 6 例有真实执行阻塞；旧 v1 评分不能覆盖全部新口径，U02 的两文档标签也不能直接代表扫描案例的三文档任务。覆盖不足时整个 arm 的对应质量汇总为 `null`，仍保存每个案例、原始数值项和问题分母。解决单位、口径、扫描资料范围适配并重新冻结后，才能使用全量新集做正式消融。
 
+Q6A/Q7A/Q8A已确认新增10家的展示数值/比较口径、现金流可回答性及限定风险参考，另存 `confirmed-references-20261026.json`。海尔/平安/太保的新参考使用调整后基期，原披露另存；光明不再是未披露候选，平安/招行风险覆盖仍partial。该覆盖层尚未接入正式评分或全量冻结；未披露分层没有已确认案例，须补齐至少2例，不以模型缺答、旧候选或零分母替代。
+
 | 登记资料 | SHA-256 |
 | --- | --- |
 | `development-v2.json` | `1e1f3567497ac28f9edef82d0a3b1099004c549ed9f4e34055e0541f5a492024` |
@@ -38,6 +42,7 @@
 | `rubric-v2.json` | `59cb710f1c7f8f4cea35b4c7aba662585dd0a642d35e70a6a2e98b234637a748` |
 | `rubric.json`（v1） | `81df0d53f38650a955957896c6c9883030588dc455cb482b95eff2ac7e0f0d45` |
 | `answerability-dev-v1.json`（仅旧 4 家，Q1A—Q3A 冻结） | `c43df428b0bda80c41d98bf273e06bc35b4efe955098556d9a5656d60f648d61` |
+| [confirmed-references-20261026.json](../../../fixtures/company-research/confirmed-references-20261026.json)（Q6—Q8有限参考，尚未接入scorer/runner） | `441db0d606042d06392a06bd6628a1134bc50a4c6e8bc1d911c67cc26f5b14c6` |
 | `development.json`（旧 4 家） | `000f1fdbdaad9f48d98c632bbe6afa3f602a5c550a3ffc8b95e2f0a35d101cf8` |
 | `holdout-registration-v2.json`（仅登记） | `c1ccbea29d988e8de2c36dbe42c28447adc74634b85ff6884de88da6a00907a2` |
 
@@ -73,7 +78,7 @@
 
 ## 真实执行前必须完成
 
-- 人工确认并冻结新样本的数值、口径、三问标签与 v2 rubric，解决 6 例真实执行阻塞和所有评分覆盖问题。
+- 承接已确认的Q6—Q8有限参考，补齐未披露分层、风险/资料覆盖与独立标签冻结；v2 rubric及旧四家标签沿用，解决6例真实执行阻塞和所有评分覆盖问题。
 - U13/U14/U33/U37 按所选变体提供 adapter；核实实际模型/推理、整个任务共享的预算、输入上限、工具权限及冷缓存条件。
 - 生成真实 adapter 对应的完整协议 hash，明确变体、重复、全 campaign cap 与同行独立预算。模型、源码、数据或预算改变须重新登记。
 - 获取明确的用户批准回执，回执绑定协议 hash、cap 和所准变体；registration 绑定回执文件的 SHA-256。待审文档或 Agent 自写的 `approved` 不能替代真实用户授权。

@@ -1,0 +1,1848 @@
+{
+  "schemaVersion": 1,
+  "referenceVersion": "research-dev-u-confirmed-references-20261026-v1",
+  "artifactKind": "bounded_reference_overlay",
+  "status": "confirmed_within_choice_card_scope",
+  "recordedAt": "2026-10-26T16:22:54+08:00",
+  "sourceDataset": {
+    "path": "fixtures/company-research/development-v2.json",
+    "sha256": "1e1f3567497ac28f9edef82d0a3b1099004c549ed9f4e34055e0541f5a492024",
+    "datasetVersion": "research-dev-u-v2"
+  },
+  "choiceCard": {
+    "path": "docs/plans/research-agent-upgrade/acceptance-choices-20261026.md",
+    "sha256": "43515d638ffe46e44270e1d3130fa8ff32ccd87e19c09772e92efba34d81d11c",
+    "commit": "f96f6cd68ad415435e55ec7d0998392346637454"
+  },
+  "confirmation": {
+    "path": "docs/plans/research-agent-upgrade/acceptance-confirmation-20261026.md",
+    "sha256": "1b0028a419e3c5d333707d0cb76b3c77d5be2afc3a817017dd635b468963de38",
+    "originalResponse": "A A  A B",
+    "choices": {
+      "Q6": "A",
+      "Q7": "A",
+      "Q8": "A",
+      "Q9": "B"
+    },
+    "method": "AI checked original documents; user accepted displayed bounded references",
+    "personalReadingTime": null,
+    "signature": null
+  },
+  "evidence": [
+    {
+      "path": "data/research-agent-upgrade/evidence/U04/human-annotation-worksheet.md",
+      "sha256": "d34080a23eac5772037bdc56b6396e9fc68aa9189be1d10060e4f3da2e7f661a"
+    },
+    {
+      "path": "data/research-agent-upgrade/evidence/U04/acceptance-choices-20261026-01/verification.json",
+      "sha256": "e5641fc8c809718428c3c1748ce5b67ab850c22a17a21e92a111c5aa27d3307d"
+    },
+    {
+      "path": "data/research-agent-upgrade/evidence/U04/acceptance-choices-20261026-01/source-review.json",
+      "sha256": "b5ec460cfd820085db31c30e9a6863e64bd7e717f705c8db11ec1f3d2dac3efb"
+    },
+    {
+      "path": "data/research-agent-upgrade/evidence/U04/acceptance-choices-20261026-01/accounting-bridges.json",
+      "sha256": "65b331a6f59c02361a7540575cfc3f8e1b449207597e775260fc293977662484"
+    },
+    {
+      "path": "data/research-agent-upgrade/evidence/U04/acceptance-choices-20261026-01/preparation-receipt.json",
+      "sha256": "c297562e7f28685643b25a90691ba63b018300212ea7b19c0c92c4940445cf17"
+    }
+  ],
+  "integration": {
+    "scorerIntegrated": false,
+    "runnerIntegrated": false,
+    "datasetFrozen": false,
+    "formalAnswerabilityLabelsFrozen": false,
+    "humanGoldenCompaniesAdded": 0,
+    "executionApproved": false,
+    "note": "This version preserves the confirmed references for later source/scoring adaptation. It is not a full dataset or a formal U02 label file."
+  },
+  "experimentPreference": {
+    "model": "gpt-6.1-sol",
+    "reasoning": "max",
+    "selectedBy": "Q9B",
+    "status": "preference_only",
+    "localEnvironmentChanged": false,
+    "lastObservedLocalConfiguration": {
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "observedDuring": "2026-10-26-u-acceptance-choices"
+    },
+    "toolBudget": 40,
+    "parentTimeBudgetMs": 1200000,
+    "campaignInputCap": 80000000,
+    "price": null,
+    "executionApproved": false
+  },
+  "summary": {
+    "numericCaseReferencesConfirmed": 10,
+    "cashFlowAnswerabilityReferencesConfirmed": 10,
+    "riskSectionReferencesConfirmed": 10,
+    "riskFullQuestionCoverageStillPartial": [
+      "dev-601318",
+      "dev-600036"
+    ],
+    "confirmedNotDisclosedCases": [],
+    "wholeCompanyGoldenPromotions": 0
+  },
+  "cases": [
+    {
+      "caseId": "dev-600690",
+      "company": {
+        "symbol": "600690.SH",
+        "name": "海尔智家"
+      },
+      "periods": [
+        {
+          "start": "2023-01-01",
+          "end": "2023-12-31",
+          "kind": "annual"
+        },
+        {
+          "start": "2024-01-01",
+          "end": "2024-12-31",
+          "kind": "annual"
+        }
+      ],
+      "taskDocumentIds": [
+        "600690-2023-annual",
+        "600690-2024-annual"
+      ],
+      "numericalReference": {
+        "confirmedBy": "Q6A",
+        "currency": "CNY",
+        "scope": "consolidated",
+        "basis": "annual_cumulative",
+        "comparisonBasis": "restated_comparative",
+        "figures": [
+          {
+            "metric": "revenue",
+            "unit": "yuan",
+            "previous": {
+              "rawValue": "274204520847.97",
+              "normalizedYuan": "274204520847.97",
+              "source": {
+                "documentId": "600690-2024-annual",
+                "bytesSha256": "cb2830d04860a0c18a491b9998c0928d1b77e740f07824a34f7543d823f7b10b",
+                "filePage": 10
+              }
+            },
+            "current": {
+              "rawValue": "285981225203.93",
+              "normalizedYuan": "285981225203.93",
+              "source": {
+                "documentId": "600690-2024-annual",
+                "bytesSha256": "cb2830d04860a0c18a491b9998c0928d1b77e740f07824a34f7543d823f7b10b",
+                "filePage": 10
+              }
+            },
+            "percentage": "4.29"
+          },
+          {
+            "metric": "parent_net_profit",
+            "unit": "yuan",
+            "previous": {
+              "rawValue": "16596615045.87",
+              "normalizedYuan": "16596615045.87",
+              "source": {
+                "documentId": "600690-2024-annual",
+                "bytesSha256": "cb2830d04860a0c18a491b9998c0928d1b77e740f07824a34f7543d823f7b10b",
+                "filePage": 10
+              }
+            },
+            "current": {
+              "rawValue": "18741120122.93",
+              "normalizedYuan": "18741120122.93",
+              "source": {
+                "documentId": "600690-2024-annual",
+                "bytesSha256": "cb2830d04860a0c18a491b9998c0928d1b77e740f07824a34f7543d823f7b10b",
+                "filePage": 10
+              }
+            },
+            "percentage": "12.92"
+          },
+          {
+            "metric": "operating_cash_flow",
+            "unit": "yuan",
+            "previous": {
+              "rawValue": "26535780568.36",
+              "normalizedYuan": "26535780568.36",
+              "source": {
+                "documentId": "600690-2024-annual",
+                "bytesSha256": "cb2830d04860a0c18a491b9998c0928d1b77e740f07824a34f7543d823f7b10b",
+                "filePage": 10
+              }
+            },
+            "current": {
+              "rawValue": "26543081911.96",
+              "normalizedYuan": "26543081911.96",
+              "source": {
+                "documentId": "600690-2024-annual",
+                "bytesSha256": "cb2830d04860a0c18a491b9998c0928d1b77e740f07824a34f7543d823f7b10b",
+                "filePage": 10
+              }
+            },
+            "percentage": "0.03"
+          }
+        ],
+        "originalPriorDisclosures": [
+          {
+            "metric": "revenue",
+            "unit": "yuan",
+            "rawValue": "261427783050.10",
+            "normalizedYuan": "261427783050.10",
+            "source": {
+              "documentId": "600690-2023-annual",
+              "bytesSha256": "b6a8748c3a59722fd1dcd302d1ffa83dfdbe4230a1b727d8182699b7cc407570",
+              "filePage": 9
+            }
+          },
+          {
+            "metric": "parent_net_profit",
+            "unit": "yuan",
+            "rawValue": "16596615045.87",
+            "normalizedYuan": "16596615045.87",
+            "source": {
+              "documentId": "600690-2023-annual",
+              "bytesSha256": "b6a8748c3a59722fd1dcd302d1ffa83dfdbe4230a1b727d8182699b7cc407570",
+              "filePage": 9
+            }
+          },
+          {
+            "metric": "operating_cash_flow",
+            "unit": "yuan",
+            "rawValue": "25262376228.30",
+            "normalizedYuan": "25262376228.30",
+            "source": {
+              "documentId": "600690-2023-annual",
+              "bytesSha256": "b6a8748c3a59722fd1dcd302d1ffa83dfdbe4230a1b727d8182699b7cc407570",
+              "filePage": 9
+            }
+          }
+        ],
+        "displayUnit": "hundred_million_yuan",
+        "acceptedDisplay": {
+          "years": "2023→2024",
+          "revenue": "2742.0452 → 2859.8123（4.29%）",
+          "parentNetProfit": "165.9662 → 187.4112（12.92%）",
+          "operatingCashFlow": "265.3578 → 265.4308（0.03%）"
+        },
+        "limitations": "Use later-report adjusted prior-year columns for changes; retain original disclosures separately."
+      },
+      "cashFlow": {
+        "questionId": "cash_flow",
+        "confirmedBy": "Q7A",
+        "answerability": "answerable",
+        "referenceStatus": "confirmed_within_choice_card_scope",
+        "comparisonReference": "numericalReference.figures",
+        "acceptedDirectionStatement": "2023调整后→2024；现金流 +0.03%，归母 +12.92%，同向。",
+        "profitDirectionMetric": "parent_net_profit",
+        "direction": "same",
+        "explanationType": "consolidated_net_profit_accounting_bridge",
+        "acceptedReference": "两年合并利润调节表显示：应付调整项同比贡献 +59.1007 亿元；存货 −45.8918 亿元，应收 −35.0627 亿元。合并利润 +24.8713 亿元，其余调节项合计 −2.9444 亿元，共对应现金流 +0.0730 亿元。原披露基期 252.6238 亿元另存，不与 +0.03% 拼接。",
+        "sourceRanges": [
+          {
+            "documentId": "600690-2024-annual",
+            "bytesSha256": "cb2830d04860a0c18a491b9998c0928d1b77e740f07824a34f7543d823f7b10b",
+            "filePageStart": 206,
+            "filePageEnd": 206
+          }
+        ],
+        "accountingBridge": {
+          "path": "data/research-agent-upgrade/evidence/U04/acceptance-choices-20261026-01/accounting-bridges.json",
+          "sha256": "65b331a6f59c02361a7540575cfc3f8e1b449207597e775260fc293977662484",
+          "caseId": "dev-600690",
+          "startingProfitMetric": "consolidated_net_profit",
+          "beforeYuan": "26535780568.36",
+          "afterYuan": "26543081911.96",
+          "deltaYuan": "7301343.60",
+          "boundary": "Accounting contribution does not establish business causality or demand/collection changes."
+        }
+      },
+      "risks": {
+        "questionId": "risks",
+        "confirmedBy": "Q8A",
+        "referenceStatus": "confirmed_within_choice_card_scope",
+        "acceptedReference": "宏观需求、价格战、原材料、海外运营、汇率、政策、信贷、存货主题延续。2024 本节把“关税及报复性贸易措施增加”列首，汇率从第5项前移至第2项，并单列资本开支；该节由8项变为10项。",
+        "boundary": "仅确认该节条目、顺序及措辞变化，不声称关税风险全年首次出现或风险程度升降。",
+        "sourceRanges": [
+          {
+            "documentId": "600690-2023-annual",
+            "bytesSha256": "b6a8748c3a59722fd1dcd302d1ffa83dfdbe4230a1b727d8182699b7cc407570",
+            "filePageStart": 46,
+            "filePageEnd": 47
+          },
+          {
+            "documentId": "600690-2024-annual",
+            "bytesSha256": "cb2830d04860a0c18a491b9998c0928d1b77e740f07824a34f7543d823f7b10b",
+            "filePageStart": 56,
+            "filePageEnd": 57
+          }
+        ],
+        "fullQuestionCoverage": "not_assessed_by_this_overlay",
+        "actualRiskDegreeConfirmed": false
+      },
+      "remainingSourceAndExecutionLimitations": [
+        "restated comparisonFacts/restated_comparative need a production adapter; original disclosures cannot replace adjusted comparatives in a real run"
+      ],
+      "supportingDocumentAcceptance": [],
+      "wholeCompanyGolden": false
+    },
+    {
+      "caseId": "dev-000651",
+      "company": {
+        "symbol": "000651.SZ",
+        "name": "格力电器"
+      },
+      "periods": [
+        {
+          "start": "2023-01-01",
+          "end": "2023-12-31",
+          "kind": "annual"
+        },
+        {
+          "start": "2024-01-01",
+          "end": "2024-12-31",
+          "kind": "annual"
+        }
+      ],
+      "taskDocumentIds": [
+        "000651-2023-annual",
+        "000651-2024-annual"
+      ],
+      "numericalReference": {
+        "confirmedBy": "Q6A",
+        "currency": "CNY",
+        "scope": "consolidated",
+        "basis": "annual_cumulative",
+        "comparisonBasis": "original_disclosure",
+        "figures": [
+          {
+            "metric": "revenue",
+            "unit": "yuan",
+            "previous": {
+              "rawValue": "203979266387.09",
+              "normalizedYuan": "203979266387.09",
+              "source": {
+                "documentId": "000651-2023-annual",
+                "bytesSha256": "32ebc475a2291ce4f1b5c1a9f9da55227e03192f07e75041e976c29d213ec8aa",
+                "filePage": 7
+              }
+            },
+            "current": {
+              "rawValue": "189163654064.64",
+              "normalizedYuan": "189163654064.64",
+              "source": {
+                "documentId": "000651-2024-annual",
+                "bytesSha256": "c7184706caf5f57c04a795990967cfc4f4253024e02f8bdaffe2b260df2c6006",
+                "filePage": 7
+              }
+            },
+            "percentage": "-7.26"
+          },
+          {
+            "metric": "parent_net_profit",
+            "unit": "yuan",
+            "previous": {
+              "rawValue": "29017387604.18",
+              "normalizedYuan": "29017387604.18",
+              "source": {
+                "documentId": "000651-2023-annual",
+                "bytesSha256": "32ebc475a2291ce4f1b5c1a9f9da55227e03192f07e75041e976c29d213ec8aa",
+                "filePage": 7
+              }
+            },
+            "current": {
+              "rawValue": "32184570372.28",
+              "normalizedYuan": "32184570372.28",
+              "source": {
+                "documentId": "000651-2024-annual",
+                "bytesSha256": "c7184706caf5f57c04a795990967cfc4f4253024e02f8bdaffe2b260df2c6006",
+                "filePage": 7
+              }
+            },
+            "percentage": "10.91"
+          },
+          {
+            "metric": "operating_cash_flow",
+            "unit": "yuan",
+            "previous": {
+              "rawValue": "56398426354.17",
+              "normalizedYuan": "56398426354.17",
+              "source": {
+                "documentId": "000651-2023-annual",
+                "bytesSha256": "32ebc475a2291ce4f1b5c1a9f9da55227e03192f07e75041e976c29d213ec8aa",
+                "filePage": 7
+              }
+            },
+            "current": {
+              "rawValue": "29369250570.66",
+              "normalizedYuan": "29369250570.66",
+              "source": {
+                "documentId": "000651-2024-annual",
+                "bytesSha256": "c7184706caf5f57c04a795990967cfc4f4253024e02f8bdaffe2b260df2c6006",
+                "filePage": 7
+              }
+            },
+            "percentage": "-47.93"
+          }
+        ],
+        "originalPriorDisclosures": [],
+        "displayUnit": "hundred_million_yuan",
+        "acceptedDisplay": {
+          "years": "2023→2024",
+          "revenue": "2039.7927 → 1891.6365（-7.26%）",
+          "parentNetProfit": "290.1739 → 321.8457（10.91%）",
+          "operatingCashFlow": "563.9843 → 293.6925（-47.93%）"
+        },
+        "limitations": "Comparison is limited to the original disclosed annual cumulative consolidated figures."
+      },
+      "cashFlow": {
+        "questionId": "cash_flow",
+        "confirmedBy": "Q7A",
+        "answerability": "answerable",
+        "referenceStatus": "confirmed_within_choice_card_scope",
+        "comparisonReference": "numericalReference.figures",
+        "acceptedDirectionStatement": "2023→2024；现金流 −47.93%，归母 +10.91%，反向。",
+        "profitDirectionMetric": "parent_net_profit",
+        "direction": "opposite",
+        "explanationType": "annual_report_attribution",
+        "acceptedReference": "年报明确写“主要系渠道模式及市场变化等因素所致”。只接受其概括归因，不补造具体渠道机制。",
+        "sourceRanges": [
+          {
+            "documentId": "000651-2024-annual",
+            "bytesSha256": "c7184706caf5f57c04a795990967cfc4f4253024e02f8bdaffe2b260df2c6006",
+            "filePageStart": 35,
+            "filePageEnd": 35
+          }
+        ]
+      },
+      "risks": {
+        "questionId": "risks",
+        "confirmedBy": "Q8A",
+        "referenceStatus": "confirmed_within_choice_card_scope",
+        "acceptedReference": "宏观、生产要素价格、市场竞争、海外、汇率主题延续。“海外政治风险”改为“海外市场风险”，增加当地法律、监管因素；竞争与原料价格的说明更具体。",
+        "boundary": "确认披露措辞，不把描述更详细视为风险恶化。",
+        "sourceRanges": [
+          {
+            "documentId": "000651-2023-annual",
+            "bytesSha256": "32ebc475a2291ce4f1b5c1a9f9da55227e03192f07e75041e976c29d213ec8aa",
+            "filePageStart": 39,
+            "filePageEnd": 40
+          },
+          {
+            "documentId": "000651-2024-annual",
+            "bytesSha256": "c7184706caf5f57c04a795990967cfc4f4253024e02f8bdaffe2b260df2c6006",
+            "filePageStart": 44,
+            "filePageEnd": 45
+          }
+        ],
+        "fullQuestionCoverage": "not_assessed_by_this_overlay",
+        "actualRiskDegreeConfirmed": false
+      },
+      "remainingSourceAndExecutionLimitations": [],
+      "supportingDocumentAcceptance": [],
+      "wholeCompanyGolden": false
+    },
+    {
+      "caseId": "dev-000568",
+      "company": {
+        "symbol": "000568.SZ",
+        "name": "泸州老窖"
+      },
+      "periods": [
+        {
+          "start": "2023-01-01",
+          "end": "2023-12-31",
+          "kind": "annual"
+        },
+        {
+          "start": "2024-01-01",
+          "end": "2024-12-31",
+          "kind": "annual"
+        }
+      ],
+      "taskDocumentIds": [
+        "000568-2023-annual",
+        "000568-2024-annual"
+      ],
+      "numericalReference": {
+        "confirmedBy": "Q6A",
+        "currency": "CNY",
+        "scope": "consolidated",
+        "basis": "annual_cumulative",
+        "comparisonBasis": "original_disclosure",
+        "figures": [
+          {
+            "metric": "revenue",
+            "unit": "yuan",
+            "previous": {
+              "rawValue": "30233301388.26",
+              "normalizedYuan": "30233301388.26",
+              "source": {
+                "documentId": "000568-2023-annual",
+                "bytesSha256": "c410ac2e3a1e786af997921a88e903077ad55572230dbc6e942dfb85d52db91c",
+                "filePage": 7
+              }
+            },
+            "current": {
+              "rawValue": "31196248208.33",
+              "normalizedYuan": "31196248208.33",
+              "source": {
+                "documentId": "000568-2024-annual",
+                "bytesSha256": "4c8ab78fac56032945e2ad789fddbc5b6e254251f497eb20c04b73016a03b4de",
+                "filePage": 8
+              }
+            },
+            "percentage": "3.19"
+          },
+          {
+            "metric": "parent_net_profit",
+            "unit": "yuan",
+            "previous": {
+              "rawValue": "13246394700.59",
+              "normalizedYuan": "13246394700.59",
+              "source": {
+                "documentId": "000568-2023-annual",
+                "bytesSha256": "c410ac2e3a1e786af997921a88e903077ad55572230dbc6e942dfb85d52db91c",
+                "filePage": 7
+              }
+            },
+            "current": {
+              "rawValue": "13472986476.01",
+              "normalizedYuan": "13472986476.01",
+              "source": {
+                "documentId": "000568-2024-annual",
+                "bytesSha256": "4c8ab78fac56032945e2ad789fddbc5b6e254251f497eb20c04b73016a03b4de",
+                "filePage": 8
+              }
+            },
+            "percentage": "1.71"
+          },
+          {
+            "metric": "operating_cash_flow",
+            "unit": "yuan",
+            "previous": {
+              "rawValue": "10648364935.46",
+              "normalizedYuan": "10648364935.46",
+              "source": {
+                "documentId": "000568-2023-annual",
+                "bytesSha256": "c410ac2e3a1e786af997921a88e903077ad55572230dbc6e942dfb85d52db91c",
+                "filePage": 7
+              }
+            },
+            "current": {
+              "rawValue": "19181768363.65",
+              "normalizedYuan": "19181768363.65",
+              "source": {
+                "documentId": "000568-2024-annual",
+                "bytesSha256": "4c8ab78fac56032945e2ad789fddbc5b6e254251f497eb20c04b73016a03b4de",
+                "filePage": 8
+              }
+            },
+            "percentage": "80.14"
+          }
+        ],
+        "originalPriorDisclosures": [],
+        "displayUnit": "hundred_million_yuan",
+        "acceptedDisplay": {
+          "years": "2023→2024",
+          "revenue": "302.3330 → 311.9625（3.19%）",
+          "parentNetProfit": "132.4639 → 134.7299（1.71%）",
+          "operatingCashFlow": "106.4836 → 191.8177（80.14%）"
+        },
+        "limitations": "Comparison is limited to the original disclosed annual cumulative consolidated figures."
+      },
+      "cashFlow": {
+        "questionId": "cash_flow",
+        "confirmedBy": "Q7A",
+        "answerability": "answerable",
+        "referenceStatus": "confirmed_within_choice_card_scope",
+        "comparisonReference": "numericalReference.figures",
+        "acceptedDirectionStatement": "2023→2024；现金流 +80.14%，归母 +1.71%，同向。",
+        "profitDirectionMetric": "parent_net_profit",
+        "direction": "same",
+        "explanationType": "annual_report_attribution",
+        "acceptedReference": "年报明确写“主要系本期销售收到的现金增加，以及票据贴现增加所致”。同页随后现金流与当年利润差异的段落不独自充当同比原因。",
+        "sourceRanges": [
+          {
+            "documentId": "000568-2024-annual",
+            "bytesSha256": "4c8ab78fac56032945e2ad789fddbc5b6e254251f497eb20c04b73016a03b4de",
+            "filePageStart": 24,
+            "filePageEnd": 24
+          }
+        ]
+      },
+      "risks": {
+        "questionId": "risks",
+        "confirmedBy": "Q8A",
+        "referenceStatus": "confirmed_within_choice_card_scope",
+        "acceptedReference": "2023 分列宏观经济和市场竞争，使用“竞争、分化、集中”；2024 本节集中描述“强者恒强、弱者恒弱”、名酒全产品线分化、渠道下沉和价格带竞争。",
+        "boundary": "宏观风险不再单列不能写成宏观风险消失。",
+        "sourceRanges": [
+          {
+            "documentId": "000568-2023-annual",
+            "bytesSha256": "c410ac2e3a1e786af997921a88e903077ad55572230dbc6e942dfb85d52db91c",
+            "filePageStart": 31,
+            "filePageEnd": 32
+          },
+          {
+            "documentId": "000568-2024-annual",
+            "bytesSha256": "4c8ab78fac56032945e2ad789fddbc5b6e254251f497eb20c04b73016a03b4de",
+            "filePageStart": 31,
+            "filePageEnd": 31
+          }
+        ],
+        "fullQuestionCoverage": "not_assessed_by_this_overlay",
+        "actualRiskDegreeConfirmed": false
+      },
+      "remainingSourceAndExecutionLimitations": [],
+      "supportingDocumentAcceptance": [],
+      "wholeCompanyGolden": false
+    },
+    {
+      "caseId": "dev-002304",
+      "company": {
+        "symbol": "002304.SZ",
+        "name": "洋河股份"
+      },
+      "periods": [
+        {
+          "start": "2023-01-01",
+          "end": "2023-12-31",
+          "kind": "annual"
+        },
+        {
+          "start": "2024-01-01",
+          "end": "2024-12-31",
+          "kind": "annual"
+        }
+      ],
+      "taskDocumentIds": [
+        "002304-2023-annual",
+        "002304-2024-annual",
+        "002304-2024-audit"
+      ],
+      "numericalReference": {
+        "confirmedBy": "Q6A",
+        "currency": "CNY",
+        "scope": "consolidated",
+        "basis": "annual_cumulative",
+        "comparisonBasis": "original_disclosure",
+        "figures": [
+          {
+            "metric": "revenue",
+            "unit": "yuan",
+            "previous": {
+              "rawValue": "33126277551.51",
+              "normalizedYuan": "33126277551.51",
+              "source": {
+                "documentId": "002304-2023-annual",
+                "bytesSha256": "68e5e79fc98e575983ab55a851f6d40da4ab4e5095a117ea416f901161c2622f",
+                "filePage": 77
+              }
+            },
+            "current": {
+              "rawValue": "28876296993.56",
+              "normalizedYuan": "28876296993.56",
+              "source": {
+                "documentId": "002304-2024-annual",
+                "bytesSha256": "436928c6acaac79332794412514d191c7e60451e2c093e91a954aebfbde379a2",
+                "filePage": 7
+              }
+            },
+            "percentage": "-12.83"
+          },
+          {
+            "metric": "parent_net_profit",
+            "unit": "yuan",
+            "previous": {
+              "rawValue": "10015930040.27",
+              "normalizedYuan": "10015930040.27",
+              "source": {
+                "documentId": "002304-2023-annual",
+                "bytesSha256": "68e5e79fc98e575983ab55a851f6d40da4ab4e5095a117ea416f901161c2622f",
+                "filePage": 78
+              }
+            },
+            "current": {
+              "rawValue": "6673388602.12",
+              "normalizedYuan": "6673388602.12",
+              "source": {
+                "documentId": "002304-2024-annual",
+                "bytesSha256": "436928c6acaac79332794412514d191c7e60451e2c093e91a954aebfbde379a2",
+                "filePage": 7
+              }
+            },
+            "percentage": "-33.37"
+          },
+          {
+            "metric": "operating_cash_flow",
+            "unit": "yuan",
+            "previous": {
+              "rawValue": "6130220867.96",
+              "normalizedYuan": "6130220867.96",
+              "source": {
+                "documentId": "002304-2023-annual",
+                "bytesSha256": "68e5e79fc98e575983ab55a851f6d40da4ab4e5095a117ea416f901161c2622f",
+                "filePage": 81
+              }
+            },
+            "current": {
+              "rawValue": "4628711237.28",
+              "normalizedYuan": "4628711237.28",
+              "source": {
+                "documentId": "002304-2024-annual",
+                "bytesSha256": "436928c6acaac79332794412514d191c7e60451e2c093e91a954aebfbde379a2",
+                "filePage": 7
+              }
+            },
+            "percentage": "-24.49"
+          }
+        ],
+        "originalPriorDisclosures": [],
+        "displayUnit": "hundred_million_yuan",
+        "acceptedDisplay": {
+          "years": "2023→2024",
+          "revenue": "331.2628 → 288.7630（-12.83%）",
+          "parentNetProfit": "100.1593 → 66.7339（-33.37%）",
+          "operatingCashFlow": "61.3022 → 46.2871（-24.49%）"
+        },
+        "limitations": "Comparison is limited to the original disclosed annual cumulative consolidated figures."
+      },
+      "cashFlow": {
+        "questionId": "cash_flow",
+        "confirmedBy": "Q7A",
+        "answerability": "answerable",
+        "referenceStatus": "confirmed_within_choice_card_scope",
+        "comparisonReference": "numericalReference.figures",
+        "acceptedDirectionStatement": "2023→2024；现金流 −24.49%，归母 −33.37%，同向。",
+        "profitDirectionMetric": "parent_net_profit",
+        "direction": "same",
+        "explanationType": "consolidated_net_profit_accounting_bridge",
+        "acceptedReference": "合并利润同比贡献 −33.5431 亿元，应收调整项 −10.3146 亿元，应付调整项 +17.5228 亿元，其余项合计 +11.3198 亿元，合计对应现金流 −15.0151 亿元。这是会计分解；不拿投资/筹资活动说明代替经营现金流原因。",
+        "sourceRanges": [
+          {
+            "documentId": "002304-2024-annual",
+            "bytesSha256": "436928c6acaac79332794412514d191c7e60451e2c093e91a954aebfbde379a2",
+            "filePageStart": 147,
+            "filePageEnd": 147
+          }
+        ],
+        "accountingBridge": {
+          "path": "data/research-agent-upgrade/evidence/U04/acceptance-choices-20261026-01/accounting-bridges.json",
+          "sha256": "65b331a6f59c02361a7540575cfc3f8e1b449207597e775260fc293977662484",
+          "caseId": "dev-002304",
+          "startingProfitMetric": "consolidated_net_profit",
+          "beforeYuan": "6130220867.96",
+          "afterYuan": "4628711237.28",
+          "deltaYuan": "-1501509630.68",
+          "boundary": "Accounting contribution does not establish business causality or demand/collection changes."
+        }
+      },
+      "risks": {
+        "questionId": "risks",
+        "confirmedBy": "Q8A",
+        "referenceStatus": "confirmed_within_choice_card_scope",
+        "acceptedReference": "三类主题延续；标题由“宏观经济不确定／市场竞争加剧／市场需求变化”改为“外部环境不确定／行业竞争加剧／消费者需求变迁”。2024 强调头部名酒同区域直接竞争与消费新势力饮酒习惯。",
+        "boundary": "确认可能面对的风险小节内的主题和措辞，不确认风险程度。",
+        "sourceRanges": [
+          {
+            "documentId": "002304-2023-annual",
+            "bytesSha256": "68e5e79fc98e575983ab55a851f6d40da4ab4e5095a117ea416f901161c2622f",
+            "filePageStart": 25,
+            "filePageEnd": 25
+          },
+          {
+            "documentId": "002304-2024-annual",
+            "bytesSha256": "436928c6acaac79332794412514d191c7e60451e2c093e91a954aebfbde379a2",
+            "filePageStart": 26,
+            "filePageEnd": 26
+          }
+        ],
+        "fullQuestionCoverage": "not_assessed_by_this_overlay",
+        "actualRiskDegreeConfirmed": false
+      },
+      "remainingSourceAndExecutionLimitations": [
+        "original scan OCR probe is partial and needs human review; complete OCR acceptance not claimed"
+      ],
+      "supportingDocumentAcceptance": [
+        {
+          "documentId": "002304-2024-audit",
+          "acceptedByTheseChoices": false
+        }
+      ],
+      "wholeCompanyGolden": false
+    },
+    {
+      "caseId": "dev-600426",
+      "company": {
+        "symbol": "600426.SH",
+        "name": "华鲁恒升"
+      },
+      "periods": [
+        {
+          "start": "2023-01-01",
+          "end": "2023-12-31",
+          "kind": "annual"
+        },
+        {
+          "start": "2024-01-01",
+          "end": "2024-12-31",
+          "kind": "annual"
+        }
+      ],
+      "taskDocumentIds": [
+        "600426-2023-annual",
+        "600426-2024-annual",
+        "600426-2024-audit"
+      ],
+      "numericalReference": {
+        "confirmedBy": "Q6A",
+        "currency": "CNY",
+        "scope": "consolidated",
+        "basis": "annual_cumulative",
+        "comparisonBasis": "original_disclosure",
+        "figures": [
+          {
+            "metric": "revenue",
+            "unit": "yuan",
+            "previous": {
+              "rawValue": "27259886885.51",
+              "normalizedYuan": "27259886885.51",
+              "source": {
+                "documentId": "600426-2023-annual",
+                "bytesSha256": "148e7e130bb135efd595e3201f8e9144fd4c03c43145dcc7eb9ae1bdb8b6e687",
+                "filePage": 5
+              }
+            },
+            "current": {
+              "rawValue": "34226018627.13",
+              "normalizedYuan": "34226018627.13",
+              "source": {
+                "documentId": "600426-2024-annual",
+                "bytesSha256": "480bbed7f1cef3533db38dd3df25d2d1bf1f91f15947cbea5f78292a2aff5120",
+                "filePage": 5
+              }
+            },
+            "percentage": "25.55"
+          },
+          {
+            "metric": "parent_net_profit",
+            "unit": "yuan",
+            "previous": {
+              "rawValue": "3575898630.37",
+              "normalizedYuan": "3575898630.37",
+              "source": {
+                "documentId": "600426-2023-annual",
+                "bytesSha256": "148e7e130bb135efd595e3201f8e9144fd4c03c43145dcc7eb9ae1bdb8b6e687",
+                "filePage": 5
+              }
+            },
+            "current": {
+              "rawValue": "3902593305.73",
+              "normalizedYuan": "3902593305.73",
+              "source": {
+                "documentId": "600426-2024-annual",
+                "bytesSha256": "480bbed7f1cef3533db38dd3df25d2d1bf1f91f15947cbea5f78292a2aff5120",
+                "filePage": 5
+              }
+            },
+            "percentage": "9.14"
+          },
+          {
+            "metric": "operating_cash_flow",
+            "unit": "yuan",
+            "previous": {
+              "rawValue": "4715319211.30",
+              "normalizedYuan": "4715319211.30",
+              "source": {
+                "documentId": "600426-2023-annual",
+                "bytesSha256": "148e7e130bb135efd595e3201f8e9144fd4c03c43145dcc7eb9ae1bdb8b6e687",
+                "filePage": 5
+              }
+            },
+            "current": {
+              "rawValue": "4968115816.50",
+              "normalizedYuan": "4968115816.50",
+              "source": {
+                "documentId": "600426-2024-annual",
+                "bytesSha256": "480bbed7f1cef3533db38dd3df25d2d1bf1f91f15947cbea5f78292a2aff5120",
+                "filePage": 6
+              }
+            },
+            "percentage": "5.36"
+          }
+        ],
+        "originalPriorDisclosures": [],
+        "displayUnit": "hundred_million_yuan",
+        "acceptedDisplay": {
+          "years": "2023→2024",
+          "revenue": "272.5989 → 342.2602（25.55%）",
+          "parentNetProfit": "35.7590 → 39.0259（9.14%）",
+          "operatingCashFlow": "47.1532 → 49.6812（5.36%）"
+        },
+        "limitations": "Comparison is limited to the original disclosed annual cumulative consolidated figures."
+      },
+      "cashFlow": {
+        "questionId": "cash_flow",
+        "confirmedBy": "Q7A",
+        "answerability": "answerable",
+        "referenceStatus": "confirmed_within_choice_card_scope",
+        "comparisonReference": "numericalReference.figures",
+        "acceptedDirectionStatement": "2023→2024；现金流 +5.36%，归母 +9.14%，同向。",
+        "profitDirectionMetric": "parent_net_profit",
+        "direction": "same",
+        "explanationType": "annual_report_attribution",
+        "acceptedReference": "年报写“主要原因系本期产品销售收入增加导致收到的现金流入增加所致”。只接受披露者对同比变化的归因。",
+        "sourceRanges": [
+          {
+            "documentId": "600426-2024-annual",
+            "bytesSha256": "480bbed7f1cef3533db38dd3df25d2d1bf1f91f15947cbea5f78292a2aff5120",
+            "filePageStart": 10,
+            "filePageEnd": 10
+          }
+        ]
+      },
+      "risks": {
+        "questionId": "risks",
+        "confirmedBy": "Q8A",
+        "referenceStatus": "confirmed_within_choice_card_scope",
+        "acceptedReference": "产业转型与绿色低碳要求延续。2023 强调供需转换、周期缩短、市场竞争；2024 改为产业调整、技术/设备/智能升级。碳达峰碳中和“更高标准”改为降碳减污与绿色转型“既是风险更是机遇”。",
+        "boundary": "不能据此把竞争或环保风险判为消失。",
+        "sourceRanges": [
+          {
+            "documentId": "600426-2023-annual",
+            "bytesSha256": "148e7e130bb135efd595e3201f8e9144fd4c03c43145dcc7eb9ae1bdb8b6e687",
+            "filePageStart": 28,
+            "filePageEnd": 29
+          },
+          {
+            "documentId": "600426-2024-annual",
+            "bytesSha256": "480bbed7f1cef3533db38dd3df25d2d1bf1f91f15947cbea5f78292a2aff5120",
+            "filePageStart": 29,
+            "filePageEnd": 29
+          }
+        ],
+        "fullQuestionCoverage": "not_assessed_by_this_overlay",
+        "actualRiskDegreeConfirmed": false
+      },
+      "remainingSourceAndExecutionLimitations": [
+        "original scan OCR probe is partial and needs human review; complete OCR acceptance not claimed"
+      ],
+      "supportingDocumentAcceptance": [
+        {
+          "documentId": "600426-2024-audit",
+          "acceptedByTheseChoices": false
+        }
+      ],
+      "wholeCompanyGolden": false
+    },
+    {
+      "caseId": "dev-601318",
+      "company": {
+        "symbol": "601318.SH",
+        "name": "中国平安"
+      },
+      "periods": [
+        {
+          "start": "2022-01-01",
+          "end": "2022-12-31",
+          "kind": "annual"
+        },
+        {
+          "start": "2023-01-01",
+          "end": "2023-12-31",
+          "kind": "annual"
+        }
+      ],
+      "taskDocumentIds": [
+        "601318-2022-annual",
+        "601318-2023-annual"
+      ],
+      "numericalReference": {
+        "confirmedBy": "Q6A",
+        "currency": "CNY",
+        "scope": "consolidated",
+        "basis": "annual_cumulative",
+        "comparisonBasis": "restated_comparative",
+        "figures": [
+          {
+            "metric": "revenue",
+            "unit": "million_yuan",
+            "previous": {
+              "rawValue": "880355",
+              "normalizedYuan": "880355000000",
+              "source": {
+                "documentId": "601318-2023-annual",
+                "bytesSha256": "f55538814200d77a61492ba216e45508f487064207bca6a4d90c7b55add43823",
+                "filePage": 11
+              }
+            },
+            "current": {
+              "rawValue": "913789",
+              "normalizedYuan": "913789000000",
+              "source": {
+                "documentId": "601318-2023-annual",
+                "bytesSha256": "f55538814200d77a61492ba216e45508f487064207bca6a4d90c7b55add43823",
+                "filePage": 11
+              }
+            },
+            "percentage": "3.80"
+          },
+          {
+            "metric": "parent_net_profit",
+            "unit": "million_yuan",
+            "previous": {
+              "rawValue": "111008",
+              "normalizedYuan": "111008000000",
+              "source": {
+                "documentId": "601318-2023-annual",
+                "bytesSha256": "f55538814200d77a61492ba216e45508f487064207bca6a4d90c7b55add43823",
+                "filePage": 11
+              }
+            },
+            "current": {
+              "rawValue": "85665",
+              "normalizedYuan": "85665000000",
+              "source": {
+                "documentId": "601318-2023-annual",
+                "bytesSha256": "f55538814200d77a61492ba216e45508f487064207bca6a4d90c7b55add43823",
+                "filePage": 11
+              }
+            },
+            "percentage": "-22.83"
+          },
+          {
+            "metric": "operating_cash_flow",
+            "unit": "million_yuan",
+            "previous": {
+              "rawValue": "476776",
+              "normalizedYuan": "476776000000",
+              "source": {
+                "documentId": "601318-2023-annual",
+                "bytesSha256": "f55538814200d77a61492ba216e45508f487064207bca6a4d90c7b55add43823",
+                "filePage": 11
+              }
+            },
+            "current": {
+              "rawValue": "360403",
+              "normalizedYuan": "360403000000",
+              "source": {
+                "documentId": "601318-2023-annual",
+                "bytesSha256": "f55538814200d77a61492ba216e45508f487064207bca6a4d90c7b55add43823",
+                "filePage": 11
+              }
+            },
+            "percentage": "-24.41"
+          }
+        ],
+        "originalPriorDisclosures": [
+          {
+            "metric": "revenue",
+            "unit": "million_yuan",
+            "rawValue": "1110568",
+            "normalizedYuan": "1110568000000",
+            "source": {
+              "documentId": "601318-2022-annual",
+              "bytesSha256": "7937751ba39685c8e79d09a77f1c15aae1d1f6e0b6fdfe37f444b503035ce746",
+              "filePage": 12
+            }
+          },
+          {
+            "metric": "parent_net_profit",
+            "unit": "million_yuan",
+            "rawValue": "83774",
+            "normalizedYuan": "83774000000",
+            "source": {
+              "documentId": "601318-2022-annual",
+              "bytesSha256": "7937751ba39685c8e79d09a77f1c15aae1d1f6e0b6fdfe37f444b503035ce746",
+              "filePage": 12
+            }
+          },
+          {
+            "metric": "operating_cash_flow",
+            "unit": "million_yuan",
+            "rawValue": "485905",
+            "normalizedYuan": "485905000000",
+            "source": {
+              "documentId": "601318-2022-annual",
+              "bytesSha256": "7937751ba39685c8e79d09a77f1c15aae1d1f6e0b6fdfe37f444b503035ce746",
+              "filePage": 12
+            }
+          }
+        ],
+        "displayUnit": "hundred_million_yuan",
+        "acceptedDisplay": {
+          "years": "2022→2023",
+          "revenue": "8803.5500 → 9137.8900（3.80%）",
+          "parentNetProfit": "1110.0800 → 856.6500（-22.83%）",
+          "operatingCashFlow": "4767.7600 → 3604.0300（-24.41%）"
+        },
+        "limitations": "Use later-report adjusted prior-year columns for changes; retain original disclosures separately."
+      },
+      "cashFlow": {
+        "questionId": "cash_flow",
+        "confirmedBy": "Q7A",
+        "answerability": "answerable",
+        "referenceStatus": "confirmed_within_choice_card_scope",
+        "comparisonReference": "numericalReference.figures",
+        "acceptedDirectionStatement": "2022重述后→2023；现金流 −24.41%，归母 −22.83%，同向。",
+        "profitDirectionMetric": "parent_net_profit",
+        "direction": "same",
+        "explanationType": "annual_report_attribution",
+        "acceptedReference": "年报写“主要原因是平安银行吸收存款现金流入减少”。比较基期用 476,776 百万元，原披露 485,905 百万元另存。",
+        "sourceRanges": [
+          {
+            "documentId": "601318-2023-annual",
+            "bytesSha256": "f55538814200d77a61492ba216e45508f487064207bca6a4d90c7b55add43823",
+            "filePageStart": 63,
+            "filePageEnd": 63
+          }
+        ]
+      },
+      "risks": {
+        "questionId": "risks",
+        "confirmedBy": "Q8A",
+        "referenceStatus": "confirmed_within_choice_card_scope",
+        "acceptedReference": "2022→2023 年报均列保险、市场、信用、操作、战略、声誉、流动性一般风险；保险计量说明转向税前利润和股东权益影响，市场风险仍含利率、权益、汇率、房地产价格。",
+        "boundary": "只确认展示的一般风险小节，集团特有风险完整覆盖仍 partial；市场利率风险敏感性分析的利率变动场景从50bp改为10bp，不能直接比金额判风险升降。",
+        "sourceRanges": [
+          {
+            "documentId": "601318-2022-annual",
+            "bytesSha256": "7937751ba39685c8e79d09a77f1c15aae1d1f6e0b6fdfe37f444b503035ce746",
+            "filePageStart": 69,
+            "filePageEnd": 70
+          },
+          {
+            "documentId": "601318-2023-annual",
+            "bytesSha256": "f55538814200d77a61492ba216e45508f487064207bca6a4d90c7b55add43823",
+            "filePageStart": 67,
+            "filePageEnd": 68
+          }
+        ],
+        "fullQuestionCoverage": "partial",
+        "actualRiskDegreeConfirmed": false,
+        "marketInterestRateSensitivityScenariosBps": [
+          50,
+          10
+        ],
+        "rawSensitivityAmountsComparable": false
+      },
+      "remainingSourceAndExecutionLimitations": [
+        "source million_yuan unit not yet supported by frozen production financialFactSchema; preparation arithmetic only",
+        "restated comparisonFacts/restated_comparative need a production adapter; original disclosures cannot replace adjusted comparatives in a real run"
+      ],
+      "supportingDocumentAcceptance": [],
+      "wholeCompanyGolden": false
+    },
+    {
+      "caseId": "dev-601601",
+      "company": {
+        "symbol": "601601.SH",
+        "name": "中国太保"
+      },
+      "periods": [
+        {
+          "start": "2022-01-01",
+          "end": "2022-12-31",
+          "kind": "annual"
+        },
+        {
+          "start": "2023-01-01",
+          "end": "2023-12-31",
+          "kind": "annual"
+        }
+      ],
+      "taskDocumentIds": [
+        "601601-2022-annual",
+        "601601-2023-annual"
+      ],
+      "numericalReference": {
+        "confirmedBy": "Q6A",
+        "currency": "CNY",
+        "scope": "consolidated",
+        "basis": "annual_cumulative",
+        "comparisonBasis": "restated_comparative",
+        "figures": [
+          {
+            "metric": "revenue",
+            "unit": "million_yuan",
+            "previous": {
+              "rawValue": "332140",
+              "normalizedYuan": "332140000000",
+              "source": {
+                "documentId": "601601-2023-annual",
+                "bytesSha256": "716a65f266f6ed6dc12f6906db26b84aeac4745c212c8cb8687c7a4fa0fc9dab",
+                "filePage": 33
+              }
+            },
+            "current": {
+              "rawValue": "323945",
+              "normalizedYuan": "323945000000",
+              "source": {
+                "documentId": "601601-2023-annual",
+                "bytesSha256": "716a65f266f6ed6dc12f6906db26b84aeac4745c212c8cb8687c7a4fa0fc9dab",
+                "filePage": 33
+              }
+            },
+            "percentage": "-2.47"
+          },
+          {
+            "metric": "parent_net_profit",
+            "unit": "million_yuan",
+            "previous": {
+              "rawValue": "37381",
+              "normalizedYuan": "37381000000",
+              "source": {
+                "documentId": "601601-2023-annual",
+                "bytesSha256": "716a65f266f6ed6dc12f6906db26b84aeac4745c212c8cb8687c7a4fa0fc9dab",
+                "filePage": 33
+              }
+            },
+            "current": {
+              "rawValue": "27257",
+              "normalizedYuan": "27257000000",
+              "source": {
+                "documentId": "601601-2023-annual",
+                "bytesSha256": "716a65f266f6ed6dc12f6906db26b84aeac4745c212c8cb8687c7a4fa0fc9dab",
+                "filePage": 33
+              }
+            },
+            "percentage": "-27.08"
+          },
+          {
+            "metric": "operating_cash_flow",
+            "unit": "million_yuan",
+            "previous": {
+              "rawValue": "148664",
+              "normalizedYuan": "148664000000",
+              "source": {
+                "documentId": "601601-2023-annual",
+                "bytesSha256": "716a65f266f6ed6dc12f6906db26b84aeac4745c212c8cb8687c7a4fa0fc9dab",
+                "filePage": 33
+              }
+            },
+            "current": {
+              "rawValue": "137863",
+              "normalizedYuan": "137863000000",
+              "source": {
+                "documentId": "601601-2023-annual",
+                "bytesSha256": "716a65f266f6ed6dc12f6906db26b84aeac4745c212c8cb8687c7a4fa0fc9dab",
+                "filePage": 33
+              }
+            },
+            "percentage": "-7.27"
+          }
+        ],
+        "originalPriorDisclosures": [
+          {
+            "metric": "revenue",
+            "unit": "million_yuan",
+            "rawValue": "455372",
+            "normalizedYuan": "455372000000",
+            "source": {
+              "documentId": "601601-2022-annual",
+              "bytesSha256": "e9f0c6966802ab4ba175a918058640aca775b8b8dbf68ad2b1caa38fa21f6820",
+              "filePage": 37
+            }
+          },
+          {
+            "metric": "parent_net_profit",
+            "unit": "million_yuan",
+            "rawValue": "24609",
+            "normalizedYuan": "24609000000",
+            "source": {
+              "documentId": "601601-2022-annual",
+              "bytesSha256": "e9f0c6966802ab4ba175a918058640aca775b8b8dbf68ad2b1caa38fa21f6820",
+              "filePage": 37
+            }
+          },
+          {
+            "metric": "operating_cash_flow",
+            "unit": "million_yuan",
+            "rawValue": "147911",
+            "normalizedYuan": "147911000000",
+            "source": {
+              "documentId": "601601-2022-annual",
+              "bytesSha256": "e9f0c6966802ab4ba175a918058640aca775b8b8dbf68ad2b1caa38fa21f6820",
+              "filePage": 37
+            }
+          }
+        ],
+        "displayUnit": "hundred_million_yuan",
+        "acceptedDisplay": {
+          "years": "2022→2023",
+          "revenue": "3321.4000 → 3239.4500（-2.47%）",
+          "parentNetProfit": "373.8100 → 272.5700（-27.08%）",
+          "operatingCashFlow": "1486.6400 → 1378.6300（-7.27%）"
+        },
+        "limitations": "Insurance comparatives retrospectively adjusted; investment business under the new financial instrument standard was not restated. These computations use disclosed comparative columns and do not establish universal accounting-basis equivalence."
+      },
+      "cashFlow": {
+        "questionId": "cash_flow",
+        "confirmedBy": "Q7A",
+        "answerability": "answerable",
+        "referenceStatus": "confirmed_within_choice_card_scope",
+        "comparisonReference": "numericalReference.figures",
+        "acceptedDirectionStatement": "2022调整后→2023；现金流 −7.27%，归母 −27.08%，同向。",
+        "profitDirectionMetric": "parent_net_profit",
+        "direction": "same",
+        "explanationType": "annual_report_attribution",
+        "acceptedReference": "年报写“主要原因是支付签发保险合同赔款的现金增加”。原表表述减少 7.3%，按原值复算为 −7.27%；比较基期 148,664 百万元，原披露 147,911 百万元另存。",
+        "sourceRanges": [
+          {
+            "documentId": "601601-2023-annual",
+            "bytesSha256": "716a65f266f6ed6dc12f6906db26b84aeac4745c212c8cb8687c7a4fa0fc9dab",
+            "filePageStart": 58,
+            "filePageEnd": 58
+          }
+        ]
+      },
+      "risks": {
+        "questionId": "risks",
+        "confirmedBy": "Q8A",
+        "referenceStatus": "confirmed_within_choice_card_scope",
+        "acceptedReference": "2022 年报对2023的展望与2023年报对2024的展望，均涉及宏观不确定、寿险经营压力、产险管控、利率/信用及新生风险。后者强调长周期低利率下价值管控、极端气候与新业务，以及“长端利率下行叠加合意资产荒”。",
+        "boundary": "这是两份报告的展望措辞变化，不能改写成已经发生的2023→2024风险事实。",
+        "sourceRanges": [
+          {
+            "documentId": "601601-2022-annual",
+            "bytesSha256": "e9f0c6966802ab4ba175a918058640aca775b8b8dbf68ad2b1caa38fa21f6820",
+            "filePageStart": 69,
+            "filePageEnd": 69
+          },
+          {
+            "documentId": "601601-2023-annual",
+            "bytesSha256": "716a65f266f6ed6dc12f6906db26b84aeac4745c212c8cb8687c7a4fa0fc9dab",
+            "filePageStart": 63,
+            "filePageEnd": 63
+          }
+        ],
+        "fullQuestionCoverage": "not_assessed_by_this_overlay",
+        "actualRiskDegreeConfirmed": false,
+        "comparisonKind": "two_reports_outlook_wording",
+        "outlookYears": [
+          "2023",
+          "2024"
+        ],
+        "realizedRiskChangeConfirmed": false
+      },
+      "remainingSourceAndExecutionLimitations": [
+        "source million_yuan unit not yet supported by frozen production financialFactSchema; preparation arithmetic only",
+        "restated comparisonFacts/restated_comparative need a production adapter; original disclosures cannot replace adjusted comparatives in a real run"
+      ],
+      "supportingDocumentAcceptance": [],
+      "wholeCompanyGolden": false
+    },
+    {
+      "caseId": "dev-600036",
+      "company": {
+        "symbol": "600036.SH",
+        "name": "招商银行"
+      },
+      "periods": [
+        {
+          "start": "2023-01-01",
+          "end": "2023-12-31",
+          "kind": "annual"
+        },
+        {
+          "start": "2024-01-01",
+          "end": "2024-12-31",
+          "kind": "annual"
+        }
+      ],
+      "taskDocumentIds": [
+        "600036-2023-annual",
+        "600036-2024-annual"
+      ],
+      "numericalReference": {
+        "confirmedBy": "Q6A",
+        "currency": "CNY",
+        "scope": "consolidated",
+        "basis": "annual_cumulative",
+        "comparisonBasis": "original_disclosure",
+        "figures": [
+          {
+            "metric": "revenue",
+            "unit": "million_yuan",
+            "previous": {
+              "rawValue": "339123",
+              "normalizedYuan": "339123000000",
+              "source": {
+                "documentId": "600036-2023-annual",
+                "bytesSha256": "948a390b579a8d46f281d3f88a346b4388f1bb6b82a90db61d5cd48b4627598a",
+                "filePage": 15
+              }
+            },
+            "current": {
+              "rawValue": "337488",
+              "normalizedYuan": "337488000000",
+              "source": {
+                "documentId": "600036-2024-annual",
+                "bytesSha256": "44a8759c94e1ba92f1d96897ca3778592d9a7eb33b53420c19268f0b140d81c3",
+                "filePage": 14
+              }
+            },
+            "percentage": "-0.48"
+          },
+          {
+            "metric": "parent_net_profit",
+            "unit": "million_yuan",
+            "previous": {
+              "rawValue": "146602",
+              "normalizedYuan": "146602000000",
+              "source": {
+                "documentId": "600036-2023-annual",
+                "bytesSha256": "948a390b579a8d46f281d3f88a346b4388f1bb6b82a90db61d5cd48b4627598a",
+                "filePage": 15
+              }
+            },
+            "current": {
+              "rawValue": "148391",
+              "normalizedYuan": "148391000000",
+              "source": {
+                "documentId": "600036-2024-annual",
+                "bytesSha256": "44a8759c94e1ba92f1d96897ca3778592d9a7eb33b53420c19268f0b140d81c3",
+                "filePage": 14
+              }
+            },
+            "percentage": "1.22"
+          },
+          {
+            "metric": "operating_cash_flow",
+            "unit": "million_yuan",
+            "previous": {
+              "rawValue": "357753",
+              "normalizedYuan": "357753000000",
+              "source": {
+                "documentId": "600036-2023-annual",
+                "bytesSha256": "948a390b579a8d46f281d3f88a346b4388f1bb6b82a90db61d5cd48b4627598a",
+                "filePage": 15
+              }
+            },
+            "current": {
+              "rawValue": "447023",
+              "normalizedYuan": "447023000000",
+              "source": {
+                "documentId": "600036-2024-annual",
+                "bytesSha256": "44a8759c94e1ba92f1d96897ca3778592d9a7eb33b53420c19268f0b140d81c3",
+                "filePage": 14
+              }
+            },
+            "percentage": "24.95"
+          }
+        ],
+        "originalPriorDisclosures": [],
+        "displayUnit": "hundred_million_yuan",
+        "acceptedDisplay": {
+          "years": "2023→2024",
+          "revenue": "3391.2300 → 3374.8800（-0.48%）",
+          "parentNetProfit": "1466.0200 → 1483.9100（1.22%）",
+          "operatingCashFlow": "3577.5300 → 4470.2300（24.95%）"
+        },
+        "limitations": "Comparison is limited to the original disclosed annual cumulative consolidated figures."
+      },
+      "cashFlow": {
+        "questionId": "cash_flow",
+        "confirmedBy": "Q7A",
+        "answerability": "answerable",
+        "referenceStatus": "confirmed_within_choice_card_scope",
+        "comparisonReference": "numericalReference.figures",
+        "acceptedDirectionStatement": "2023→2024；现金流 +24.95%，归母 +1.22%，同向。",
+        "profitDirectionMetric": "parent_net_profit",
+        "direction": "same",
+        "explanationType": "annual_report_attribution",
+        "acceptedReference": "年报写“净流入额同比增加892.70亿元，主要由于客户存款净增加额增加”。该引用来自 hash 绑定的 PDFium 准备文本；不据此解除生产原生解析中文字形缺失。",
+        "sourceRanges": [
+          {
+            "documentId": "600036-2024-annual",
+            "bytesSha256": "44a8759c94e1ba92f1d96897ca3778592d9a7eb33b53420c19268f0b140d81c3",
+            "filePageStart": 41,
+            "filePageEnd": 41
+          }
+        ]
+      },
+      "risks": {
+        "questionId": "risks",
+        "confirmedBy": "Q8A",
+        "referenceStatus": "confirmed_within_choice_card_scope",
+        "acceptedReference": "信用、利率/汇率、流动性风险管理延续。信用段由房地产业务封闭管理，转为结合城市房地产融资协调机制与化债政策；利率段细化重定价错配、定价基准差异和提前还款等期权性风险。",
+        "boundary": "只确认信用/利率/流动性三个完整小节，全部风险及财报附注覆盖仍 partial；两期自述“整体稳定”不能当独立程度结论。",
+        "sourceRanges": [
+          {
+            "documentId": "600036-2023-annual",
+            "bytesSha256": "948a390b579a8d46f281d3f88a346b4388f1bb6b82a90db61d5cd48b4627598a",
+            "filePageStart": 66,
+            "filePageEnd": 66
+          },
+          {
+            "documentId": "600036-2023-annual",
+            "bytesSha256": "948a390b579a8d46f281d3f88a346b4388f1bb6b82a90db61d5cd48b4627598a",
+            "filePageStart": 67,
+            "filePageEnd": 67
+          },
+          {
+            "documentId": "600036-2023-annual",
+            "bytesSha256": "948a390b579a8d46f281d3f88a346b4388f1bb6b82a90db61d5cd48b4627598a",
+            "filePageStart": 69,
+            "filePageEnd": 69
+          },
+          {
+            "documentId": "600036-2024-annual",
+            "bytesSha256": "44a8759c94e1ba92f1d96897ca3778592d9a7eb33b53420c19268f0b140d81c3",
+            "filePageStart": 65,
+            "filePageEnd": 65
+          },
+          {
+            "documentId": "600036-2024-annual",
+            "bytesSha256": "44a8759c94e1ba92f1d96897ca3778592d9a7eb33b53420c19268f0b140d81c3",
+            "filePageStart": 66,
+            "filePageEnd": 66
+          },
+          {
+            "documentId": "600036-2024-annual",
+            "bytesSha256": "44a8759c94e1ba92f1d96897ca3778592d9a7eb33b53420c19268f0b140d81c3",
+            "filePageStart": 68,
+            "filePageEnd": 68
+          }
+        ],
+        "fullQuestionCoverage": "partial",
+        "actualRiskDegreeConfirmed": false
+      },
+      "remainingSourceAndExecutionLimitations": [
+        "source million_yuan unit not yet supported by frozen production financialFactSchema; preparation arithmetic only",
+        "production pdf-parse receipt drops Chinese glyphs; PDFium preparation text retained; production fallback/OCR must be validated"
+      ],
+      "supportingDocumentAcceptance": [],
+      "wholeCompanyGolden": false
+    },
+    {
+      "caseId": "dev-600887",
+      "company": {
+        "symbol": "600887.SH",
+        "name": "伊利股份"
+      },
+      "periods": [
+        {
+          "start": "2023-01-01",
+          "end": "2023-12-31",
+          "kind": "annual"
+        },
+        {
+          "start": "2024-01-01",
+          "end": "2024-12-31",
+          "kind": "annual"
+        }
+      ],
+      "taskDocumentIds": [
+        "600887-2023-annual",
+        "600887-2024-annual"
+      ],
+      "numericalReference": {
+        "confirmedBy": "Q6A",
+        "currency": "CNY",
+        "scope": "consolidated",
+        "basis": "annual_cumulative",
+        "comparisonBasis": "original_disclosure",
+        "figures": [
+          {
+            "metric": "revenue",
+            "unit": "yuan",
+            "previous": {
+              "rawValue": "125758168916.51",
+              "normalizedYuan": "125758168916.51",
+              "source": {
+                "documentId": "600887-2023-annual",
+                "bytesSha256": "d56b0be917eb89a07f092a3ecf1c269aea9f1698c51b648a53f69a0759ef44fe",
+                "filePage": 7
+              }
+            },
+            "current": {
+              "rawValue": "115393310976.69",
+              "normalizedYuan": "115393310976.69",
+              "source": {
+                "documentId": "600887-2024-annual",
+                "bytesSha256": "a82a81e52f52da3cd1b7f38ded08625dc18e3d4522b15d3ef76bf921e54c1f43",
+                "filePage": 7
+              }
+            },
+            "percentage": "-8.24"
+          },
+          {
+            "metric": "parent_net_profit",
+            "unit": "yuan",
+            "previous": {
+              "rawValue": "10428540457.94",
+              "normalizedYuan": "10428540457.94",
+              "source": {
+                "documentId": "600887-2023-annual",
+                "bytesSha256": "d56b0be917eb89a07f092a3ecf1c269aea9f1698c51b648a53f69a0759ef44fe",
+                "filePage": 7
+              }
+            },
+            "current": {
+              "rawValue": "8452859993.18",
+              "normalizedYuan": "8452859993.18",
+              "source": {
+                "documentId": "600887-2024-annual",
+                "bytesSha256": "a82a81e52f52da3cd1b7f38ded08625dc18e3d4522b15d3ef76bf921e54c1f43",
+                "filePage": 7
+              }
+            },
+            "percentage": "-18.94"
+          },
+          {
+            "metric": "operating_cash_flow",
+            "unit": "yuan",
+            "previous": {
+              "rawValue": "18290357650.56",
+              "normalizedYuan": "18290357650.56",
+              "source": {
+                "documentId": "600887-2023-annual",
+                "bytesSha256": "d56b0be917eb89a07f092a3ecf1c269aea9f1698c51b648a53f69a0759ef44fe",
+                "filePage": 7
+              }
+            },
+            "current": {
+              "rawValue": "21739740393.38",
+              "normalizedYuan": "21739740393.38",
+              "source": {
+                "documentId": "600887-2024-annual",
+                "bytesSha256": "a82a81e52f52da3cd1b7f38ded08625dc18e3d4522b15d3ef76bf921e54c1f43",
+                "filePage": 7
+              }
+            },
+            "percentage": "18.86"
+          }
+        ],
+        "originalPriorDisclosures": [],
+        "displayUnit": "hundred_million_yuan",
+        "acceptedDisplay": {
+          "years": "2023→2024",
+          "revenue": "1257.5817 → 1153.9331（-8.24%）",
+          "parentNetProfit": "104.2854 → 84.5286（-18.94%）",
+          "operatingCashFlow": "182.9036 → 217.3974（18.86%）"
+        },
+        "limitations": "Comparison is limited to the original disclosed annual cumulative consolidated figures."
+      },
+      "cashFlow": {
+        "questionId": "cash_flow",
+        "confirmedBy": "Q7A",
+        "answerability": "answerable",
+        "referenceStatus": "confirmed_within_choice_card_scope",
+        "comparisonReference": "numericalReference.figures",
+        "acceptedDirectionStatement": "2023→2024；现金流 +18.86%，归母 −18.94%，反向。",
+        "profitDirectionMetric": "parent_net_profit",
+        "direction": "opposite",
+        "explanationType": "annual_report_attribution",
+        "acceptedReference": "年报写“主要因2025年春节备货，预收经销商货款增加使得本期经营活动现金流量净额增加所致”。2025 春节备货是 2024 报告对本期现金流的说明，不把财年改成 2025。",
+        "sourceRanges": [
+          {
+            "documentId": "600887-2024-annual",
+            "bytesSha256": "a82a81e52f52da3cd1b7f38ded08625dc18e3d4522b15d3ef76bf921e54c1f43",
+            "filePageStart": 24,
+            "filePageEnd": 24
+          }
+        ]
+      },
+      "risks": {
+        "questionId": "risks",
+        "confirmedBy": "Q8A",
+        "referenceStatus": "confirmed_within_choice_card_scope",
+        "acceptedReference": "“行业风险”改为“供应风险”：2023 涉及生鲜乳供需、进口原料、海外拓展、需求复苏；2024 聚焦地缘政治、经贸政策、汇率对进口原辅料价格的不确定影响。财务与产品质量核心表述延续。",
+        "boundary": "2023 财务风险已有贸易/关税内容，不能声称2024首次出现。",
+        "sourceRanges": [
+          {
+            "documentId": "600887-2023-annual",
+            "bytesSha256": "d56b0be917eb89a07f092a3ecf1c269aea9f1698c51b648a53f69a0759ef44fe",
+            "filePageStart": 33,
+            "filePageEnd": 33
+          },
+          {
+            "documentId": "600887-2024-annual",
+            "bytesSha256": "a82a81e52f52da3cd1b7f38ded08625dc18e3d4522b15d3ef76bf921e54c1f43",
+            "filePageStart": 33,
+            "filePageEnd": 34
+          }
+        ],
+        "fullQuestionCoverage": "not_assessed_by_this_overlay",
+        "actualRiskDegreeConfirmed": false
+      },
+      "remainingSourceAndExecutionLimitations": [],
+      "supportingDocumentAcceptance": [],
+      "wholeCompanyGolden": false
+    },
+    {
+      "caseId": "dev-600597",
+      "company": {
+        "symbol": "600597.SH",
+        "name": "光明乳业"
+      },
+      "periods": [
+        {
+          "start": "2023-01-01",
+          "end": "2023-12-31",
+          "kind": "annual"
+        },
+        {
+          "start": "2024-01-01",
+          "end": "2024-12-31",
+          "kind": "annual"
+        }
+      ],
+      "taskDocumentIds": [
+        "600597-2023-annual",
+        "600597-2024-annual"
+      ],
+      "numericalReference": {
+        "confirmedBy": "Q6A",
+        "currency": "CNY",
+        "scope": "consolidated",
+        "basis": "annual_cumulative",
+        "comparisonBasis": "original_disclosure",
+        "figures": [
+          {
+            "metric": "revenue",
+            "unit": "yuan",
+            "previous": {
+              "rawValue": "26485200199",
+              "normalizedYuan": "26485200199",
+              "source": {
+                "documentId": "600597-2023-annual",
+                "bytesSha256": "6212306c2ca373b455eef4d274d4b7c1c89af6861c828426fea7679b94afa53d",
+                "filePage": 6
+              }
+            },
+            "current": {
+              "rawValue": "24277783283",
+              "normalizedYuan": "24277783283",
+              "source": {
+                "documentId": "600597-2024-annual",
+                "bytesSha256": "5e9bb424762be92550edc84885098360f0852091a2caf06e0584cd017b774a38",
+                "filePage": 6
+              }
+            },
+            "percentage": "-8.33"
+          },
+          {
+            "metric": "parent_net_profit",
+            "unit": "yuan",
+            "previous": {
+              "rawValue": "967330384",
+              "normalizedYuan": "967330384",
+              "source": {
+                "documentId": "600597-2023-annual",
+                "bytesSha256": "6212306c2ca373b455eef4d274d4b7c1c89af6861c828426fea7679b94afa53d",
+                "filePage": 6
+              }
+            },
+            "current": {
+              "rawValue": "722044680",
+              "normalizedYuan": "722044680",
+              "source": {
+                "documentId": "600597-2024-annual",
+                "bytesSha256": "5e9bb424762be92550edc84885098360f0852091a2caf06e0584cd017b774a38",
+                "filePage": 6
+              }
+            },
+            "percentage": "-25.36"
+          },
+          {
+            "metric": "operating_cash_flow",
+            "unit": "yuan",
+            "previous": {
+              "rawValue": "1464349957",
+              "normalizedYuan": "1464349957",
+              "source": {
+                "documentId": "600597-2023-annual",
+                "bytesSha256": "6212306c2ca373b455eef4d274d4b7c1c89af6861c828426fea7679b94afa53d",
+                "filePage": 6
+              }
+            },
+            "current": {
+              "rawValue": "1254574290",
+              "normalizedYuan": "1254574290",
+              "source": {
+                "documentId": "600597-2024-annual",
+                "bytesSha256": "5e9bb424762be92550edc84885098360f0852091a2caf06e0584cd017b774a38",
+                "filePage": 6
+              }
+            },
+            "percentage": "-14.33"
+          }
+        ],
+        "originalPriorDisclosures": [],
+        "displayUnit": "hundred_million_yuan",
+        "acceptedDisplay": {
+          "years": "2023→2024",
+          "revenue": "264.8520 → 242.7778（-8.33%）",
+          "parentNetProfit": "9.6733 → 7.2204（-25.36%）",
+          "operatingCashFlow": "14.6435 → 12.5457（-14.33%）"
+        },
+        "limitations": "Comparison is limited to the original disclosed annual cumulative consolidated figures."
+      },
+      "cashFlow": {
+        "questionId": "cash_flow",
+        "confirmedBy": "Q7A",
+        "answerability": "answerable",
+        "referenceStatus": "confirmed_within_choice_card_scope",
+        "comparisonReference": "numericalReference.figures",
+        "acceptedDirectionStatement": "2023→2024；现金流 −14.33%，归母 −25.36%，同向。",
+        "profitDirectionMetric": "parent_net_profit",
+        "direction": "same",
+        "explanationType": "consolidated_net_profit_accounting_bridge",
+        "acceptedReference": "现金流 14.6435→12.5457 亿元。两年调节表中，应收调整项同比贡献 −6.7836 亿元，应付 +10.4508 亿元；合并利润 −3.4868 亿元，其余调节项合计 −2.2782 亿元，共对应现金流 −2.0978 亿元。存在可复算会计解释，拟将旧 not_disclosed 候选改为 answerable；不推定需求或回款变化。",
+        "sourceRanges": [
+          {
+            "documentId": "600597-2024-annual",
+            "bytesSha256": "5e9bb424762be92550edc84885098360f0852091a2caf06e0584cd017b774a38",
+            "filePageStart": 165,
+            "filePageEnd": 165
+          }
+        ],
+        "accountingBridge": {
+          "path": "data/research-agent-upgrade/evidence/U04/acceptance-choices-20261026-01/accounting-bridges.json",
+          "sha256": "65b331a6f59c02361a7540575cfc3f8e1b449207597e775260fc293977662484",
+          "caseId": "dev-600597",
+          "startingProfitMetric": "consolidated_net_profit",
+          "beforeYuan": "1464349957.00",
+          "afterYuan": "1254574290.00",
+          "deltaYuan": "-209775667.00",
+          "boundary": "Accounting contribution does not establish business causality or demand/collection changes."
+        },
+        "previousDraftAnswerability": "not_disclosed",
+        "correction": "Answerable: the disclosed two-year accounting bridge provides a bounded explanation. The old draft is retained in the source dataset."
+      },
+      "risks": {
+        "questionId": "risks",
+        "confirmedBy": "Q8A",
+        "referenceStatus": "confirmed_within_choice_card_scope",
+        "acceptedReference": "行业竞争与成本、牛只疾病防疫、财务流动性、食品安全、生产安全、环保六主题两期均列，核心文字延续。",
+        "boundary": "只确认披露主题/措辞延续，不确认实际风险程度没有变化。",
+        "sourceRanges": [
+          {
+            "documentId": "600597-2023-annual",
+            "bytesSha256": "6212306c2ca373b455eef4d274d4b7c1c89af6861c828426fea7679b94afa53d",
+            "filePageStart": 25,
+            "filePageEnd": 26
+          },
+          {
+            "documentId": "600597-2024-annual",
+            "bytesSha256": "5e9bb424762be92550edc84885098360f0852091a2caf06e0584cd017b774a38",
+            "filePageStart": 25,
+            "filePageEnd": 26
+          }
+        ],
+        "fullQuestionCoverage": "not_assessed_by_this_overlay",
+        "actualRiskDegreeConfirmed": false
+      },
+      "remainingSourceAndExecutionLimitations": [],
+      "supportingDocumentAcceptance": [],
+      "wholeCompanyGolden": false
+    }
+  ]
+}
