@@ -36,6 +36,7 @@
 | [evaluation-results.md](evaluation-results.md) | S19 冻结合同、真实配对结果、失败、候选取舍与保留集边界 |
 | [failure-attribution.md](failure-attribution.md) | U01 历史工具轨迹、问题失败类别、重复检索与上下文争用假设的证据边界 |
 | [block1-review.md](block1-review.md) | 阶段 0 的可复验产物、评分合同、待人工确认项目及 G0 阻塞 |
+| [acceptance-choices-20261026.md](acceptance-choices-20261026.md) | 当前四道待选验收题 Q6—Q9：新增样本数值/比较口径、现金流解释、限定风险参考和研究模型配置偏好；旧确认沿用，实际选择另存回执 |
 | [block2-review.md](block2-review.md) | U10—U14 实现审查：更新重试、比较节点完成条件和动态核验预留反例 |
 | [ablation-registration.md](ablation-registration.md) | U03 消融框架、样本/变体/重复/预算提案、统计与停止规则；设计和真实执行批准分别登记 |
 | [delivery.md](delivery.md) | S20 架构、演示脚本、环境恢复与可核对项目描述 |
