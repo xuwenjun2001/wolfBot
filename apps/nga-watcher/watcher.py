@@ -267,6 +267,8 @@ class PostHTMLParser(HTMLParser):
         self.parts = []
         self.closed = False
         self.ended = False
+        self.containers = set()
+        self.duplicate_container = False
 
     def handle_comment(self, data):
         if data.strip() == 'postlistend':
@@ -283,7 +285,11 @@ class PostHTMLParser(HTMLParser):
         if match:
             kind, index = match.groups()
             record = self.posts.setdefault(index, {})
-            if kind == 'author':
+            if kind == 'container':
+                if index in self.containers:
+                    self.duplicate_container = True
+                self.containers.add(index)
+            elif kind == 'author':
                 record['authorid'] = int(urllib.parse.parse_qs(urllib.parse.urlsplit(attrs.get('href', '')).query).get('uid', ['0'])[0])
             elif kind in ('date', 'content'):
                 self.capture = (index, kind, len(self.stack))
@@ -327,25 +333,28 @@ class PostHTMLParser(HTMLParser):
         self.handle_data(f'&#{name};')
 
 
-def parse_html_page(body, requested, author=AUTHOR, tid=47559481):
+def parse_html_page(body, requested, author=AUTHOR, tid=47559481, *, allow_gaps=False):
     pager = re.search(r"var\s+__PAGE\s*=\s*\{0:'([^']+)',1:(\d+),2:(\d+),3:(\d+)\}", body)
     if not pager:
         raise ValueError('网页缺少分页信息，可能是登录页或响应不完整')
     query = urllib.parse.parse_qs(urllib.parse.urlsplit(html.unescape(pager[1])).query)
     pages, current, size = map(int, pager.groups()[1:])
-    if query.get('tid') != [str(tid)] or query.get('authorid') != [str(author)] or current != requested or not 1 <= current <= pages or size <= 0:
+    if query.get('tid') != [str(tid)] or query.get('authorid') != [str(author)] or current != requested or not 1 <= current <= pages or not 1 <= size <= 100:
         raise ValueError('网页帖子、作者或分页不匹配')
     parser = PostHTMLParser()
     parser.feed(body)
     parser.close()
     records = parser.posts
-    if not parser.closed or not parser.ended or parser.capture or not records:
+    if not parser.closed or not parser.ended or parser.capture or parser.duplicate_container or (not records and not allow_gaps):
         raise ValueError('网页响应不完整')
-    expected = list(range((current - 1) * size, (current - 1) * size + len(records)))
-    if sorted(map(int, records)) != expected or len(records) > size or (current < pages and len(records) != size):
+    start = (current - 1) * size
+    floors = sorted(map(int, records))
+    if len(records) > size or any(index < start or index >= start + size for index in floors):
+        raise ValueError('网页楼层不属于当前页')
+    if not allow_gaps and (floors != list(range(start, start + len(records))) or (current < pages and len(records) != size)):
         raise ValueError('网页发言数量或楼层不完整')
     posts = []
-    for index in expected:
+    for index in floors:
         record = records[str(index)]
         if not all(key in record for key in ('pid', 'authorid', 'content', 'date')) or record['authorid'] != author or record['pid'] < 0 or not re.fullmatch(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}', record['date']):
             raise ValueError('网页发言字段缺失或作者不匹配')
@@ -357,7 +366,8 @@ def parse_html_page(body, requested, author=AUTHOR, tid=47559481):
     if len({p['pid'] for p in posts}) != len(posts):
         raise ValueError('网页出现重复 PID')
     return {'posts': posts, 'page': current, 'pages': pages,
-            'rows': (current - 1) * size + len(posts) if current == pages else None, 'source': 'HTML'}
+            'rows': start + len(posts) if current == pages and not allow_gaps else None,
+            'source': 'HTML', 'size': size, 'floors': floors}
 
 
 def parse_page(data, requested):
@@ -388,7 +398,7 @@ def parse_page(data, requested):
     return {'posts': posts, 'pages': max(1, math.ceil(rows / size)), 'rows': rows, 'page': page}
 
 
-def parse_thread_page(data, requested, author, tid):
+def parse_thread_page(data, requested, author, tid, *, allow_gaps=False):
     required = ('__T', '__R', '__ROWS', '__R__ROWS_PAGE', '__R__ROWS', '__PAGE')
     if not isinstance(data, dict) or any(key not in data for key in required):
         raise ValueError('帖子接口结构不完整，原进度已保留')
@@ -401,7 +411,8 @@ def parse_thread_page(data, requested, author, tid):
     records = data['__R']
     records = list(records.values()) if isinstance(records, dict) else records
     expected = min(size, max(0, rows - (current - 1) * size))
-    if not isinstance(records, list) or len(records) != expected or int(data['__R__ROWS']) != expected:
+    if (not isinstance(records, list) or int(data['__R__ROWS']) != len(records)
+            or len(records) > expected or (not allow_gaps and len(records) != expected)):
         raise ValueError('帖子发言数量不完整，原进度已保留')
     posts = []
     for record in records:
@@ -411,7 +422,32 @@ def parse_thread_page(data, requested, author, tid):
     ids = [post['pid'] for post in posts]
     if ids != sorted(set(ids)):
         raise ValueError('帖子发言重复或顺序异常，原进度已保留')
-    return {'posts': posts, 'page': current, 'pages': pages, 'rows': rows, 'source': 'JSON'}
+    start = (current - 1) * size
+    if any('lou' in record for record in records):
+        if not all('lou' in record for record in records):
+            raise ValueError('帖子楼层字段不完整，原进度已保留')
+        floors = [int(record['lou']) for record in records]
+    else:
+        if records and len(records) != expected:
+            raise ValueError('缺楼页面缺少真实楼层，原进度已保留')
+        floors = list(range(start, start + len(records)))
+    if floors != sorted(set(floors)) or any(index < start or index >= start + expected for index in floors):
+        raise ValueError('帖子楼层重复、乱序或不属于当前页，原进度已保留')
+    return {'posts': posts, 'page': current, 'pages': pages, 'rows': rows, 'source': 'JSON',
+            'size': size, 'floors': floors,
+            'missing_floors': sorted(set(range(start, start + expected)) - set(floors))}
+
+
+def confirm_thread_gaps(json_page, html_page):
+    """Only accept absent floors when two complete sources agree on visible posts."""
+    if any(json_page[key] != html_page[key] for key in ('page', 'pages', 'size', 'floors')):
+        raise ValueError('缺楼页面的 JSON 与网页分页或楼层不一致，原进度已保留')
+    def records(page):
+        return [(post['tid'], post['pid'], post['authorid'], post['timestamp'] // 60, post['content'])
+                for post in page['posts']]
+    if records(json_page) != records(html_page):
+        raise ValueError('缺楼页面的 JSON 与网页发言不一致，原进度已保留')
+    return dict(json_page, source='JSON + HTML')
 
 
 class PollCancelled(RuntimeError):
@@ -568,18 +604,27 @@ class AuthorThreadClient(PollingClient):
 
     def page(self, number):
         for attempt in range(2):
+            needs_confirmation = False
             try:
                 status, body = self.request(self.page_url(number) + '&__output=11')
                 if check_access(status, body) == 'guest':
                     self.refresh_guest(number)
                     raise ValueError('访客会话已刷新')
-                result = parse_thread_page(json.loads(body)['data'], number, self.author, self.tid)
+                result = parse_thread_page(json.loads(body)['data'], number, self.author, self.tid, allow_gaps=True)
+                needs_confirmation = bool(result['missing_floors'])
+                if needs_confirmation:
+                    result = confirm_thread_gaps(result, self.html_page(number, allow_gaps=True))
+                    LOG.info('Thread gaps verified uid=%s tid=%s page=%s missing=%s posts=%s',
+                             self.author, self.tid, number, result['missing_floors'], len(result['posts']))
+                    return result
                 LOG.info('Thread JSON OK uid=%s tid=%s page=%s posts=%s', self.author, self.tid, number, len(result['posts']))
                 return result
             except (NGAAccessError, PollCancelled):
                 raise
             except (ValueError, KeyError, TypeError, OSError, HTTPException) as exc:
                 LOG.warning('Thread JSON uid=%s tid=%s page=%s attempt=%s failed=%s', self.author, self.tid, number, attempt + 1, type(exc).__name__)
+                if attempt == 1 and needs_confirmation:
+                    raise ValueError(f'第 {number} 页存在空楼层，JSON 与网页未能完成一致性验证，原进度已保留') from exc
                 if attempt == 0 and self.cancel_event.wait(1):
                     raise PollCancelled()
         LOG.info('Thread HTML fallback uid=%s tid=%s page=%s', self.author, self.tid, number)
@@ -587,7 +632,7 @@ class AuthorThreadClient(PollingClient):
             raise PollCancelled()
         return self.html_page(number)
 
-    def html_page(self, number):
+    def html_page(self, number, *, allow_gaps=False):
         for attempt in range(2):
             status, body = self.request(self.page_url(number))
             if check_access(status, body) == 'guest':
@@ -595,7 +640,7 @@ class AuthorThreadClient(PollingClient):
                     self.refresh_guest(number)
                     continue
                 raise ValueError('帖子网页访客会话建立失败，原进度已保留')
-            result = parse_html_page(body, number, self.author, self.tid)
+            result = parse_html_page(body, number, self.author, self.tid, allow_gaps=allow_gaps)
             LOG.info('Thread HTML OK uid=%s tid=%s page=%s posts=%s', self.author, self.tid, number, len(result['posts']))
             return result
 
@@ -610,11 +655,11 @@ def poll_thread(client, state, max_pages=200):
     # deleted floors and are only needed if unread posts actually extend there.
     first = client.page(start)
     pages, number = first['pages'], first['pages']
-    collected, sources, visited = {}, {first['source']}, set()
+    collected, sources, visited = {}, set(first['source'].split(' + ')), set()
     rows = first['rows']
     for _ in range(max_pages):
         result = first if number == first['page'] else client.page(number)
-        sources.add(result['source'])
+        sources.update(result['source'].split(' + '))
         posts = result['posts']
         if result['page'] != number:
             raise ValueError('帖子补查页码不匹配，原进度已保留')
@@ -629,7 +674,7 @@ def poll_thread(client, state, max_pages=200):
             # A newly appended page must also be verified before committing.
             pages = number = result['pages']
             continue
-        if baseline or number == 1 or not posts or min(post['pid'] for post in posts) <= old:
+        if baseline or number == 1 or (posts and min(post['pid'] for post in posts) <= old):
             break
         number -= 1
     else:
