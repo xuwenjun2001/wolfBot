@@ -6,8 +6,8 @@ import copy
 from feishu import enqueue_posts, post_key
 
 AUTHORS = (60916468, 150058)
-THREADS = {60916468: 47710788, 150058: 47288722}
-THREAD_START_PAGES = {60916468: 6}
+THREADS = {60916468: 47812645, 150058: 47288722}
+THREAD_START_PAGES = {}
 PROGRESS_FIELDS = ('watermark', 'page', 'monitor', 'search_watermark',
                    'search_seen', 'recent', 'last_success', 'rows', 'source', 'thread_id')
 

@@ -3,7 +3,7 @@ import json
 import unittest
 from unittest.mock import Mock, patch
 
-from monitor_state import monitor_url, prepare_monitors
+from monitor_state import merge_author_result, monitor_url, prepare_monitors
 from test_monitor_state import legacy_state
 import test_watcher
 from watcher import (App, AuthorThreadClient, Client, NGAAccessError,
@@ -44,7 +44,7 @@ class ThreadTests(unittest.TestCase):
         return client
 
     def test_scope_switch_carries_verified_pid_and_preserves_other_user_and_queues(self):
-        for author, tid, other in ((60916468, 47710788, AUTHOR), (AUTHOR, TID, 60916468)):
+        for author, tid, other in ((60916468, 47812645, AUTHOR), (AUTHOR, TID, 60916468)):
             with self.subTest(author=author):
                 state = prepare_monitors(legacy_state())
                 known = dict(record(42, author, tid), timestamp=197, date='2026-10-14 09:00', page=1)
@@ -58,7 +58,7 @@ class ThreadTests(unittest.TestCase):
                 self.assertEqual(progress['monitor'], 'author_thread')
                 self.assertEqual(progress['thread_id'], tid)
                 self.assertEqual(progress['watermark'], 42)
-                self.assertEqual(progress['page'], 6 if author == 60916468 else 1)
+                self.assertEqual(progress['page'], 1)
                 self.assertEqual(progress['recent'], [known])
                 self.assertEqual(updated['previous_monitors'][f'{author}:author_search'], prior)
                 self.assertEqual(updated['authors'][str(other)], before['authors'][str(other)])
@@ -71,13 +71,50 @@ class ThreadTests(unittest.TestCase):
         app = App.__new__(App)
         app.state = prepare_monitors(legacy_state())
         app.events = Mock()
-        for author, tid in ((60916468, 47710788), (AUTHOR, TID)):
+        for author, tid in ((60916468, 47812645), (AUTHOR, TID)):
             with self.subTest(author=author):
                 client = app.make_client(author, '')
                 self.assertIsInstance(client, AuthorThreadClient)
                 self.assertEqual((client.author, client.tid), (author, tid))
                 self.assertEqual(monitor_url(author), f'https://ngabbs.com/read.php?tid={tid}&authorid={author}')
                 self.assertEqual(client.url, monitor_url(author))
+
+    def test_thread_switch_baselines_new_topic_then_notifies_only_new_posts(self):
+        author, old_tid, new_tid = 60916468, 47710788, 47812645
+        state = prepare_monitors(legacy_state())
+        old = dict(record(999, author, old_tid), timestamp=197, date='2026-10-14 09:00', page=7)
+        prior = {'monitor': 'author_thread', 'thread_id': old_tid, 'page': 7,
+                 'watermark': 999, 'recent': [old], 'last_success': 197}
+        state['authors'][str(author)] = prior
+        before = copy.deepcopy(state)
+        migrated = prepare_monitors(state)
+        progress = migrated['authors'][str(author)]
+        self.assertEqual((progress['thread_id'], progress['page'], progress['watermark']), (new_tid, 1, None))
+        self.assertEqual(progress['recent'], [])
+        self.assertEqual(migrated['previous_monitors'][f'{author}:author_thread'], prior)
+        self.assertEqual(migrated['authors'][str(AUTHOR)], before['authors'][str(AUTHOR)])
+        self.assertEqual(state, before)
+
+        client = AuthorThreadClient(author=author, tid=new_tid)
+        initial = {'__T': {'tid': new_tid}, '__R': [record(42, author, new_tid)],
+                   '__ROWS': 1, '__R__ROWS': 1, '__R__ROWS_PAGE': 20, '__PAGE': 1}
+        with patch.object(client, 'page', return_value=parse_thread_page(initial, 1, author, new_tid)):
+            baseline, fresh, is_baseline = poll(client, progress)
+        self.assertTrue(is_baseline)
+        self.assertEqual(baseline['watermark'], 42)
+        self.assertEqual(fresh, [])
+        committed = merge_author_result(migrated, author, baseline, fresh, True)
+        self.assertEqual(committed['pending'], before['pending'])
+        self.assertEqual(committed['feishu_outbox'], before['feishu_outbox'])
+
+        later = dict(initial, __R=[record(42, author, new_tid), record(43, author, new_tid)], __ROWS=2, __R__ROWS=2)
+        with patch.object(client, 'page', return_value=parse_thread_page(later, 1, author, new_tid)):
+            updated, fresh, is_baseline = poll(client, committed['authors'][str(author)])
+        self.assertFalse(is_baseline)
+        self.assertEqual([p['pid'] for p in fresh], [43])
+        committed = merge_author_result(committed, author, updated, fresh, True)
+        for queue in ('pending', 'feishu_outbox'):
+            self.assertEqual(committed[queue], before[queue] + fresh)
 
     def test_json_validates_author_topic_and_all_fields_including_pid_zero(self):
         parsed = parse_thread_page(data((0, 42)), 1, AUTHOR, TID)
