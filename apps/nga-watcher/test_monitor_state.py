@@ -7,7 +7,8 @@ import unittest
 from unittest.mock import Mock, patch
 
 from feishu import post_key
-from monitor_state import AUTHORS, merge_author_result, prepare_monitors, search_url
+from monitor_state import (AUTHORS, discard_feishu_backlog, merge_author_result,
+                           prepare_monitors, search_url)
 from search_posts import parse_search_html, parse_search_page, poll_search
 from test_search_posts import api_body, html_body, FakeSearch, result
 from watcher import App, AuthorMonitor, AuthorSearchClient, poll_thread, read_state, save_state
@@ -63,6 +64,16 @@ class MonitorTests(unittest.TestCase):
             path = Path(folder) / 'state.json'
             save_state(state, path)
             self.assertEqual(prepare_monitors(read_state(path)), state)
+
+    def test_discard_feishu_backlog_preserves_progress_and_desktop_reminders(self):
+        state = prepare_monitors(legacy_state())
+        before = copy.deepcopy(state)
+        updated, discarded = discard_feishu_backlog(state)
+        self.assertEqual(discarded, 1)
+        self.assertEqual(updated['feishu_outbox'], [])
+        self.assertEqual(updated['pending'], before['pending'])
+        self.assertEqual(updated['authors'], before['authors'])
+        self.assertEqual(state, before)
 
     @patch.dict('monitor_state.THREADS', {}, clear=True)
     def test_search_mode_new_author_baselines_while_existing_author_catches_up(self):
@@ -134,6 +145,25 @@ class MonitorTests(unittest.TestCase):
             app.handle_poll_event('ok', (progress, [], True), SECOND)
         self.assertEqual(app.targets[str(SECOND)].next_check, 160)
         self.assertEqual(app.targets[str(FIRST)].next_check, before)
+
+    def test_startup_catchup_skips_feishu_but_later_new_posts_are_sent(self):
+        app = self.mock_app()
+        app.state['feishu_outbox'] = []
+        first_target = app.targets[str(FIRST)]
+        initial_post = post(FIRST, 51, 500)
+        progress = dict(app.state['authors'][str(FIRST)], recent=[initial_post],
+                        watermark=51, rows=1, page=1, last_success=500)
+        with patch('watcher.save_state'):
+            app.handle_poll_event('ok', (progress, [initial_post], False), FIRST)
+        self.assertTrue(first_target.initial_success_seen)
+        self.assertEqual(app.state['feishu_outbox'], [])
+
+        later_post = post(FIRST, 52, 560)
+        progress = dict(app.state['authors'][str(FIRST)], recent=[initial_post, later_post],
+                        watermark=52, rows=2, page=1, last_success=560)
+        with patch('watcher.save_state'):
+            app.handle_poll_event('ok', (progress, [later_post], False), FIRST)
+        self.assertEqual([item['pid'] for item in app.state['feishu_outbox']], [52])
 
     def test_tick_starts_due_author_while_other_is_retrying(self):
         app = self.mock_app()

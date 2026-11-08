@@ -56,6 +56,14 @@ def prepare_monitors(state):
     return result
 
 
+def discard_feishu_backlog(state):
+    """Drop notifications queued before this app session while preserving monitor state."""
+    queued = state.get('feishu_outbox', [])
+    if not isinstance(queued, list):
+        raise ValueError('飞书待发送队列格式异常，请保留 state.json 后检查')
+    return dict(state, feishu_outbox=[]), len(queued)
+
+
 def merge_author_result(state, author, progress, fresh, feishu_enabled):
     """Only commit this author's progress; never restore queues from a snapshot."""
     author = str(author)

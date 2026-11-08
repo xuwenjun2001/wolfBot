@@ -202,6 +202,7 @@ class FeishuTests(unittest.TestCase):
 
     def test_new_posts_are_persisted_before_notification(self):
         app = self.mock_app()
+        app.targets[str(AUTHORS[0])].initial_success_seen = True
         new_post = dict(POST, pid=43)
         result = dict(copy.deepcopy(app.state), rows=2, watermark=43)
         with patch('watcher.save_state') as save:
@@ -211,6 +212,7 @@ class FeishuTests(unittest.TestCase):
     def test_disabled_channel_does_not_queue_new_posts(self):
         app = self.mock_app()
         app.feishu_config['enabled'] = False
+        app.targets[str(AUTHORS[0])].initial_success_seen = True
         new_post = dict(POST, pid=43)
         result = dict(copy.deepcopy(app.state), rows=2, watermark=43)
         with patch('watcher.save_state'):

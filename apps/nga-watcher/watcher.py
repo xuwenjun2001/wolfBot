@@ -25,7 +25,8 @@ import urllib.request
 import webbrowser
 
 from feishu import DEFAULT_CONFIG, FeishuClient, post_key, post_url, read_config, validate_config
-from monitor_state import AUTHORS, THREADS, merge_author_result, monitor_url, prepare_monitors, search_url
+from monitor_state import (AUTHORS, THREADS, discard_feishu_backlog,
+                           merge_author_result, monitor_url, prepare_monitors, search_url)
 from nga_auth import SEARCH_URL, load_cookie, open_settings as open_nga_settings, validate_cookie
 from search_posts import make_post, parse_search_html, parse_search_page, poll_search, validate_order
 
@@ -737,6 +738,7 @@ class AuthorMonitor:
         self.author, self.client = author, client
         self.busy = False
         self.failed = 0
+        self.initial_success_seen = False
         self.next_check = time.monotonic()
         self.message = '等待检查…'
 
@@ -746,8 +748,12 @@ class App:
         self.root, self.smoke = root, smoke
         saved_state = read_state() if not smoke else {'watermark': None, 'page': 1, 'pending': [], 'recent': []}
         self.state = prepare_monitors(saved_state)
-        if not smoke and self.state != saved_state:
-            save_state(self.state)
+        if not smoke:
+            self.state, discarded = discard_feishu_backlog(self.state)
+            if self.state != saved_state:
+                save_state(self.state)
+            if discarded:
+                LOG.info('Discarded queued Feishu backlog count=%s', discarded)
         try:
             cookie = '' if smoke else load_cookie()
         except (ValueError, OSError):
@@ -885,7 +891,9 @@ class App:
         target.next_check = time.monotonic() + INTERVAL
         if kind == 'ok':
             result, fresh, baseline = value
-            self.state = merge_author_result(self.state, author, result, fresh, self.feishu_config['enabled'])
+            feishu_enabled = self.feishu_config['enabled'] and target.initial_success_seen
+            self.state = merge_author_result(self.state, author, result, fresh, feishu_enabled)
+            target.initial_success_seen = True
             try:
                 save_state(self.state)
             except OSError as exc:
