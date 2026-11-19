@@ -1,7 +1,8 @@
-"""NGA author-post watcher. Python standard library only."""
+"""NGA and index volume watcher. Python standard library only."""
 from __future__ import annotations
 
 import ctypes
+from datetime import datetime
 import html
 from html.parser import HTMLParser
 from http.client import HTTPException
@@ -25,6 +26,7 @@ import urllib.request
 import webbrowser
 
 from feishu import DEFAULT_CONFIG, FeishuClient, post_key, post_url, read_config, validate_config
+from market_volume import CHINA, MarketMonitor
 from monitor_state import (AUTHORS, THREADS, discard_feishu_backlog,
                            merge_author_result, monitor_url, prepare_monitors, search_url)
 from nga_auth import SEARCH_URL, load_cookie, open_settings as open_nga_settings, validate_cookie
@@ -761,6 +763,8 @@ class App:
             LOG.warning('NGA login configuration could not be loaded')
         self.events = queue.Queue()
         self.targets = {str(author): AuthorMonitor(author, self.make_client(author, cookie)) for author in AUTHORS}
+        self.market = MarketMonitor(self.events)
+        self.market_alerts = {}
         self.paused = False
         self.alert = None
         self.silent = False
@@ -783,9 +787,9 @@ class App:
                 self.feishu_status.set('飞书：配置读取失败，请打开“飞书设置”重新保存')
                 LOG.warning('Feishu configuration could not be loaded')
         self.feishu_client = FeishuClient(self.feishu_config)
-        root.title('NGA 发言雷达 · UID 60916468 / 150058')
+        root.title('NGA 发言雷达 · 指数成交量')
         root.geometry('1100x780')
-        root.minsize(1040, 660)
+        root.minsize(1040, 700)
         root.configure(bg='#0b1220')
         style = ttk.Style()
         style.theme_use('clam')
@@ -795,6 +799,7 @@ class App:
         tk.Label(root, text=f'{scopes}  /  各自每 60 秒检查，忙时每 {BUSY_RETRY_INTERVAL:g} 秒重试', bg='#0b1220', fg='#94a3b8', font=('Microsoft YaHei UI', 11)).pack(anchor='w', padx=30)
         self.status = tk.StringVar()
         self.details = tk.StringVar()
+        self.market_status = tk.StringVar(value=self.market.status(self.paused))
         self.refresh_status()
         tk.Label(root, textvariable=self.status, bg='#132538', fg='#5eead4', font=('Microsoft YaHei UI', 13, 'bold'), anchor='w', justify='left', padx=18, pady=18, wraplength=980).pack(fill='x', padx=28, pady=(22, 5))
         tk.Label(root, textvariable=self.details, bg='#0b1220', fg='#94a3b8', justify='left', font=('Microsoft YaHei UI', 10)).pack(anchor='w', padx=30, pady=5)
@@ -807,9 +812,12 @@ class App:
         self.pause_button.pack(side='left')
         ttk.Button(bar, text='飞书设置', command=self.open_feishu_settings).pack(side='left', padx=(8, 0))
         ttk.Button(bar, text='NGA 登录态', command=self.open_nga_settings).pack(side='left', padx=(8, 0))
+        tk.Label(root, textvariable=self.market_status, bg='#132538', fg='#bfdbfe',
+                 font=('Microsoft YaHei UI', 11), anchor='w', justify='left',
+                 padx=18, pady=9, wraplength=970).pack(fill='x', padx=28, pady=(0, 10))
         self.content = tk.Text(root, bg='#111c2e', fg='#e2e8f0', insertbackground='white', relief='flat', wrap='word', font=('Microsoft YaHei UI', 11), padx=18, pady=16)
         self.content.pack(fill='both', expand=True, padx=28, pady=(0, 14))
-        tk.Label(root, text='新发言：置顶大窗口 + 循环提示音 + 任务栏闪烁，确认后停止。\n最小化可继续运行；退出、关机或电脑睡眠期间无法实时检查。', bg='#0b1220', fg='#94a3b8', justify='left', font=('Microsoft YaHei UI', 10)).pack(anchor='w', padx=30, pady=(0, 20))
+        tk.Label(root, text='新发言和指数放量会置顶弹窗并循环响铃，确认后停止。\n最小化可继续运行，退出或电脑睡眠期间暂停检查。', bg='#0b1220', fg='#94a3b8', justify='left', font=('Microsoft YaHei UI', 10)).pack(anchor='w', padx=30, pady=(0, 16))
         root.protocol('WM_DELETE_WINDOW', self.close)
         self.render_posts()
         if smoke:
@@ -899,6 +907,7 @@ class App:
             except OSError as exc:
                 target.message = f'进度保存失败：{exc}'
                 self.paused = True
+                self.market.reset()
                 for item in self.targets.values():
                     item.client.cancel_event.set()
                 self.pause_button.config(text='继续监控')
@@ -930,6 +939,11 @@ class App:
             elif kind == 'poll':
                 author, event, result = value
                 self.handle_poll_event(event, result, author)
+            elif kind == 'market':
+                alerts = self.market.receive(value, datetime.now(CHINA), self.paused)
+                if alerts:
+                    self.market_alerts.update({alert.symbol: alert for alert in alerts})
+                    self.show_alert()
         lines = []
         for uid, target in self.targets.items():
             remaining = max(0, math.ceil(target.next_check - time.monotonic()))
@@ -941,6 +955,11 @@ class App:
             if not self.paused and not target.busy and remaining == 0:
                 self.check(uid)
         self.details.set('\n'.join(lines) + f'\n待确认：{len(self.state["pending"])} 条')
+        if not self.smoke:
+            self.market.tick(datetime.now(CHINA), time.monotonic(), self.paused)
+            market_status = self.market.status(self.paused)
+            if market_status != self.market_status.get():
+                self.market_status.set(market_status)
         self.dispatch_feishu()
         self.root.after(250, self.tick)
 
@@ -1081,6 +1100,7 @@ class App:
 
     def toggle(self):
         self.paused = not self.paused
+        self.market.reset()
         self.pause_button.config(text='继续监控' if self.paused else '暂停监控')
         for target in self.targets.values():
             if self.paused:
@@ -1095,37 +1115,60 @@ class App:
         self.show_alert(test=True)
 
     def show_alert(self, test=False, error=False):
+        posts = self.state['pending']
+        spikes = list(self.market_alerts.values())
+        if not (test or error or posts or spikes):
+            return
+        test = test and not (posts or spikes)
         if self.alert and self.alert.winfo_exists():
             self.alert.destroy()
         self.silent = False
         win = self.alert = tk.Toplevel(self.root)
-        win.title('NGA · 需要你关注')
+        win.title('发言雷达 · 需要你关注')
         win.configure(bg='#9f1239')
         win.attributes('-topmost', True)
         w, h = int(win.winfo_screenwidth() * .90), int(win.winfo_screenheight() * .85)
         win.geometry(f'{w}x{h}+{(win.winfo_screenwidth()-w)//2}+{(win.winfo_screenheight()-h)//2}')
-        title = '提醒测试 · 这是演示' if test else ('监控连续失败，请检查网络或 NGA 登录态' if error else f'目标用户有新发言！共 {len(self.state["pending"])} 条待确认')
+        messages = []
+        if test:
+            title = '提醒测试 · 这是演示'
+            messages.append('发现新发言或指数放量时，会置顶显示并循环播放提示音。点击“我知道了”即可关闭。')
+        elif spikes:
+            title = '指数明显放量！' if not posts else f'指数明显放量 · {len(posts)} 条新发言'
+            messages.extend(spike.describe() for spike in spikes)
+        elif posts:
+            title = f'目标用户有新发言！共 {len(posts)} 条待确认'
+        else:
+            title = '监控连续失败，请检查网络或 NGA 登录态'
+        messages.extend(f"UID {p.get('authorid', AUTHOR)}  ·  {p['date']}\n"
+                        + (f"{p['subject']}\n" if p.get('subject') else '') + p['content'] for p in posts)
+        if error:
+            messages.append(self.status.get())
         tk.Label(win, text=title, bg='#9f1239', fg='white', font=('Microsoft YaHei UI', 30, 'bold'), wraplength=w-80).pack(pady=(35, 20))
         text = tk.Text(win, bg='#fff1f2', fg='#4c0519', font=('Microsoft YaHei UI', 16), wrap='word', padx=24, pady=20)
         text.pack(fill='both', expand=True, padx=36, pady=12)
-        posts = self.state['pending']
-        message = '真实新发言出现时，会像这样置顶显示并循环播放提示音。点击“我知道了”即可关闭。' if test else (self.status.get() if error else '\n\n'.join(f"UID {p.get('authorid', AUTHOR)}  ·  {p['date']}\n" + (f"{p['subject']}\n" if p.get('subject') else '') + p['content'] for p in posts))
-        text.insert('end', message)
+        text.insert('end', '\n\n'.join(messages))
         text.config(state='disabled')
         actions = tk.Frame(win, bg='#9f1239')
         actions.pack(pady=24)
         def ack():
-            if not test and not error:
-                self.state['pending'] = []
+            if posts:
                 try:
-                    save_state(self.state)
+                    next_state = dict(self.state, pending=[])
+                    save_state(next_state)
+                    self.state = next_state
                 except OSError as exc:
                     messagebox.showerror('保存失败', str(exc), parent=win)
+                    return
+            self.market_alerts.clear()
             win.destroy()
             self.alert = None
             if os.name == 'nt':
                 ctypes.windll.user32.FlashWindow(self.root.winfo_id(), False)
-        ttk.Button(actions, text='打开对应发言', command=lambda: webbrowser.open(post_url(posts[-1]) if posts and not test and not error else SEARCH_URL)).pack(side='left', padx=8)
+        if posts:
+            ttk.Button(actions, text='打开对应发言', command=lambda: webbrowser.open(post_url(posts[-1]))).pack(side='left', padx=8)
+        elif error:
+            ttk.Button(actions, text='打开 NGA', command=lambda: webbrowser.open(SEARCH_URL)).pack(side='left', padx=8)
         ttk.Button(actions, text='静音（保留提醒）', command=lambda: setattr(self, 'silent', True)).pack(side='left', padx=8)
         ttk.Button(actions, text='我知道了 · 关闭提醒', command=ack).pack(side='left', padx=8)
         win.protocol('WM_DELETE_WINDOW', ack)

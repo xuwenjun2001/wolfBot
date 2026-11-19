@@ -3,7 +3,7 @@ import json
 import unittest
 from unittest.mock import Mock, patch
 
-from monitor_state import merge_author_result, monitor_url, prepare_monitors
+from monitor_state import AUTHORS, THREADS, merge_author_result, monitor_url, prepare_monitors
 from test_monitor_state import legacy_state
 import test_watcher
 from watcher import (App, AuthorThreadClient, Client, NGAAccessError,
@@ -44,7 +44,7 @@ class ThreadTests(unittest.TestCase):
         return client
 
     def test_scope_switch_carries_verified_pid_and_preserves_other_user_and_queues(self):
-        for author, tid, other in ((60916468, 47812645, AUTHOR), (AUTHOR, TID, 60916468)):
+        for author, tid, other in ((60916468, 47908854, AUTHOR), (63513284, 47908854, AUTHOR), (AUTHOR, TID, 60916468)):
             with self.subTest(author=author):
                 state = prepare_monitors(legacy_state())
                 known = dict(record(42, author, tid), timestamp=197, date='2026-10-14 09:00', page=1)
@@ -71,7 +71,7 @@ class ThreadTests(unittest.TestCase):
         app = App.__new__(App)
         app.state = prepare_monitors(legacy_state())
         app.events = Mock()
-        for author, tid in ((60916468, 47812645), (AUTHOR, TID)):
+        for author, tid in THREADS.items():
             with self.subTest(author=author):
                 client = app.make_client(author, '')
                 self.assertIsInstance(client, AuthorThreadClient)
@@ -80,7 +80,7 @@ class ThreadTests(unittest.TestCase):
                 self.assertEqual(client.url, monitor_url(author))
 
     def test_thread_switch_baselines_new_topic_then_notifies_only_new_posts(self):
-        author, old_tid, new_tid = 60916468, 47710788, 47812645
+        author, old_tid, new_tid = 60916468, 47812645, 47908854
         state = prepare_monitors(legacy_state())
         old = dict(record(999, author, old_tid), timestamp=197, date='2026-10-14 09:00', page=7)
         prior = {'monitor': 'author_thread', 'thread_id': old_tid, 'page': 7,
@@ -115,6 +115,23 @@ class ThreadTests(unittest.TestCase):
         committed = merge_author_result(committed, author, updated, fresh, True)
         for queue in ('pending', 'feishu_outbox'):
             self.assertEqual(committed[queue], before[queue] + fresh)
+
+    def test_new_author_and_changed_topic_have_separate_baselines(self):
+        state = prepare_monitors(legacy_state())
+        previous_author = copy.deepcopy(state['authors'][str(AUTHOR)])
+        for author, pid in ((60916468, 42), (63513284, 157)):
+            client = AuthorThreadClient(author=author, tid=47908854)
+            sample = {'__T': {'tid': 47908854}, '__R': [record(pid, author, 47908854)],
+                      '__ROWS': 1, '__R__ROWS': 1, '__R__ROWS_PAGE': 20, '__PAGE': 1}
+            with patch.object(client, 'page', return_value=parse_thread_page(sample, 1, author, 47908854)):
+                baseline, fresh, first_run = poll(client, state['authors'][str(author)])
+            self.assertTrue(first_run)
+            self.assertEqual(fresh, [])
+            self.assertEqual(baseline['watermark'], pid)
+            state = merge_author_result(state, author, baseline, fresh, True)
+        self.assertEqual(state['authors'][str(AUTHOR)], previous_author)
+        self.assertEqual(set(state['authors']), {str(uid) for uid in AUTHORS})
+        self.assertEqual(prepare_monitors(state), state)
 
     def test_json_validates_author_topic_and_all_fields_including_pid_zero(self):
         parsed = parse_thread_page(data((0, 42)), 1, AUTHOR, TID)
