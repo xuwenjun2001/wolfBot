@@ -9,7 +9,8 @@ import unittest
 from unittest.mock import Mock, patch
 
 from feishu import post_key
-from market_volume import CHINA, VolumeSpike
+from market_feed import CHINA
+from market_signals import TurnoverSignal
 from monitor_state import (AUTHORS, discard_feishu_backlog, merge_author_result,
                            prepare_monitors, search_url)
 from search_posts import parse_search_html, parse_search_page, poll_search
@@ -193,13 +194,17 @@ class MonitorTests(unittest.TestCase):
     def test_market_spike_opens_desktop_alert_without_changing_nga_or_feishu_state(self):
         app = self.mock_app()
         before = copy.deepcopy(app.state)
-        spike = VolumeSpike('sh000688', datetime(2026, 11, 19, 10, tzinfo=CHINA), 800, 20, 2.0)
+        stamp = datetime(2026, 11, 19, 10, tzinfo=CHINA)
+        spike = TurnoverSignal('sh000688', stamp, stamp, 1, 2.4e9, 2.4e9, 1e9, False)
         app.market.receive.return_value = [spike]
-        app.events.put(('market', (0, {}, '')))
+        app.market.checkpoint.return_value = {'sh000688': {'stage': 1, 'end': stamp.isoformat(), 'baseline': 1e9}}
+        app.events.put(('market', (0, None)))
         app.root, app.dispatch_feishu, app.check = Mock(), Mock(), Mock()
-        app.tick()
-        self.assertEqual(app.state, before)
-        self.assertEqual(app.market_alerts, {'sh000688': spike})
+        with patch('watcher.save_state') as save:
+            app.tick()
+            save.assert_called_once_with(app.state)
+        self.assertEqual(app.state, dict(before, market_signals=app.market.checkpoint.return_value))
+        self.assertEqual(app.market_alerts, {('sh000688', stamp): spike})
         app.show_alert.assert_called_once_with()
 
     def test_new_author_json_and_html_reject_mixed_authors(self):

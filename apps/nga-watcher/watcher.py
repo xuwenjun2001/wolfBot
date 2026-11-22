@@ -26,7 +26,9 @@ import urllib.request
 import webbrowser
 
 from feishu import DEFAULT_CONFIG, FeishuClient, post_key, post_url, read_config, validate_config
-from market_volume import CHINA, MarketMonitor
+from market_feed import CHINA
+from market_signals import STAGES
+from market_volume import MarketMonitor
 from monitor_state import (AUTHORS, THREADS, discard_feishu_backlog,
                            merge_author_result, monitor_url, prepare_monitors, search_url)
 from nga_auth import SEARCH_URL, load_cookie, open_settings as open_nga_settings, validate_cookie
@@ -763,7 +765,7 @@ class App:
             LOG.warning('NGA login configuration could not be loaded')
         self.events = queue.Queue()
         self.targets = {str(author): AuthorMonitor(author, self.make_client(author, cookie)) for author in AUTHORS}
-        self.market = MarketMonitor(self.events)
+        self.market = MarketMonitor(self.events, self.state.get('market_signals'))
         self.market_alerts = {}
         self.paused = False
         self.alert = None
@@ -787,7 +789,7 @@ class App:
                 self.feishu_status.set('飞书：配置读取失败，请打开“飞书设置”重新保存')
                 LOG.warning('Feishu configuration could not be loaded')
         self.feishu_client = FeishuClient(self.feishu_config)
-        root.title('NGA 发言雷达 · 指数成交量')
+        root.title('NGA 发言雷达 · 盘中成交额')
         root.geometry('1100x780')
         root.minsize(1040, 700)
         root.configure(bg='#0b1220')
@@ -942,7 +944,13 @@ class App:
             elif kind == 'market':
                 alerts = self.market.receive(value, datetime.now(CHINA), self.paused)
                 if alerts:
-                    self.market_alerts.update({alert.symbol: alert for alert in alerts})
+                    self.state['market_signals'] = self.market.checkpoint()
+                    try:
+                        save_state(self.state)
+                    except OSError as exc:
+                        LOG.warning('Market alert checkpoint not saved: %s', exc)
+                        self.market.notes[alerts[-1].symbol] += ' · 提醒记录保存失败'
+                    self.market_alerts.update({(alert.symbol, alert.bar_end): alert for alert in alerts})
                     self.show_alert()
         lines = []
         for uid, target in self.targets.items():
@@ -1134,8 +1142,10 @@ class App:
             title = '提醒测试 · 这是演示'
             messages.append('发现新发言或指数放量时，会置顶显示并循环播放提示音。点击“我知道了”即可关闭。')
         elif spikes:
-            title = '指数明显放量！' if not posts else f'指数明显放量 · {len(posts)} 条新发言'
-            messages.extend(spike.describe() for spike in spikes)
+            title = STAGES[max(spike.stage for spike in spikes)]
+            if posts:
+                title += f' · {len(posts)} 条新发言'
+            messages.extend(spike.describe() for spike in reversed(spikes))
         elif posts:
             title = f'目标用户有新发言！共 {len(posts)} 条待确认'
         else:
